@@ -30,6 +30,8 @@ export default async function ExhibitorLayout({
     { href: `${basePath}/dashboard`, label: "Dashboard" },
     { href: `${basePath}/shows`, label: "Enter a show" },
     { href: `${basePath}/entries`, label: "My entries" },
+    { href: `${basePath}/horses`, label: "My horses" },
+    { href: `${basePath}/profile`, label: "My profile" },
   ];
 
   return (

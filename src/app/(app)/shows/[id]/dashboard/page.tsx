@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/authz";
 import { Card } from "@/components/ui";
 import { loadValidatedEntries } from "@/lib/validate-entries";
+import { loadMissingPaperworkSummary } from "@/lib/load-missing-paperwork";
 import { STAFF_ROLES } from "@/lib/validation/show";
 import type { Show, ShowStaffRow } from "@/lib/types";
 
@@ -30,6 +31,7 @@ export default async function ShowDashboardPage({
     { data: staff },
     { count: classCount },
     { entries: validatedEntries },
+    paperwork,
   ] = await Promise.all([
     supabase.from("shows").select("*").eq("id", id).maybeSingle(),
     supabase
@@ -42,6 +44,7 @@ export default async function ShowDashboardPage({
       .select("id", { count: "exact", head: true })
       .eq("show_id", id),
     loadValidatedEntries(supabase, id),
+    loadMissingPaperworkSummary(supabase, id),
   ]);
 
   const activeEntries = validatedEntries.filter(
@@ -56,6 +59,11 @@ export default async function ShowDashboardPage({
       sum + v.issues.filter((issue) => issue.severity !== "info").length,
     0
   );
+  const paperworkIssueCount =
+    paperwork.ridersWithNoDocs +
+    paperwork.horsesWithNoDocs +
+    paperwork.pendingCount +
+    paperwork.expiredCount;
 
   if (!show) notFound();
   const s = show as Show;
@@ -135,6 +143,49 @@ export default async function ShowDashboardPage({
           </p>
         </Card>
       </Link>
+      <Card
+        className={
+          paperworkIssueCount > 0 ? "border-amber-300 dark:border-amber-800" : ""
+        }
+      >
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Missing paperwork
+        </p>
+        {paperworkIssueCount === 0 ? (
+          <p className="mt-1 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+            All paperwork verified
+          </p>
+        ) : (
+          <ul className="mt-1 space-y-0.5 text-sm text-amber-700 dark:text-amber-400">
+            {paperwork.ridersWithNoDocs > 0 && (
+              <li>
+                {paperwork.ridersWithNoDocs} rider entr
+                {paperwork.ridersWithNoDocs === 1 ? "y" : "ies"} with no documents
+                on file
+              </li>
+            )}
+            {paperwork.horsesWithNoDocs > 0 && (
+              <li>
+                {paperwork.horsesWithNoDocs} horse entr
+                {paperwork.horsesWithNoDocs === 1 ? "y" : "ies"} with no documents
+                on file
+              </li>
+            )}
+            {paperwork.pendingCount > 0 && (
+              <li>
+                {paperwork.pendingCount} document
+                {paperwork.pendingCount === 1 ? "" : "s"} awaiting verification
+              </li>
+            )}
+            {paperwork.expiredCount > 0 && (
+              <li>
+                {paperwork.expiredCount} expired document
+                {paperwork.expiredCount === 1 ? "" : "s"}
+              </li>
+            )}
+          </ul>
+        )}
+      </Card>
       <Card className="border-dashed">
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Export readiness

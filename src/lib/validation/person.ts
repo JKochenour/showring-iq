@@ -61,8 +61,22 @@ export const addMembershipSchema = z.object({
   notes: z.string().trim().max(500).optional(),
 });
 
+// Exhibitor self-service edit — deliberately narrower than updatePersonSchema.
+// Legal name and role assignment stay staff-managed (see migration 00015).
+export const exhibitorUpdateProfileSchema = z.object({
+  personId: z.uuid(),
+  preferredName: personFields.preferredName,
+  email: personFields.email,
+  phone: personFields.phone,
+  city: personFields.city,
+  state: personFields.state,
+  birthdate: personFields.birthdate,
+});
+
 export type CreatePersonInput = z.infer<typeof createPersonSchema>;
 export type CreatePersonFormValues = z.input<typeof createPersonSchema>;
 export type UpdatePersonInput = z.infer<typeof updatePersonSchema>;
 export type UpdatePersonFormValues = z.input<typeof updatePersonSchema>;
 export type AddMembershipInput = z.infer<typeof addMembershipSchema>;
+export type ExhibitorUpdateProfileInput = z.infer<typeof exhibitorUpdateProfileSchema>;
+export type ExhibitorUpdateProfileFormValues = z.input<typeof exhibitorUpdateProfileSchema>;
