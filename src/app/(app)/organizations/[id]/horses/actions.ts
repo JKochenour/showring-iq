@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { hasOrgPermission } from "@/lib/authz";
 import {
   addOwnershipSchema,
   addRegistrationSchema,
@@ -13,8 +14,27 @@ import {
   type CreateHorseInput,
   type UpdateHorseInput,
 } from "@/lib/validation/horse";
+import { normalizeSex, normalizeStatus, normalizeYear } from "@/lib/import/normalize";
 
 export type ActionResult = { error?: string };
+
+const MAX_IMPORT_ROWS = 1000;
+
+export type ImportRowResult = {
+  row: number;
+  name: string;
+  status: "created" | "skipped" | "error";
+  message?: string;
+};
+
+export type ImportSummary = {
+  created: number;
+  skipped: number;
+  errors: number;
+  results: ImportRowResult[];
+};
+
+const importHorseRowSchema = createHorseSchema.omit({ organizationId: true });
 
 function horseValues(d: CreateHorseInput | UpdateHorseInput) {
   return {
@@ -345,4 +365,171 @@ export async function removeOwnership(
     `/organizations/${ownership.organization_id}/horses/${ownership.horse_id}`
   );
   return {};
+}
+
+export type ImportHorseRow = {
+  registeredName?: string;
+  barnName?: string;
+  breed?: string;
+  sex?: string;
+  color?: string;
+  foalYear?: string;
+  sire?: string;
+  dam?: string;
+  notes?: string;
+  ownerName?: string;
+  registrationAssociation?: string;
+  registrationNumber?: string;
+  competitionLicenseNumber?: string;
+  registrationStatus?: string;
+};
+
+export async function bulkImportHorses(
+  organizationId: string,
+  rows: ImportHorseRow[]
+): Promise<ImportSummary | ActionResult> {
+  if (!(await hasOrgPermission(organizationId, "horse.create"))) {
+    return { error: "You don't have permission to add horses to this organization." };
+  }
+  const canAddRegistration = await hasOrgPermission(organizationId, "membership.edit");
+  const canAddOwnership = await hasOrgPermission(organizationId, "ownership.edit");
+
+  const supabase = await createClient();
+  const input = rows.slice(0, MAX_IMPORT_ROWS);
+
+  const [{ data: existingHorses }, { data: people }] = await Promise.all([
+    supabase.from("horses").select("registered_name").eq("organization_id", organizationId),
+    canAddOwnership
+      ? supabase.from("people").select("id, first_name, last_name").eq("organization_id", organizationId)
+      : Promise.resolve({ data: [] as { id: string; first_name: string; last_name: string }[] }),
+  ]);
+
+  const seen = new Set((existingHorses ?? []).map((h) => h.registered_name.trim().toLowerCase()));
+  const peopleByName = new Map(
+    (people ?? []).map((p) => [`${p.first_name} ${p.last_name}`.trim().toLowerCase(), p.id])
+  );
+
+  const results: ImportRowResult[] = [];
+
+  for (let i = 0; i < input.length; i++) {
+    const raw = input[i];
+    const rowNum = i + 1;
+    const displayName = raw.registeredName?.trim() || `Row ${rowNum}`;
+
+    const sex = normalizeSex(raw.sex);
+    const parsed = importHorseRowSchema.safeParse({
+      registeredName: raw.registeredName ?? "",
+      barnName: raw.barnName ?? "",
+      breed: raw.breed ?? "",
+      sex: sex ?? "",
+      color: raw.color ?? "",
+      foalYear: normalizeYear(raw.foalYear) ?? "",
+      sire: raw.sire ?? "",
+      dam: raw.dam ?? "",
+      notes: raw.notes ?? "",
+    });
+
+    if (!parsed.success) {
+      results.push({
+        row: rowNum,
+        name: displayName,
+        status: "error",
+        message: parsed.error.issues[0]?.message ?? "Invalid row",
+      });
+      continue;
+    }
+    const d = parsed.data;
+
+    const key = d.registeredName.trim().toLowerCase();
+    if (seen.has(key)) {
+      results.push({ row: rowNum, name: displayName, status: "skipped", message: "Already exists" });
+      continue;
+    }
+
+    const { data: created, error } = await supabase
+      .from("horses")
+      .insert({
+        organization_id: organizationId,
+        registered_name: d.registeredName,
+        barn_name: d.barnName || null,
+        breed: d.breed || null,
+        sex: d.sex || null,
+        color: d.color || null,
+        foal_year: d.foalYear ?? null,
+        sire: d.sire || null,
+        dam: d.dam || null,
+        notes: d.notes || null,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (error || !created) {
+      results.push({
+        row: rowNum,
+        name: displayName,
+        status: "error",
+        message: error?.message ?? "Not created — check permissions.",
+      });
+      continue;
+    }
+    seen.add(key);
+
+    const notes: string[] = [];
+
+    if (
+      canAddRegistration &&
+      raw.registrationAssociation?.trim() &&
+      (raw.registrationNumber?.trim() || raw.competitionLicenseNumber?.trim())
+    ) {
+      await supabase.from("horse_registrations").insert({
+        horse_id: created.id,
+        organization_id: organizationId,
+        association: raw.registrationAssociation.trim(),
+        registration_number: raw.registrationNumber?.trim() || null,
+        competition_license_number: raw.competitionLicenseNumber?.trim() || null,
+        status: normalizeStatus(raw.registrationStatus),
+      });
+    }
+
+    if (canAddOwnership && raw.ownerName?.trim()) {
+      const ownerId = peopleByName.get(raw.ownerName.trim().toLowerCase());
+      if (ownerId) {
+        await supabase.from("horse_ownerships").insert({
+          horse_id: created.id,
+          organization_id: organizationId,
+          owner_person_id: ownerId,
+          percentage: 100,
+        });
+      } else {
+        notes.push(`Owner "${raw.ownerName.trim()}" not found — add ownership manually`);
+      }
+    }
+
+    if (raw.sex?.trim() && !sex) notes.push(`Unrecognized sex "${raw.sex.trim()}" ignored`);
+
+    results.push({
+      row: rowNum,
+      name: displayName,
+      status: "created",
+      message: notes.length > 0 ? notes.join("; ") : undefined,
+    });
+  }
+
+  const created = results.filter((r) => r.status === "created").length;
+  const skipped = results.filter((r) => r.status === "skipped").length;
+  const errors = results.filter((r) => r.status === "error").length;
+
+  if (created > 0) {
+    await supabase.rpc("log_audit", {
+      p_org: organizationId,
+      p_action: "horse.bulk_imported",
+      p_entity_type: "horses",
+      p_entity_id: null,
+      p_old: null,
+      p_new: { created, skipped, errors, source: "csv" },
+    });
+  }
+
+  revalidatePath(`/organizations/${organizationId}/horses`);
+  return { created, skipped, errors, results };
 }

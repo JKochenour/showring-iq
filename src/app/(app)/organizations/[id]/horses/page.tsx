@@ -74,9 +74,14 @@ export default async function HorsesPage({
         description="The organization's horse database: registrations, competition licenses, and ownership."
         action={
           canCreate ? (
-            <ButtonLink href={`/organizations/${id}/horses/new`}>
-              Add horse
-            </ButtonLink>
+            <div className="flex gap-2">
+              <ButtonLink href={`/organizations/${id}/horses/import`} variant="secondary">
+                Import from spreadsheet
+              </ButtonLink>
+              <ButtonLink href={`/organizations/${id}/horses/new`}>
+                Add horse
+              </ButtonLink>
+            </div>
           ) : undefined
         }
       />
@@ -84,12 +89,17 @@ export default async function HorsesPage({
       {rows.length === 0 ? (
         <EmptyState
           title="No horses yet"
-          description="Add horses with their registration and competition license numbers."
+          description="Add horses with their registration and competition license numbers, or import your whole database from a spreadsheet."
           action={
             canCreate ? (
-              <ButtonLink href={`/organizations/${id}/horses/new`}>
-                Add horse
-              </ButtonLink>
+              <div className="flex gap-2">
+                <ButtonLink href={`/organizations/${id}/horses/import`} variant="secondary">
+                  Import from spreadsheet
+                </ButtonLink>
+                <ButtonLink href={`/organizations/${id}/horses/new`}>
+                  Add horse
+                </ButtonLink>
+              </div>
             ) : undefined
           }
         />

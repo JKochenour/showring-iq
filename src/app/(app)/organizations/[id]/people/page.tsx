@@ -54,9 +54,14 @@ export default async function PeoplePage({
         description="Riders, owners, trainers, and judges. Saved once at the organization level and reused across every show."
         action={
           canCreate ? (
-            <ButtonLink href={`/organizations/${id}/people/new`}>
-              Add person
-            </ButtonLink>
+            <div className="flex gap-2">
+              <ButtonLink href={`/organizations/${id}/people/import`} variant="secondary">
+                Import from spreadsheet
+              </ButtonLink>
+              <ButtonLink href={`/organizations/${id}/people/new`}>
+                Add person
+              </ButtonLink>
+            </div>
           ) : undefined
         }
       />
@@ -64,12 +69,17 @@ export default async function PeoplePage({
       {rows.length === 0 ? (
         <EmptyState
           title="No people yet"
-          description="Add riders, owners, and trainers with their association membership numbers."
+          description="Add riders, owners, and trainers with their association membership numbers, or import your whole roster from a spreadsheet."
           action={
             canCreate ? (
-              <ButtonLink href={`/organizations/${id}/people/new`}>
-                Add person
-              </ButtonLink>
+              <div className="flex gap-2">
+                <ButtonLink href={`/organizations/${id}/people/import`} variant="secondary">
+                  Import from spreadsheet
+                </ButtonLink>
+                <ButtonLink href={`/organizations/${id}/people/new`}>
+                  Add person
+                </ButtonLink>
+              </div>
             ) : undefined
           }
         />
