@@ -62,6 +62,7 @@ export interface Show {
   contact_email: string | null;
   contact_phone: string | null;
   description: string | null;
+  nrha_show_number: string | null;
   created_at: string;
 }
 
@@ -107,6 +108,7 @@ export interface ShowClass {
   status: ClassStatus;
   scheduled_date: string | null;
   drag_every_n: number | null;
+  nrha_class_code: string | null;
   notes: string | null;
   created_at: string;
 }

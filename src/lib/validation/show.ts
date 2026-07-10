@@ -82,6 +82,7 @@ export const updateShowSchema = z
     contactEmail: z.email("Enter a valid email address").or(z.literal("")).optional(),
     contactPhone: z.string().trim().max(40).optional(),
     description: z.string().trim().max(2000).optional(),
+    nrhaShowNumber: z.string().trim().max(40).optional(),
   })
   .refine(datesInOrder, {
     message: "End date must be on or after the start date",

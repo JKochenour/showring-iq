@@ -44,6 +44,7 @@ export function ShowSettingsForm({ show }: { show: Show }) {
       contactEmail: show.contact_email ?? "",
       contactPhone: show.contact_phone ?? "",
       description: show.description ?? "",
+      nrhaShowNumber: show.nrha_show_number ?? "",
     },
   });
 
@@ -126,6 +127,18 @@ export function ShowSettingsForm({ show }: { show: Show }) {
             <Label htmlFor="contactPhone">Contact phone</Label>
             <Input id="contactPhone" {...register("contactPhone")} />
           </div>
+        </div>
+        <div>
+          <Label htmlFor="nrhaShowNumber">NRHA show/approval number</Label>
+          <Input
+            id="nrhaShowNumber"
+            placeholder="e.g. 2026-1234"
+            {...register("nrhaShowNumber")}
+          />
+          <FieldError message={errors.nrhaShowNumber?.message} />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Required for the NRHA ReinerSuite CSV export.
+          </p>
         </div>
         <div>
           <Label htmlFor="description">Description / notes</Label>

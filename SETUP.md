@@ -36,6 +36,9 @@ in `supabase/migrations/` **in order**:
 9. [`00009_results.sql`](supabase/migrations/00009_results.sql) — results
    (placings, tie status, manual-override flag); audited calculate/publish/
    unpublish/override-placing RPCs
+10. [`00010_nrha_export.sql`](supabase/migrations/00010_nrha_export.sql) —
+    `nrha_show_number` on shows, `nrha_class_code` on classes (plain
+    columns — not a rule-package engine yet)
 
 `00001_foundation.sql` creates:
 
@@ -208,7 +211,41 @@ Then:
   but the project's own Defer list overrides it. PDFs are built properly in
   Sprint 10 as part of the NRHA submission package, which needs them anyway.
 
-## Next: Sprint 10 — NRHA export v1
+## What's in Sprint 10
 
-NRHA fields, CSV generation, export validation, submission checklist,
-downloadable package.
+- Show setting: NRHA show/approval number. Class setting: NRHA class code
+  (both plain fields for now — a full multi-affiliation rule-package
+  engine, where one class carries several association codes at once, is
+  future work per CLAUDE.md's architecture principles)
+- Exports tab: NRHA ReinerSuite CSV generator matching the exact field
+  order/delimiter/quoting spec (`ShowNum; ShowName; ClassName; ClassCode;
+  PatternNum; EntryCount; ShownCount; GoType; GoNum; Horse; HorseNrha;
+  Member; MemberNrha; BackNum; PlaceNum; TotalScore; MoneyWon`), semicolon
+  delimiter, every field quoted, CRLF line endings
+- Score codes: scratched entries → -2.0, no_score/excused → -1.0, zero →
+  0.0, shown → the real score — scratches are always included in the CSV
+  per spec, not dropped
+- Pre-export readiness checklist ("NRHA Submission: Ready" / "N issues"),
+  reusing the Sprint 6 validation-issue UI: blocking on missing show
+  number, missing class code/pattern, missing back numbers, or missing
+  scores; warning on missing NRHA membership/registration numbers. Export
+  is refused (422) server-side if any blocking issue remains — the
+  checklist can't be bypassed by hitting the download URL directly
+- Every generated export is audited (`export.nrha_csv_generated`)
+
+**Scope cut, called out explicitly:** this is the CSV export only. The
+full NRHA submission ZIP (PDF results, per-class score sheets, tally
+sheet, 5% retainage summary, medication fee summary, collected paperwork,
+submission summary, validation report, audit log bundle) is real,
+substantial future work — PDF generation alone needs a new dependency and
+its own design pass. Building it properly was out of reach for this pass;
+flagging it here rather than shipping a rushed, likely-buggy version.
+
+## MVP status
+
+This completes every item in CLAUDE.md's 10-sprint plan except the NRHA
+package's non-CSV pieces (PDF results, score sheets, tally/retainage/
+medication summaries, paperwork bundling) and the platform-wide items the
+CLAUDE.md MVP section explicitly defers: AI extraction, offline mode,
+Stripe, public live results, other associations, analytics, SMS, API
+integrations.

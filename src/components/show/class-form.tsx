@@ -53,6 +53,7 @@ export function CreateClassForm({
       entryFee: "",
       addedMoney: "",
       scheduledDate: "",
+      nrhaClassCode: "",
       notes: "",
     },
   });
@@ -101,6 +102,7 @@ export function EditClassForm({ showClass }: { showClass: ShowClass }) {
       addedMoney: centsToInput(showClass.added_money_cents),
       status: showClass.status,
       scheduledDate: showClass.scheduled_date ?? "",
+      nrhaClassCode: showClass.nrha_class_code ?? "",
       notes: showClass.notes ?? "",
     },
   });
@@ -199,6 +201,18 @@ function ClassFields({ register, errors }: { register: any; errors: any }) {
           />
           <FieldError message={errors.patternNumber?.message} />
         </div>
+      </div>
+      <div>
+        <Label htmlFor="nrhaClassCode">NRHA class code (optional)</Label>
+        <Input
+          id="nrhaClassCode"
+          placeholder="e.g. 5300"
+          {...register("nrhaClassCode")}
+        />
+        <FieldError message={errors.nrhaClassCode?.message} />
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          Required for the NRHA ReinerSuite CSV export.
+        </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <div>

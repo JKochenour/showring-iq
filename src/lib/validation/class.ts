@@ -46,6 +46,7 @@ const classFields = {
   entryFee: money,
   addedMoney: money,
   scheduledDate: z.iso.date("Enter a valid date").or(z.literal("")).optional(),
+  nrhaClassCode: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(1000).optional(),
 };
 

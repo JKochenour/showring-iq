@@ -58,7 +58,7 @@ export async function updateShow(input: UpdateShowInput): Promise<ActionResult> 
 
   const { data: before } = await supabase
     .from("shows")
-    .select("organization_id, name, slug, start_date, end_date, timezone, venue_name, city, state, contact_name, contact_email, contact_phone, description")
+    .select("organization_id, name, slug, start_date, end_date, timezone, venue_name, city, state, contact_name, contact_email, contact_phone, description, nrha_show_number")
     .eq("id", d.showId)
     .maybeSingle();
   if (!before) return { error: "Show not found." };
@@ -76,6 +76,7 @@ export async function updateShow(input: UpdateShowInput): Promise<ActionResult> 
     contact_email: d.contactEmail || null,
     contact_phone: d.contactPhone || null,
     description: d.description || null,
+    nrha_show_number: d.nrhaShowNumber || null,
   };
 
   // RLS enforces show.edit and blocks locked/archived shows
