@@ -6,6 +6,12 @@ import {
   AddEligibilityRuleForm,
 } from "@/components/org/rule-package-forms";
 import { RulePackageStatusActions } from "@/components/org/rule-package-status";
+import {
+  deleteClassCode,
+  deleteEligibilityRule,
+  deleteRulePackage,
+} from "@/app/(app)/organizations/[id]/rule-packages/actions";
+import { RemoveButton } from "@/components/remove-button";
 import { ButtonLink, Card, EmptyState } from "@/components/ui";
 import type {
   AssociationClassCode,
@@ -106,6 +112,7 @@ export default async function RulePackageDetailPage({
                   <th className="py-2 pr-4 font-medium">Code</th>
                   <th className="py-2 pr-4 font-medium">Name</th>
                   <th className="py-2 pr-4 font-medium">Flags</th>
+                  {canCreate && <th className="py-2 font-medium" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -125,6 +132,14 @@ export default async function RulePackageDetailPage({
                         .filter(Boolean)
                         .join(" · ")}
                     </td>
+                    {canCreate && (
+                      <td className="py-2">
+                        <RemoveButton
+                          action={deleteClassCode.bind(null, c.id)}
+                          confirmText={`Remove code ${c.code} — ${c.name}?`}
+                        />
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -143,21 +158,46 @@ export default async function RulePackageDetailPage({
         ) : (
           <ul className="mb-4 divide-y divide-zinc-200 dark:divide-zinc-800">
             {rules.map((r) => (
-              <li key={r.id} className="py-3">
-                <p className="text-sm font-medium">{r.rule_key}</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {r.conditions.map((c) => `${c.field} ${c.operator} ${c.value}`).join(", ")}
-                  {" · "}
-                  {r.severity}
-                  {r.applies_to.length > 0 && ` · applies to ${r.applies_to.join(", ")}`}
-                </p>
-                <p className="text-sm">{r.message}</p>
+              <li key={r.id} className="flex items-start justify-between gap-3 py-3">
+                <div>
+                  <p className="text-sm font-medium">{r.rule_key}</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {r.conditions.map((c) => `${c.field} ${c.operator} ${c.value}`).join(", ")}
+                    {" · "}
+                    {r.severity}
+                    {r.applies_to.length > 0 && ` · applies to ${r.applies_to.join(", ")}`}
+                  </p>
+                  <p className="text-sm">{r.message}</p>
+                </div>
+                {canCreate && (
+                  <RemoveButton
+                    action={deleteEligibilityRule.bind(null, r.id)}
+                    confirmText={`Remove rule ${r.rule_key}?`}
+                  />
+                )}
               </li>
             ))}
           </ul>
         )}
         {canCreate && <AddEligibilityRuleForm rulePackageId={packageId} />}
       </Card>
+
+      {canCreate && rulePkg.status === "draft" && (
+        <Card className="border-red-200 dark:border-red-900">
+          <h3 className="mb-1 text-sm font-semibold">Danger zone</h3>
+          <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+            Deleting removes this package and all its class codes and eligibility
+            rules. Only draft packages can be deleted — send a package to review
+            (or further) to protect it, or archive it instead.
+          </p>
+          <RemoveButton
+            action={deleteRulePackage.bind(null, packageId, id)}
+            label="Delete rule package"
+            pendingLabel="Deleting…"
+            confirmText={`Permanently delete ${rulePkg.association?.name} ${rulePkg.year} v${rulePkg.version}? This cannot be undone.`}
+          />
+        </Card>
+      )}
     </div>
   );
 }

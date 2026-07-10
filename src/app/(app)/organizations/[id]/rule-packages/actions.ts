@@ -98,6 +98,119 @@ export async function setRulePackageStatus(
   return {};
 }
 
+export async function deleteClassCode(classCodeId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: code } = await supabase
+    .from("association_class_codes")
+    .select("rule_package_id, code, name, organization_id")
+    .eq("id", classCodeId)
+    .maybeSingle();
+  if (!code) return { error: "Class code not found." };
+
+  const { data: deleted, error } = await supabase
+    .from("association_class_codes")
+    .delete()
+    .eq("id", classCodeId)
+    .select("id");
+
+  if (error) {
+    if (error.message.includes("violates foreign key constraint")) {
+      return { error: "This code is linked to one or more classes — unlink them first." };
+    }
+    return { error: error.message };
+  }
+  if (!deleted || deleted.length === 0) {
+    return { error: "Delete was not applied. You may lack the rules.edit permission." };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: code.organization_id,
+    p_action: "rule_package.class_code_deleted",
+    p_entity_type: "association_class_code",
+    p_entity_id: classCodeId,
+    p_old: { code: code.code, name: code.name },
+    p_new: null,
+  });
+
+  revalidatePath(`/organizations`, "layout");
+  return {};
+}
+
+export async function deleteEligibilityRule(ruleId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: rule } = await supabase
+    .from("association_eligibility_rules")
+    .select("rule_package_id, rule_key, organization_id")
+    .eq("id", ruleId)
+    .maybeSingle();
+  if (!rule) return { error: "Eligibility rule not found." };
+
+  const { data: deleted, error } = await supabase
+    .from("association_eligibility_rules")
+    .delete()
+    .eq("id", ruleId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!deleted || deleted.length === 0) {
+    return { error: "Delete was not applied. You may lack the rules.edit permission." };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: rule.organization_id,
+    p_action: "rule_package.eligibility_rule_deleted",
+    p_entity_type: "association_eligibility_rule",
+    p_entity_id: ruleId,
+    p_old: { rule_key: rule.rule_key },
+    p_new: null,
+  });
+
+  revalidatePath(`/organizations`, "layout");
+  return {};
+}
+
+export async function deleteRulePackage(
+  packageId: string,
+  organizationId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: pkg } = await supabase
+    .from("association_rule_packages")
+    .select("status, year, version")
+    .eq("id", packageId)
+    .maybeSingle();
+  if (!pkg) return { error: "Rule package not found." };
+  if (pkg.status !== "draft") {
+    return { error: "Only draft rule packages can be deleted. Archive it instead." };
+  }
+
+  const { data: deleted, error } = await supabase
+    .from("association_rule_packages")
+    .delete()
+    .eq("id", packageId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!deleted || deleted.length === 0) {
+    return { error: "Delete was not applied. You may lack the rules.edit permission." };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: organizationId,
+    p_action: "rule_package.deleted",
+    p_entity_type: "association_rule_package",
+    p_entity_id: packageId,
+    p_old: { year: pkg.year, version: pkg.version },
+    p_new: null,
+  });
+
+  revalidatePath(`/organizations/${organizationId}/rule-packages`);
+  return {};
+}
+
 export async function createClassCode(
   input: CreateClassCodeInput
 ): Promise<ActionResult> {
