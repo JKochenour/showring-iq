@@ -213,6 +213,24 @@ export interface BackNumberRow {
   entry_id: string;
 }
 
+export type ResultStatus = "shown" | "zero" | "no_score" | "dq" | "excused";
+export type ScoreStatus = "pending" | "submitted" | "verified";
+
+export interface Score {
+  id: string;
+  entry_class_id: string;
+  class_id: string;
+  judge_staff_id: string | null;
+  judge_name: string | null;
+  result_status: ResultStatus;
+  total_score_tenths: number | null;
+  penalty_points_tenths: number;
+  notes: string | null;
+  status: ScoreStatus;
+  submitted_at: string | null;
+  verified_at: string | null;
+}
+
 export interface AuditLogRow {
   id: number;
   actor_role: string | null;

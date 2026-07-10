@@ -1,0 +1,109 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireUser } from "@/lib/authz";
+import { ClassStatusBadge } from "@/components/show/class-status-badge";
+import { Card, EmptyState, PageHeader } from "@/components/ui";
+import type { ShowClass } from "@/lib/types";
+
+export const metadata = { title: "Scoring — ShowRing IQ" };
+
+export default async function ScoringPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const { supabase } = await requireUser();
+
+  const { data: show } = await supabase
+    .from("shows")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!show) notFound();
+
+  const [{ data: classes }, { data: entryClasses }, { data: scores }] =
+    await Promise.all([
+      supabase
+        .from("classes")
+        .select("*")
+        .eq("show_id", id)
+        .not("status", "in", "(draft,open,entry_closed,cancelled,archived)")
+        .order("display_order"),
+      supabase
+        .from("entry_classes")
+        .select("class_id, status")
+        .eq("show_id", id)
+        .eq("status", "entered"),
+      supabase.from("scores").select("class_id, status").eq("show_id", id),
+    ]);
+
+  const rows = (classes as ShowClass[]) ?? [];
+
+  const enteredByClass = new Map<string, number>();
+  for (const ec of entryClasses ?? []) {
+    enteredByClass.set(ec.class_id, (enteredByClass.get(ec.class_id) ?? 0) + 1);
+  }
+  const verifiedByClass = new Map<string, number>();
+  const scoredByClass = new Map<string, number>();
+  for (const s of scores ?? []) {
+    scoredByClass.set(s.class_id, (scoredByClass.get(s.class_id) ?? 0) + 1);
+    if (s.status === "verified") {
+      verifiedByClass.set(s.class_id, (verifiedByClass.get(s.class_id) ?? 0) + 1);
+    }
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title="Scoring"
+        description="Classes with a draw. Judges and secretaries enter scores here; the secretary verifies before the class becomes official."
+      />
+
+      {rows.length === 0 ? (
+        <EmptyState
+          title="No classes ready for scoring"
+          description="Generate a draw for a class first — scoring opens once a class is drawn or running."
+        />
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                  <th className="py-2 pr-4 font-medium">#</th>
+                  <th className="py-2 pr-4 font-medium">Class</th>
+                  <th className="py-2 pr-4 font-medium">Entered</th>
+                  <th className="py-2 pr-4 font-medium">Scored</th>
+                  <th className="py-2 pr-4 font-medium">Verified</th>
+                  <th className="py-2 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                {rows.map((cls) => (
+                  <tr key={cls.id}>
+                    <td className="py-3 pr-4 font-mono">{cls.class_number}</td>
+                    <td className="py-3 pr-4">
+                      <Link
+                        href={`/shows/${id}/scoring/${cls.id}`}
+                        className="font-medium text-emerald-700 hover:underline dark:text-emerald-500"
+                      >
+                        {cls.name}
+                      </Link>
+                    </td>
+                    <td className="py-3 pr-4">{enteredByClass.get(cls.id) ?? 0}</td>
+                    <td className="py-3 pr-4">{scoredByClass.get(cls.id) ?? 0}</td>
+                    <td className="py-3 pr-4">{verifiedByClass.get(cls.id) ?? 0}</td>
+                    <td className="py-3">
+                      <ClassStatusBadge status={cls.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}

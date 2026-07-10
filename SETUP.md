@@ -29,6 +29,10 @@ in `supabase/migrations/` **in order**:
 7. [`00007_draws.sql`](supabase/migrations/00007_draws.sql) — class_draws
    (order of go + gate run status), drag frequency on classes, audited
    move_draw_row / set_run_status RPCs
+8. [`00008_scoring.sql`](supabase/migrations/00008_scoring.sql) — scores
+   (tenths-of-a-point, never floats) with a pending → submitted → verified
+   lifecycle; audited enter/submit/verify/reopen/correct RPCs; class scoring
+   completion / official RPCs
 
 `00001_foundation.sql` creates:
 
@@ -164,6 +168,25 @@ Then:
 - Gate scratches also scratch the class entry (permission-checked);
   in-arena auto-completes the previous run
 
-## Next: Sprint 8 — Scoring
+## What's in Sprint 8
 
-Judge-style screen, secretary score entry, verification, score-change audit.
+- Scores stored as integer tenths of a point (never floats), same
+  convention as money-as-cents; result status (shown/zero/no score/DQ/
+  excused) with DB-level consistency checks
+- Lifecycle: judge enters (pending) → submits/signs → secretary verifies.
+  After verification, changes require a correction (judge_sheet_correction
+  or data_entry_correction) with a mandatory reason, gated by
+  score.correct_official vs score.edit_unofficial depending on stage
+- Reopen a submitted/verified score with a reason if it needs another look
+  before going further
+- Scoring tab: per-show class list with entered/scored/verified counts;
+  per-class page scores in draw order (falls back to entry order pre-draw),
+  with "mark scoring complete" (blocks until every entry is verified) and
+  "mark official" actions
+- Simplification (documented in the migration): no per-class judge
+  assignment table yet, so any score.enter holder can pick which judge
+  they're entering for; per-judge score visibility isn't restricted yet
+
+## Next: Sprint 9 — Results
+
+Placings, tie handling v1, publish, public results page, PDF class results.
