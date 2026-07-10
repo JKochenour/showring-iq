@@ -476,3 +476,30 @@ export async function bulkDeletePeople(
   revalidatePath(`/organizations/${organizationId}/people`);
   return { deleted: deletedNames.length, failed: results.length - deletedNames.length, results };
 }
+
+export async function inviteExhibitor(
+  personId: string,
+  email: string
+): Promise<ActionResult> {
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed || !trimmed.includes("@")) {
+    return { error: "Enter a valid email address." };
+  }
+
+  const supabase = await createClient();
+  const { data: person } = await supabase
+    .from("people")
+    .select("organization_id")
+    .eq("id", personId)
+    .maybeSingle();
+  if (!person) return { error: "Person not found." };
+
+  const { error } = await supabase.rpc("invite_exhibitor", {
+    p_person: personId,
+    p_email: trimmed,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/organizations/${person.organization_id}/people/${personId}`);
+  return {};
+}

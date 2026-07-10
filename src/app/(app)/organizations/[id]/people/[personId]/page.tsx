@@ -8,6 +8,7 @@ import {
 import { EditPersonForm } from "@/components/org/person-form";
 import { AddMembershipForm } from "@/components/org/membership-manager";
 import { DocumentManager } from "@/components/org/document-manager";
+import { InviteExhibitorForm } from "@/components/org/invite-exhibitor-form";
 import { RemoveButton } from "@/components/remove-button";
 import { Card } from "@/components/ui";
 import type { DocumentRow, Person, PersonMembership } from "@/lib/types";
@@ -32,6 +33,7 @@ export default async function PersonDetailPage({
     canVerifyDocs,
     canRejectDocs,
     canDeleteDocs,
+    canInviteExhibitor,
   ] = await Promise.all([
     supabase
       .from("people")
@@ -55,6 +57,7 @@ export default async function PersonDetailPage({
     hasOrgPermission(id, "document.verify"),
     hasOrgPermission(id, "document.reject"),
     hasOrgPermission(id, "document.delete"),
+    hasOrgPermission(id, "org.members.invite"),
   ]);
 
   if (!person) notFound();
@@ -80,6 +83,19 @@ export default async function PersonDetailPage({
           )}
         </h2>
       </div>
+
+      {canInviteExhibitor && (
+        <Card>
+          <h3 className="mb-1 text-base font-semibold">Account access</h3>
+          {p.user_id ? (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              This person has a linked login and can sign in as an exhibitor.
+            </p>
+          ) : (
+            <InviteExhibitorForm personId={personId} />
+          )}
+        </Card>
+      )}
 
       <Card>
         <h3 className="mb-1 text-base font-semibold">Association memberships</h3>

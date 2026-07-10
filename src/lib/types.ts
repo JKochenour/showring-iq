@@ -187,6 +187,7 @@ export interface Person {
   roles: string[];
   notes: string | null;
   created_at: string;
+  user_id: string | null;
 }
 
 export interface PersonMembership {

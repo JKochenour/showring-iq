@@ -130,12 +130,27 @@ export async function revokeInvite(
 
 export async function acceptInvite(inviteId: string): Promise<ActionResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { data, error } = await supabase.rpc("accept_invite", {
     p_invite: inviteId,
   });
   if (error) return { error: error.message };
   revalidatePath("/dashboard");
   revalidatePath("/organizations");
+
+  const { data: membership } = await supabase
+    .from("organization_members")
+    .select("role:organization_roles(key)")
+    .eq("organization_id", data)
+    .eq("user_id", user?.id ?? "")
+    .maybeSingle();
+  const roleKey = (membership?.role as unknown as { key: string } | null)?.key;
+
+  if (roleKey === "exhibitor") {
+    redirect("/exhibitor/dashboard");
+  }
   redirect(`/organizations/${data}`);
 }
 
