@@ -7,7 +7,9 @@ import {
   OverridePlacingButton,
   ResultsClassActions,
 } from "@/components/show/results-controls";
+import { PayoutActions, PayoutScheduleEditor } from "@/components/show/payout-controls";
 import { Card, EmptyState } from "@/components/ui";
+import { formatCents } from "@/lib/money";
 import type { Result, Score, ShowClass } from "@/lib/types";
 
 export const metadata = { title: "Class results — ShowRing IQ" };
@@ -46,6 +48,9 @@ export default async function ClassResultsPage({
     { data: backNumbers },
     canPublish,
     canUnpublish,
+    canCalculatePayouts,
+    canApprovePayouts,
+    canEditClass,
   ] = await Promise.all([
     supabase
       .from("entry_classes")
@@ -57,6 +62,9 @@ export default async function ClassResultsPage({
     supabase.from("back_numbers").select("entry_id, number").eq("show_id", id),
     hasOrgPermission(showClass.organization_id, "result.publish"),
     hasOrgPermission(showClass.organization_id, "result.unpublish"),
+    hasOrgPermission(showClass.organization_id, "payout.calculate"),
+    hasOrgPermission(showClass.organization_id, "payout.approve"),
+    hasOrgPermission(showClass.organization_id, "class.edit"),
   ]);
 
   const scoreByEntryClass = new Map<string, Score>();
@@ -122,6 +130,27 @@ export default async function ClassResultsPage({
         />
       </Card>
 
+      <Card>
+        <h3 className="mb-3 text-base font-semibold">Payouts</h3>
+        <PayoutScheduleEditor
+          classId={classId}
+          showId={id}
+          retainagePercent={showClass.retainage_percent}
+          schedule={showClass.payout_schedule}
+          canEdit={canEditClass}
+        />
+        {hasResults && (
+          <div className="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+            <PayoutActions
+              classId={classId}
+              showId={id}
+              canCalculate={canCalculatePayouts}
+              canApprove={canApprovePayouts}
+            />
+          </div>
+        )}
+      </Card>
+
       {rows.length === 0 ? (
         <EmptyState title="No entries" description="Nothing to place in this class." />
       ) : (
@@ -134,6 +163,7 @@ export default async function ClassResultsPage({
                   <th className="py-2 pr-4 font-medium">Back #</th>
                   <th className="py-2 pr-4 font-medium">Rider / Horse</th>
                   <th className="py-2 pr-4 font-medium">Score</th>
+                  <th className="py-2 pr-4 font-medium">Money won</th>
                   {canPublish && <th className="py-2 font-medium"></th>}
                 </tr>
               </thead>
@@ -174,6 +204,11 @@ export default async function ClassResultsPage({
                           row.score.result_status === "zero"
                           ? formatScore(row.score.total_score_tenths)
                           : row.score.result_status
+                        : "—"}
+                    </td>
+                    <td className="py-3 pr-4 font-mono">
+                      {row.result && row.result.money_won_cents > 0
+                        ? formatCents(row.result.money_won_cents)
                         : "—"}
                     </td>
                     {canPublish && (

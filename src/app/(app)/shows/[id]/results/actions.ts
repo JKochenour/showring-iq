@@ -6,6 +6,10 @@ import {
   overridePlacingSchema,
   type OverridePlacingInput,
 } from "@/lib/validation/result";
+import {
+  updatePayoutSettingsSchema,
+  type UpdatePayoutSettingsInput,
+} from "@/lib/validation/payout";
 
 export type ActionResult = { error?: string };
 
@@ -47,6 +51,66 @@ export async function unpublishResults(
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("unpublish_results", {
+    p_class: classId,
+  });
+  if (error) return { error: error.message };
+
+  revalidateResults(showId, classId);
+  return {};
+}
+
+export async function updatePayoutSettings(
+  input: UpdatePayoutSettingsInput,
+  showId: string
+): Promise<ActionResult> {
+  const parsed = updatePayoutSettingsSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("classes")
+    .update({
+      retainage_percent: d.retainagePercent,
+      payout_schedule: d.schedule,
+    })
+    .eq("id", d.classId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error:
+        "Update was not applied. It requires the class.edit permission on an unlocked show.",
+    };
+  }
+
+  revalidateResults(showId, d.classId);
+  return {};
+}
+
+export async function calculatePayouts(
+  classId: string,
+  showId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("calculate_payouts", {
+    p_class: classId,
+  });
+  if (error) return { error: error.message };
+
+  revalidateResults(showId, classId);
+  return {};
+}
+
+export async function approvePayouts(
+  classId: string,
+  showId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("approve_payouts", {
     p_class: classId,
   });
   if (error) return { error: error.message };

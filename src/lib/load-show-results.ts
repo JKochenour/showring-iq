@@ -29,6 +29,9 @@ export interface ShowResultsData {
    * exceptions, tie splits) are future work; this is a fee tally. */
   totalEntryFeeCents: number;
   retainageCents: number;
+  medicationFeeCents: number;
+  activeEntryCount: number;
+  medicationFeeTotalCents: number;
 }
 
 const INCLUDED_STATUSES = ["official", "results_posted", "exported"];
@@ -40,9 +43,15 @@ export async function loadShowResults(
 ): Promise<ShowResultsData> {
   const { data: show } = await supabase
     .from("shows")
-    .select("name, nrha_show_number, start_date, end_date")
+    .select("name, nrha_show_number, start_date, end_date, medication_fee_cents")
     .eq("id", showId)
     .maybeSingle();
+
+  const { count: activeEntryCount } = await supabase
+    .from("entries")
+    .select("id", { count: "exact", head: true })
+    .eq("show_id", showId)
+    .eq("status", "active");
 
   const { data: classes } = await supabase
     .from("classes")
@@ -54,6 +63,9 @@ export async function loadShowResults(
   const classList = classes ?? [];
   const classIds = classList.map((c) => c.id as string);
 
+  const medicationFeeCents = (show?.medication_fee_cents as number) ?? 0;
+  const entryCount = activeEntryCount ?? 0;
+
   if (classIds.length === 0) {
     return {
       showName: show?.name ?? "",
@@ -63,6 +75,9 @@ export async function loadShowResults(
       classes: [],
       totalEntryFeeCents: 0,
       retainageCents: 0,
+      medicationFeeCents,
+      activeEntryCount: entryCount,
+      medicationFeeTotalCents: medicationFeeCents * entryCount,
     };
   }
 
@@ -163,5 +178,8 @@ export async function loadShowResults(
     classes: resultClasses,
     totalEntryFeeCents,
     retainageCents: Math.round(totalEntryFeeCents * 0.05),
+    medicationFeeCents,
+    activeEntryCount: entryCount,
+    medicationFeeTotalCents: medicationFeeCents * entryCount,
   };
 }

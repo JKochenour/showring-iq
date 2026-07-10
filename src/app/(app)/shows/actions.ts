@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { dollarsToCents } from "@/lib/money";
 import {
   addStaffSchema,
   createShowSchema,
@@ -58,7 +59,7 @@ export async function updateShow(input: UpdateShowInput): Promise<ActionResult> 
 
   const { data: before } = await supabase
     .from("shows")
-    .select("organization_id, name, slug, start_date, end_date, timezone, venue_name, city, state, contact_name, contact_email, contact_phone, description, nrha_show_number")
+    .select("organization_id, name, slug, start_date, end_date, timezone, venue_name, city, state, contact_name, contact_email, contact_phone, description, nrha_show_number, medication_fee_cents")
     .eq("id", d.showId)
     .maybeSingle();
   if (!before) return { error: "Show not found." };
@@ -77,6 +78,7 @@ export async function updateShow(input: UpdateShowInput): Promise<ActionResult> 
     contact_phone: d.contactPhone || null,
     description: d.description || null,
     nrha_show_number: d.nrhaShowNumber || null,
+    medication_fee_cents: dollarsToCents(d.medicationFee ?? ""),
   };
 
   // RLS enforces show.edit and blocks locked/archived shows

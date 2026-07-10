@@ -233,6 +233,14 @@ Then:
   checklist can't be bypassed by hitting the download URL directly
 - Every generated export is audited (`export.nrha_csv_generated`)
 
+## Migration 00011
+
+[`00011_payouts_rule_packages.sql`](supabase/migrations/00011_payouts_rule_packages.sql) —
+medication fee on shows, retainage/payout schedule on classes, audited
+calculate/approve payout RPCs; associations + versioned rule packages +
+class codes + eligibility rules (organization-scoped foundation), with
+draft→review→tested→published→deprecated→archived lifecycle RPC.
+
 ## PDF results + fee summary (post-Sprint-10 follow-up)
 
 - Exports tab now also generates a full-show PDF (`@react-pdf/renderer`):
@@ -246,11 +254,43 @@ Then:
   before shipping; a full payout engine (splits by placement, category/
   youth exceptions, ties, add-back) is deliberately not attempted here.
 
+## NRHA package v2, payout engine, rule-package foundation
+
+- **Full submission ZIP** (Exports tab, "Download full package"): CSV +
+  full-show results PDF + per-entry score sheets PDF (with judge
+  signature/date lines) + a tally & fees PDF (entry counts, fees,
+  retainage, medication fee total) + a plain-text submission summary
+  restating the readiness checklist. Still not included: collected
+  paperwork (needs a document-management system that doesn't exist yet)
+  and an audit-log excerpt (log_audit doesn't tag entries with show_id,
+  so there's no reliable per-show filter without a schema change) — both
+  explicitly flagged in the generated summary rather than faked.
+- **Payout engine v1** (Results → class page): a configurable
+  percent-by-placing schedule per class, with a clearly-labeled *example*
+  schedule the show manager must confirm before use. `calculate_payouts`
+  computes pool = entry fees (shown entries) + added money, minus
+  retainage; tied placings split their combined percentage evenly
+  (consistent with the "ties stand" placing rule already built).
+  `approve_payouts` just records an audit entry — there's no separate
+  locked state yet. This is a calculator, not a verified formula; CLAUDE.md
+  flags payout math as needing exhaustive tests before real use.
+- **Rule-package foundation** (new "Rule Packages" org tab): associations,
+  versioned rule packages (draft→review→tested→published→deprecated→
+  archived lifecycle), class codes, and eligibility rules as JSON condition
+  objects — the data model CLAUDE.md's architecture principle #2 calls
+  for. Organization-scoped (there's no platform-admin catalog built yet).
+  **Not yet wired** into the Classes, Entries, or Issues tabs — classes
+  still use the plain `nrha_class_code` field, and the Sprint 6 validation
+  engine still uses its built-in NRHA-shaped rules, not these. This is
+  groundwork for a future pass that threads rule packages through
+  eligibility checks and exports.
+
 ## MVP status
 
-This completes every item in CLAUDE.md's 10-sprint plan, plus PDF
-results. What's left of the NRHA package: per-class score sheets, a
-tally sheet, medication fee summary, collected-paperwork bundling, and
-ZIP packaging. Also still deferred per CLAUDE.md's MVP section: AI
-extraction, offline mode, Stripe, public live results, other
-associations, analytics, SMS, API integrations, and a real payout engine.
+This completes every item in CLAUDE.md's 10-sprint plan, PDF results,
+the fuller NRHA package (score sheets/tally/medication/ZIP), a v1 payout
+calculator, and the start of the rule-package engine. Still open: wiring
+rule packages into eligibility/export flows, collected-paperwork/document
+management, and everything CLAUDE.md's MVP section explicitly defers —
+AI extraction, offline mode, Stripe, public live results, other
+associations, analytics, SMS, API integrations.

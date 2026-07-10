@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateShow } from "@/app/(app)/shows/actions";
+import { centsToInput } from "@/lib/money";
 import {
   updateShowSchema,
   US_TIMEZONES,
@@ -45,6 +46,7 @@ export function ShowSettingsForm({ show }: { show: Show }) {
       contactPhone: show.contact_phone ?? "",
       description: show.description ?? "",
       nrhaShowNumber: show.nrha_show_number ?? "",
+      medicationFee: centsToInput(show.medication_fee_cents),
     },
   });
 
@@ -138,6 +140,20 @@ export function ShowSettingsForm({ show }: { show: Show }) {
           <FieldError message={errors.nrhaShowNumber?.message} />
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             Required for the NRHA ReinerSuite CSV export.
+          </p>
+        </div>
+        <div>
+          <Label htmlFor="medicationFee">Medication fee per horse ($)</Label>
+          <Input
+            id="medicationFee"
+            inputMode="decimal"
+            placeholder="0.00"
+            {...register("medicationFee")}
+          />
+          <FieldError message={errors.medicationFee?.message} />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Charged once per active entry for the whole show. Shown in the
+            Exports tally sheet.
           </p>
         </div>
         <div>

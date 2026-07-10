@@ -83,6 +83,12 @@ export const updateShowSchema = z
     contactPhone: z.string().trim().max(40).optional(),
     description: z.string().trim().max(2000).optional(),
     nrhaShowNumber: z.string().trim().max(40).optional(),
+    medicationFee: z
+      .string()
+      .trim()
+      .regex(/^\d{1,5}(\.\d{1,2})?$/, "Enter a dollar amount like 25 or 25.00")
+      .or(z.literal(""))
+      .optional(),
   })
   .refine(datesInOrder, {
     message: "End date must be on or after the start date",

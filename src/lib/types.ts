@@ -63,6 +63,7 @@ export interface Show {
   contact_phone: string | null;
   description: string | null;
   nrha_show_number: string | null;
+  medication_fee_cents: number;
   created_at: string;
 }
 
@@ -109,8 +110,66 @@ export interface ShowClass {
   scheduled_date: string | null;
   drag_every_n: number | null;
   nrha_class_code: string | null;
+  retainage_percent: number;
+  payout_schedule: PayoutScheduleEntry[];
   notes: string | null;
   created_at: string;
+}
+
+export interface PayoutScheduleEntry {
+  placing: number;
+  percent: number;
+}
+
+export interface Association {
+  id: string;
+  organization_id: string;
+  name: string;
+  created_at: string;
+}
+
+export type RulePackageStatus =
+  | "draft"
+  | "review"
+  | "tested"
+  | "published"
+  | "deprecated"
+  | "archived";
+
+export interface RulePackage {
+  id: string;
+  association_id: string;
+  year: number;
+  version: string;
+  status: RulePackageStatus;
+  source_notes: string | null;
+  created_at: string;
+}
+
+export interface AssociationClassCode {
+  id: string;
+  rule_package_id: string;
+  code: string;
+  name: string;
+  discipline: string | null;
+  division: string | null;
+  is_youth: boolean;
+  is_amateur: boolean;
+  is_open: boolean;
+  is_non_pro: boolean;
+  counts_for_points: boolean;
+  counts_for_money: boolean;
+  active: boolean;
+}
+
+export interface AssociationEligibilityRule {
+  id: string;
+  rule_package_id: string;
+  rule_key: string;
+  applies_to: string[];
+  conditions: { field: string; operator: string; value: string }[];
+  severity: "info" | "warning" | "blocking" | "critical";
+  message: string;
 }
 
 export interface Person {

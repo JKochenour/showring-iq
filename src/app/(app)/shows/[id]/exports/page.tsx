@@ -74,9 +74,14 @@ export default async function ExportsPage({
                 </p>
               </div>
               {nrhaData!.ready && (
-                <ButtonLink href={`/shows/${id}/exports/nrha-csv`}>
-                  Download NRHA CSV
-                </ButtonLink>
+                <div className="flex flex-wrap gap-2">
+                  <ButtonLink href={`/shows/${id}/exports/nrha-csv`} variant="secondary">
+                    Download CSV only
+                  </ButtonLink>
+                  <ButtonLink href={`/shows/${id}/exports/nrha-package`}>
+                    Download full package (.zip)
+                  </ButtonLink>
+                </div>
               )}
             </div>
             {nrhaData!.readiness.length > 0 ? (
