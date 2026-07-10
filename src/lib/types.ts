@@ -231,6 +231,16 @@ export interface Score {
   verified_at: string | null;
 }
 
+export interface Result {
+  id: string;
+  entry_class_id: string;
+  class_id: string;
+  placing: number | null;
+  tie_status: "none" | "tied";
+  money_won_cents: number;
+  manual_override: boolean;
+}
+
 export interface AuditLogRow {
   id: number;
   actor_role: string | null;

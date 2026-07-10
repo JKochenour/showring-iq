@@ -33,6 +33,9 @@ in `supabase/migrations/` **in order**:
    (tenths-of-a-point, never floats) with a pending → submitted → verified
    lifecycle; audited enter/submit/verify/reopen/correct RPCs; class scoring
    completion / official RPCs
+9. [`00009_results.sql`](supabase/migrations/00009_results.sql) — results
+   (placings, tie status, manual-override flag); audited calculate/publish/
+   unpublish/override-placing RPCs
 
 `00001_foundation.sql` creates:
 
@@ -187,6 +190,25 @@ Then:
   assignment table yet, so any score.enter holder can pick which judge
   they're entering for; per-judge score visibility isn't restricted yet
 
-## Next: Sprint 9 — Results
+## What's in Sprint 9
 
-Placings, tie handling v1, publish, public results page, PDF class results.
+- Results tab: once a class is marked official (Scoring tab), calculate
+  placings from verified scores — higher `total_score_tenths` wins,
+  standard competition ranking (ties stand: 1, 2, 2, 4)
+- Entries with no_score/DQ/excused/unscored get no placing; scratched
+  entries are excluded (they're handled directly by entry status at
+  export time, not through the results table)
+- Manual placing override (`placing_correction`, reason required) that
+  survives recalculation (`manual_override` flag)
+- Post / unpost results — moves the class between `official` and
+  `results_posted`, reusing the class-status lifecycle from Sprint 3
+- **Scope note:** CLAUDE.md's MVP section explicitly defers "public live
+  results," so this sprint skips the public results page and standalone
+  PDF generation — the blueprint's fuller Sprint 9 description lists both,
+  but the project's own Defer list overrides it. PDFs are built properly in
+  Sprint 10 as part of the NRHA submission package, which needs them anyway.
+
+## Next: Sprint 10 — NRHA export v1
+
+NRHA fields, CSV generation, export validation, submission checklist,
+downloadable package.
