@@ -42,6 +42,7 @@ const classFields = {
   discipline: z.string().trim().max(80).optional(),
   division: z.string().trim().max(80).optional(),
   patternNumber: optionalInt(999),
+  dragEveryN: optionalInt(50),
   entryFee: money,
   addedMoney: money,
   scheduledDate: z.iso.date("Enter a valid date").or(z.literal("")).optional(),

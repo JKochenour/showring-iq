@@ -96,6 +96,7 @@ export function EditClassForm({ showClass }: { showClass: ShowClass }) {
       discipline: showClass.discipline ?? "",
       division: showClass.division ?? "",
       patternNumber: showClass.pattern_number ?? undefined,
+      dragEveryN: showClass.drag_every_n ?? undefined,
       entryFee: centsToInput(showClass.entry_fee_cents),
       addedMoney: centsToInput(showClass.added_money_cents),
       status: showClass.status,
@@ -226,14 +227,28 @@ function ClassFields({ register, errors }: { register: any; errors: any }) {
           <FieldError message={errors.scheduledDate?.message} />
         </div>
       </div>
-      <div>
-        <Label htmlFor="notes">Notes (optional)</Label>
-        <Input
-          id="notes"
-          placeholder="e.g. concurrent with Class 13"
-          {...register("notes")}
-        />
-        <FieldError message={errors.notes?.message} />
+      <div className="grid gap-4 sm:grid-cols-[170px_1fr]">
+        <div>
+          <Label htmlFor="dragEveryN">Drag every N runs</Label>
+          <Input
+            id="dragEveryN"
+            type="number"
+            min={1}
+            max={50}
+            placeholder="e.g. 8"
+            {...register("dragEveryN")}
+          />
+          <FieldError message={errors.dragEveryN?.message} />
+        </div>
+        <div>
+          <Label htmlFor="notes">Notes (optional)</Label>
+          <Input
+            id="notes"
+            placeholder="e.g. concurrent with Class 13"
+            {...register("notes")}
+          />
+          <FieldError message={errors.notes?.message} />
+        </div>
       </div>
     </>
   );

@@ -26,6 +26,9 @@ in `supabase/migrations/` **in order**:
 6. [`00006_checkin_validation.sql`](supabase/migrations/00006_checkin_validation.sql) —
    check-in state on entries with audited check-in/undo RPCs (overrides
    require a reason)
+7. [`00007_draws.sql`](supabase/migrations/00007_draws.sql) — class_draws
+   (order of go + gate run status), drag frequency on classes, audited
+   move_draw_row / set_run_status RPCs
 
 `00001_foundation.sql` creates:
 
@@ -146,6 +149,21 @@ Then:
 - Validation surfaces on the entry detail page and the show dashboard
   (issue count and checked-in count cards)
 
-## Next: Sprint 7 — Draws & gate
+## What's in Sprint 7
 
-Draw generation, manual reorder, gate screen, announcer screen.
+- Draws tab: per-class draw generation with a seeded shuffle (reproducible —
+  the seed lands in the audit log) and best-effort back-to-back rider
+  spacing; re-draws confirmed and audited; manual reorder; late entries
+  append to the end
+- Gate tab: class picker, Now / On deck / 2 away / 3 away cards, one-tap run
+  actions (at gate, in arena, done, hold, no show, scratch with reason),
+  drag markers from the class's drag frequency, not-checked-in badges,
+  auto-refresh every 10s
+- Announcer tab: read-only current horse/rider/owner/trainer plus the next
+  three, auto-refreshing
+- Gate scratches also scratch the class entry (permission-checked);
+  in-arena auto-completes the previous run
+
+## Next: Sprint 8 — Scoring
+
+Judge-style screen, secretary score entry, verification, score-change audit.

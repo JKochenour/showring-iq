@@ -106,6 +106,7 @@ export interface ShowClass {
   added_money_cents: number;
   status: ClassStatus;
   scheduled_date: string | null;
+  drag_every_n: number | null;
   notes: string | null;
   created_at: string;
 }
