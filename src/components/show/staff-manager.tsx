@@ -18,6 +18,7 @@ import {
   Label,
   Select,
 } from "@/components/ui";
+import { FormCombobox } from "@/components/combobox";
 
 export function AddStaffForm({
   showId,
@@ -33,6 +34,7 @@ export function AddStaffForm({
     handleSubmit,
     watch,
     reset,
+    control,
     formState: { errors },
   } = useForm<AddStaffInput>({
     resolver: zodResolver(addStaffSchema),
@@ -72,14 +74,14 @@ export function AddStaffForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="staff-user">Organization member</Label>
-            <Select id="staff-user" {...register("userId")}>
-              <option value="">Not a member — enter a name below</option>
-              {members.map((m) => (
-                <option key={m.userId} value={m.userId}>
-                  {m.label}
-                </option>
-              ))}
-            </Select>
+            <FormCombobox
+              id="staff-user"
+              control={control}
+              name="userId"
+              options={members.map((m) => ({ id: m.userId, label: m.label }))}
+              placeholder="Not a member — enter a name below"
+              clearable
+            />
           </div>
           <div>
             <Label htmlFor="staff-role">Staff role</Label>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { parseCsv } from "@/lib/import/csv";
+import { parseXlsx } from "@/lib/import/xlsx";
 import { guessMapping, type ImportFieldConfig } from "@/lib/import/field-config";
 import { Alert, Button, ButtonLink, Card, Select } from "@/components/ui";
 
@@ -61,8 +62,19 @@ export function SpreadsheetImport({
     setParseError(undefined);
     setSummary(undefined);
     setSubmitError(undefined);
-    const text = await file.text();
-    const parsed = parseCsv(text);
+
+    const isExcel = /\.xlsx?$/i.test(file.name);
+    let parsed: { headers: string[]; rows: string[][] };
+    try {
+      parsed = isExcel ? await parseXlsx(file) : parseCsv(await file.text());
+    } catch {
+      setParseError(
+        isExcel
+          ? "Couldn't read that Excel file. Make sure it's a valid .xlsx or .xls file."
+          : "Couldn't read that file as CSV."
+      );
+      return;
+    }
     if (parsed.headers.length === 0) {
       setParseError("Couldn't find a header row. Make sure the first row has column names.");
       return;
@@ -157,18 +169,18 @@ export function SpreadsheetImport({
   return (
     <div className="space-y-6">
       <Card>
-        <h3 className="text-sm font-semibold">1. Upload a CSV file</h3>
+        <h3 className="text-sm font-semibold">1. Upload a spreadsheet</h3>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Export your roster from Excel or Google Sheets as CSV, then upload it here. Not sure of the
-          format?{" "}
+          Upload a .csv, .xlsx, or .xls file exported from Excel or Google Sheets. For an .xlsx/.xls
+          file, only the first sheet is read. Not sure of the format?{" "}
           <a href={templateHref} download={`${entityLabelPlural.toLowerCase()}-import-template.csv`} className="text-emerald-700 hover:underline dark:text-emerald-500">
-            Download a template
+            Download a CSV template
           </a>
           .
         </p>
         <input
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
           className="mt-4 block w-full text-sm text-zinc-700 file:mr-4 file:rounded-md file:border-0 file:bg-emerald-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-800 dark:text-zinc-300"
           onChange={(e) => {
             const file = e.target.files?.[0];

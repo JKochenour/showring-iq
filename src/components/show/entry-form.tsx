@@ -17,8 +17,8 @@ import {
   FieldError,
   Input,
   Label,
-  Select,
 } from "@/components/ui";
+import { FormCombobox } from "@/components/combobox";
 
 export interface PersonOption {
   id: string;
@@ -54,6 +54,7 @@ export function CreateEntryForm({
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors },
   } = useForm<CreateEntryFormValues, unknown, CreateEntryInput>({
     resolver: zodResolver(createEntrySchema),
@@ -96,53 +97,49 @@ export function CreateEntryForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="rider">Rider</Label>
-            <Select id="rider" defaultValue="" {...register("riderPersonId")}>
-              <option value="" disabled>
-                Choose a rider…
-              </option>
-              {riders.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </Select>
+            <FormCombobox
+              id="rider"
+              control={control}
+              name="riderPersonId"
+              options={riders}
+              placeholder="Choose a rider…"
+              invalid={!!errors.riderPersonId}
+            />
             <FieldError message={errors.riderPersonId?.message} />
           </div>
           <div>
             <Label htmlFor="horse">Horse</Label>
-            <Select id="horse" defaultValue="" {...register("horseId")}>
-              <option value="" disabled>
-                Choose a horse…
-              </option>
-              {horses.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.label}
-                </option>
-              ))}
-            </Select>
+            <FormCombobox
+              id="horse"
+              control={control}
+              name="horseId"
+              options={horses}
+              placeholder="Choose a horse…"
+              invalid={!!errors.horseId}
+            />
             <FieldError message={errors.horseId?.message} />
           </div>
           <div>
             <Label htmlFor="owner">Owner (optional)</Label>
-            <Select id="owner" {...register("ownerPersonId")}>
-              <option value="">—</option>
-              {owners.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </Select>
+            <FormCombobox
+              id="owner"
+              control={control}
+              name="ownerPersonId"
+              options={owners}
+              placeholder="—"
+              clearable
+            />
           </div>
           <div>
             <Label htmlFor="trainer">Trainer (optional)</Label>
-            <Select id="trainer" {...register("trainerPersonId")}>
-              <option value="">—</option>
-              {trainers.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </Select>
+            <FormCombobox
+              id="trainer"
+              control={control}
+              name="trainerPersonId"
+              options={trainers}
+              placeholder="—"
+              clearable
+            />
           </div>
         </div>
 

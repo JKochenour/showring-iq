@@ -26,6 +26,7 @@ import {
   Label,
   Select,
 } from "@/components/ui";
+import { FormCombobox } from "@/components/combobox";
 
 export function AddRegistrationForm({ horseId }: { horseId: string }) {
   const [serverError, setServerError] = useState<string>();
@@ -126,6 +127,7 @@ export function AddOwnershipForm({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<AddOwnershipFormValues, unknown, AddOwnershipInput>({
     resolver: zodResolver(addOwnershipSchema),
@@ -161,16 +163,14 @@ export function AddOwnershipForm({
       <div className="grid gap-3 sm:grid-cols-[1fr_120px_170px_auto] sm:items-end">
         <div>
           <Label htmlFor="o-person">Owner</Label>
-          <Select id="o-person" defaultValue="" {...register("ownerPersonId")}>
-            <option value="" disabled>
-              Choose a person…
-            </option>
-            {people.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </Select>
+          <FormCombobox
+            id="o-person"
+            control={control}
+            name="ownerPersonId"
+            options={people}
+            placeholder="Choose a person…"
+            invalid={!!errors.ownerPersonId}
+          />
           <FieldError message={errors.ownerPersonId?.message} />
         </div>
         <div>
