@@ -31,6 +31,7 @@ export const HORSE_IMPORT_FIELDS: ImportFieldConfig[] = [
   { key: "sire", label: "Sire", synonyms: ["sire"] },
   { key: "dam", label: "Dam", synonyms: ["dam"] },
   { key: "ownerName", label: "Owner name", synonyms: ["owner", "owner name"] },
+  { key: "ownerPercentage", label: "Ownership %", synonyms: ["ownership percent", "ownership percentage", "owner percent", "owner percentage", "percentage", "percent owned", "pct owned"] },
   { key: "registrationAssociation", label: "Registration association", synonyms: ["association", "registration association"] },
   { key: "registrationNumber", label: "Registration number", synonyms: ["registration number", "reg number", "reg #", "nrha number", "aqha number", "mem no", "member no", "member number", "memno"] },
   { key: "competitionLicenseNumber", label: "Competition license #", synonyms: ["competition license", "license number", "license #", "license"] },
@@ -38,9 +39,17 @@ export const HORSE_IMPORT_FIELDS: ImportFieldConfig[] = [
   { key: "notes", label: "Notes", synonyms: ["notes", "comment", "comments"] },
 ];
 
-/** Lowercased, letters-and-digits-only form — makes "HorseName" and "Horse Name" compare equal. */
+/**
+ * Lowercased, letters-and-digits-only form — makes "HorseName" and "Horse
+ * Name" compare equal. "%" is spelled out first (not just stripped) so
+ * "Ownership %" stays distinct from "Ownership" instead of collapsing into
+ * a generic substring that could match unrelated columns.
+ */
 function compact(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return s
+    .toLowerCase()
+    .replace(/%/g, "percent")
+    .replace(/[^a-z0-9]/g, "");
 }
 
 /**

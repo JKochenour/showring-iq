@@ -378,6 +378,7 @@ export type ImportHorseRow = {
   dam?: string;
   notes?: string;
   ownerName?: string;
+  ownerPercentage?: string;
   registrationAssociation?: string;
   registrationNumber?: string;
   competitionLicenseNumber?: string;
@@ -397,14 +398,43 @@ export async function bulkImportHorses(
   const supabase = await createClient();
   const input = rows.slice(0, MAX_IMPORT_ROWS);
 
-  const [{ data: existingHorses }, { data: people }] = await Promise.all([
-    supabase.from("horses").select("registered_name").eq("organization_id", organizationId),
+  const [{ data: existingHorses }, { data: registrations }, { data: people }] = await Promise.all([
+    supabase.from("horses").select("id, registered_name").eq("organization_id", organizationId),
+    supabase
+      .from("horse_registrations")
+      .select("horse_id, registration_number, competition_license_number")
+      .eq("organization_id", organizationId),
     canAddOwnership
       ? supabase.from("people").select("id, first_name, last_name").eq("organization_id", organizationId)
       : Promise.resolve({ data: [] as { id: string; first_name: string; last_name: string }[] }),
   ]);
 
-  const seen = new Set((existingHorses ?? []).map((h) => h.registered_name.trim().toLowerCase()));
+  // A horse can be keyed by name or by any registration/license number it
+  // already has — a CSV export may repeat the same horse across rows using
+  // just the number, or vice versa. Registry data commonly has one row per
+  // (horse, owner) pair for co-owned horses, so re-matching an existing
+  // horse is expected, not an error — it means "attach this row's owner".
+  const byName = new Map<string, string>();
+  for (const h of existingHorses ?? []) byName.set(h.registered_name.trim().toLowerCase(), h.id);
+  const byNumber = new Map<string, string>();
+  for (const r of registrations ?? []) {
+    if (r.registration_number) byNumber.set(r.registration_number.trim().toLowerCase(), r.horse_id);
+    if (r.competition_license_number)
+      byNumber.set(r.competition_license_number.trim().toLowerCase(), r.horse_id);
+  }
+  const { data: existingOwnerships } = canAddOwnership
+    ? await supabase
+        .from("horse_ownerships")
+        .select("horse_id, owner_person_id")
+        .eq("organization_id", organizationId)
+    : { data: [] as { horse_id: string; owner_person_id: string }[] };
+  const ownersByHorse = new Map<string, Set<string>>();
+  for (const o of existingOwnerships ?? []) {
+    const set = ownersByHorse.get(o.horse_id) ?? new Set<string>();
+    set.add(o.owner_person_id);
+    ownersByHorse.set(o.horse_id, set);
+  }
+
   const peopleByName = new Map(
     (people ?? []).map((p) => [`${p.first_name} ${p.last_name}`.trim().toLowerCase(), p.id])
   );
@@ -440,77 +470,99 @@ export async function bulkImportHorses(
     }
     const d = parsed.data;
 
-    const key = d.registeredName.trim().toLowerCase();
-    if (seen.has(key)) {
-      results.push({ row: rowNum, name: displayName, status: "skipped", message: "Already exists" });
-      continue;
-    }
-
-    const { data: created, error } = await supabase
-      .from("horses")
-      .insert({
-        organization_id: organizationId,
-        registered_name: d.registeredName,
-        barn_name: d.barnName || null,
-        breed: d.breed || null,
-        sex: d.sex || null,
-        color: d.color || null,
-        foal_year: d.foalYear ?? null,
-        sire: d.sire || null,
-        dam: d.dam || null,
-        notes: d.notes || null,
-      })
-      .select("id")
-      .maybeSingle();
-
-    if (error || !created) {
-      results.push({
-        row: rowNum,
-        name: displayName,
-        status: "error",
-        message: error?.message ?? "Not created — check permissions.",
-      });
-      continue;
-    }
-    seen.add(key);
+    const nameKey = d.registeredName.trim().toLowerCase();
+    const numberKey =
+      raw.registrationNumber?.trim().toLowerCase() || raw.competitionLicenseNumber?.trim().toLowerCase();
+    const existingHorseId = (numberKey && byNumber.get(numberKey)) ?? byName.get(nameKey);
 
     const notes: string[] = [];
+    let horseId: string;
+    let rowStatus: "created" | "skipped";
 
-    if (
-      canAddRegistration &&
-      raw.registrationAssociation?.trim() &&
-      (raw.registrationNumber?.trim() || raw.competitionLicenseNumber?.trim())
-    ) {
-      await supabase.from("horse_registrations").insert({
-        horse_id: created.id,
-        organization_id: organizationId,
-        association: raw.registrationAssociation.trim(),
-        registration_number: raw.registrationNumber?.trim() || null,
-        competition_license_number: raw.competitionLicenseNumber?.trim() || null,
-        status: normalizeStatus(raw.registrationStatus),
-      });
+    if (existingHorseId) {
+      horseId = existingHorseId;
+      rowStatus = "skipped";
+      notes.push("Horse already exists");
+    } else {
+      const { data: created, error } = await supabase
+        .from("horses")
+        .insert({
+          organization_id: organizationId,
+          registered_name: d.registeredName,
+          barn_name: d.barnName || null,
+          breed: d.breed || null,
+          sex: d.sex || null,
+          color: d.color || null,
+          foal_year: d.foalYear ?? null,
+          sire: d.sire || null,
+          dam: d.dam || null,
+          notes: d.notes || null,
+        })
+        .select("id")
+        .maybeSingle();
+
+      if (error || !created) {
+        results.push({
+          row: rowNum,
+          name: displayName,
+          status: "error",
+          message: error?.message ?? "Not created — check permissions.",
+        });
+        continue;
+      }
+      horseId = created.id;
+      rowStatus = "created";
+      byName.set(nameKey, horseId);
+      if (numberKey) byNumber.set(numberKey, horseId);
+
+      if (
+        canAddRegistration &&
+        raw.registrationAssociation?.trim() &&
+        (raw.registrationNumber?.trim() || raw.competitionLicenseNumber?.trim())
+      ) {
+        await supabase.from("horse_registrations").insert({
+          horse_id: horseId,
+          organization_id: organizationId,
+          association: raw.registrationAssociation.trim(),
+          registration_number: raw.registrationNumber?.trim() || null,
+          competition_license_number: raw.competitionLicenseNumber?.trim() || null,
+          status: normalizeStatus(raw.registrationStatus),
+        });
+      }
+
+      if (raw.sex?.trim() && !sex) notes.push(`Unrecognized sex "${raw.sex.trim()}" ignored`);
     }
 
     if (canAddOwnership && raw.ownerName?.trim()) {
       const ownerId = peopleByName.get(raw.ownerName.trim().toLowerCase());
-      if (ownerId) {
-        await supabase.from("horse_ownerships").insert({
-          horse_id: created.id,
+      const existingOwners = ownersByHorse.get(horseId) ?? new Set<string>();
+      if (!ownerId) {
+        notes.push(`Owner "${raw.ownerName.trim()}" not found — add ownership manually`);
+      } else if (existingOwners.has(ownerId)) {
+        // Already an owner of this horse — nothing to add.
+      } else {
+        const pct = Number(raw.ownerPercentage);
+        const percentage = Number.isInteger(pct) && pct >= 1 && pct <= 100 ? pct : 100;
+        const { error: ownerError } = await supabase.from("horse_ownerships").insert({
+          horse_id: horseId,
           organization_id: organizationId,
           owner_person_id: ownerId,
-          percentage: 100,
+          percentage,
         });
-      } else {
-        notes.push(`Owner "${raw.ownerName.trim()}" not found — add ownership manually`);
+        if (!ownerError) {
+          existingOwners.add(ownerId);
+          ownersByHorse.set(horseId, existingOwners);
+          if (rowStatus === "skipped") notes.push(`Added ${raw.ownerName.trim()} as co-owner`);
+          if (percentage === 100 && !raw.ownerPercentage?.trim())
+            notes.push("Ownership % not specified in the sheet — set to 100%; adjust manually if co-owned");
+        }
       }
     }
-
-    if (raw.sex?.trim() && !sex) notes.push(`Unrecognized sex "${raw.sex.trim()}" ignored`);
 
     results.push({
       row: rowNum,
       name: displayName,
-      status: "created",
+      status: rowStatus,
       message: notes.length > 0 ? notes.join("; ") : undefined,
     });
   }

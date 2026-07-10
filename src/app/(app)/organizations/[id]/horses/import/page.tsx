@@ -17,6 +17,7 @@ const SAMPLE_ROW = {
   sire: "Shining Spark",
   dam: "Certain Potential",
   ownerName: "Jamie Rivers",
+  ownerPercentage: "100",
   registrationAssociation: "NRHA",
   registrationNumber: "1234567",
   competitionLicenseNumber: "",
@@ -45,7 +46,7 @@ export default async function ImportHorsesPage({
     <div>
       <PageHeader
         title="Import horses"
-        description="Bulk-load your horse database from a CSV export instead of entering every horse by hand. Owner name is matched against existing people by exact name — add ownership manually for anyone not matched. You can still add, edit, or remove horses individually afterward."
+        description="Bulk-load your horse database from a CSV export instead of entering every horse by hand. For co-owned horses, use one row per owner (same registration number or horse name) — each row adds that owner rather than being skipped as a duplicate. Owner name is matched against existing people by exact name — add ownership manually for anyone not matched. You can still add, edit, or remove horses individually afterward."
       />
       {canCreate ? (
         <SpreadsheetImport
