@@ -134,7 +134,15 @@ export async function deletePerson(personId: string): Promise<ActionResult> {
     .eq("id", personId)
     .select("id");
 
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.message.includes("violates foreign key constraint")) {
+      return {
+        error:
+          "This person has show entries and can't be deleted. Scratch their entries instead.",
+      };
+    }
+    return { error: error.message };
+  }
   if (!deleted || deleted.length === 0) {
     return { error: "Delete was not applied. You may lack the person.edit permission." };
   }

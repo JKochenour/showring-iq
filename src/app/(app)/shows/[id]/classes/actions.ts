@@ -160,7 +160,15 @@ export async function deleteClass(
     .eq("id", classId)
     .select("id");
 
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.message.includes("violates foreign key constraint")) {
+      return {
+        error:
+          "This class has entries and can't be deleted. Cancel the class instead.",
+      };
+    }
+    return { error: error.message };
+  }
   if (!deleted || deleted.length === 0) {
     return {
       error:

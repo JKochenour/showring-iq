@@ -126,7 +126,15 @@ export async function deleteHorse(horseId: string): Promise<ActionResult> {
     .eq("id", horseId)
     .select("id");
 
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.message.includes("violates foreign key constraint")) {
+      return {
+        error:
+          "This horse has show entries and can't be deleted. Scratch its entries instead.",
+      };
+    }
+    return { error: error.message };
+  }
   if (!deleted || deleted.length === 0) {
     return { error: "Delete was not applied. You may lack the horse.edit permission." };
   }

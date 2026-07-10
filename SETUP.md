@@ -19,6 +19,10 @@ in `supabase/migrations/` **in order**:
 4. [`00004_people_horses.sql`](supabase/migrations/00004_people_horses.sql) —
    people (multi-role), association memberships, horses, registrations /
    competition licenses, ownership records, RLS
+5. [`00005_entries.sql`](supabase/migrations/00005_entries.sql) — entries
+   (per-show entry numbers, name snapshots), entry_classes (fee snapshots,
+   scratch status), back_numbers (unique per show, RPC-only writes), audited
+   scratch/reinstate/back-number RPCs
 
 `00001_foundation.sql` creates:
 
@@ -112,6 +116,20 @@ Then:
   contact info or birthdates); writes require the person/horse/membership/
   ownership permissions
 
-## Next: Sprint 5 — Entries
+## What's in Sprint 5
 
-Create entry, horse/rider + class selection, back numbers, entry list/detail.
+- Entries tab on each show: rider + horse + owner/trainer + class selection
+  with a live fee total (fees snapshotted per class at entry time)
+- Sequential entry numbers per show; rider/horse names snapshotted so
+  gate/announcer views and printed programs stay stable
+- Back numbers: auto-assign next, set a specific number, transfer, release —
+  unique per show, all moves audited
+- Scratch/reinstate per class or for the whole entry (with reasons, audited);
+  scratched classes are kept for results — NRHA CSVs must include them
+- People/horses/classes with entries can't be deleted (friendly errors point
+  to scratching/cancelling instead)
+
+## Next: Sprint 6 — Check-in & validation
+
+Missing-info flags, basic eligibility, check-in screen, missing paperwork
+dashboard.

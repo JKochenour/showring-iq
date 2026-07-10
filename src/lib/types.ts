@@ -176,6 +176,41 @@ export interface HorseOwnership {
   owner: Pick<Person, "id" | "first_name" | "last_name"> | null;
 }
 
+export interface Entry {
+  id: string;
+  show_id: string;
+  organization_id: string;
+  entry_number: number;
+  rider_person_id: string;
+  horse_id: string;
+  owner_person_id: string | null;
+  trainer_person_id: string | null;
+  rider_name: string;
+  horse_name: string;
+  owner_name: string | null;
+  trainer_name: string | null;
+  status: "active" | "scratched";
+  notes: string | null;
+  created_at: string;
+}
+
+export interface EntryClassRow {
+  id: string;
+  entry_id: string;
+  class_id: string;
+  status: "entered" | "scratched";
+  fee_cents: number;
+  scratch_reason: string | null;
+  class: Pick<ShowClass, "id" | "class_number" | "name" | "status"> | null;
+}
+
+export interface BackNumberRow {
+  id: string;
+  show_id: string;
+  number: number;
+  entry_id: string;
+}
+
 export interface AuditLogRow {
   id: number;
   actor_role: string | null;
