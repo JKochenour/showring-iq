@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/authz";
 import { SignOutButton } from "@/components/sign-out-button";
+import { HelpChatWidget } from "@/components/help/help-chat-widget";
 
 export default async function AppLayout({
   children,
@@ -61,6 +62,12 @@ export default async function AppLayout({
               ))}
             </div>
           )}
+          <Link
+            href="/help"
+            className="mt-4 rounded-md px-2 py-2 font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            Help &amp; Support
+          </Link>
         </nav>
         <div className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
           <p className="truncate px-2 text-sm font-medium">
@@ -80,6 +87,9 @@ export default async function AppLayout({
             <Link href="/organizations" className="font-medium">
               Orgs
             </Link>
+            <Link href="/help" className="font-medium">
+              Help
+            </Link>
             <SignOutButton />
           </div>
         </header>
@@ -87,6 +97,7 @@ export default async function AppLayout({
           {children}
         </main>
       </div>
+      <HelpChatWidget />
     </div>
   );
 }

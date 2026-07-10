@@ -285,6 +285,26 @@ draft→review→tested→published→deprecated→archived lifecycle RPC.
   groundwork for a future pass that threads rule packages through
   eligibility checks and exports.
 
+## Help & Support (AI assistant + tutorials)
+
+- **Help & Support page** (`/help`, also in the sidebar): getting-started
+  guides per role, a video tutorials grid (placeholder cards — add real
+  videos by filling in `youtubeId` in `src/app/(app)/help/page.tsx`), and an
+  FAQ.
+- **AI help chat** — a floating chat widget on every app page. Calls the
+  Anthropic API (`claude-opus-4-8`, low effort — this is simple Q&A about
+  using the app, not a reasoning-heavy task) with a system prompt summarizing
+  ShowRing IQ's roles, navigation, and workflows. Streams the response for a
+  responsive feel.
+  - **Requires `ANTHROPIC_API_KEY`** in `.env.local` (get one at
+    console.anthropic.com → API Keys). Without it, the rest of the app works
+    normally — the chat widget just returns "not configured yet."
+  - v1 scope: conversation history lives in the browser only, not saved to
+    the database — it resets on page refresh. No document retrieval; the
+    app's feature set is summarized directly in the prompt
+    (`src/lib/ai/help-assistant.ts`), so keep that in sync with major
+    feature changes.
+
 ## MVP status
 
 This completes every item in CLAUDE.md's 10-sprint plan, PDF results,
