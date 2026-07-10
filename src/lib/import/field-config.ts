@@ -27,38 +27,50 @@ export const HORSE_IMPORT_FIELDS: ImportFieldConfig[] = [
   { key: "breed", label: "Breed", synonyms: ["breed"] },
   { key: "sex", label: "Sex", synonyms: ["sex", "gender"] },
   { key: "color", label: "Color", synonyms: ["color", "colour"] },
-  { key: "foalYear", label: "Foal year", synonyms: ["foal year", "year foaled", "birth year", "dob"] },
+  { key: "foalYear", label: "Foal year", synonyms: ["foal year", "foal date", "year foaled", "birth year", "dob"] },
   { key: "sire", label: "Sire", synonyms: ["sire"] },
   { key: "dam", label: "Dam", synonyms: ["dam"] },
   { key: "ownerName", label: "Owner name", synonyms: ["owner", "owner name"] },
   { key: "registrationAssociation", label: "Registration association", synonyms: ["association", "registration association"] },
-  { key: "registrationNumber", label: "Registration number", synonyms: ["registration number", "reg number", "reg #", "nrha number", "aqha number"] },
-  { key: "competitionLicenseNumber", label: "Competition license #", synonyms: ["competition license", "license number", "license #"] },
+  { key: "registrationNumber", label: "Registration number", synonyms: ["registration number", "reg number", "reg #", "nrha number", "aqha number", "mem no", "member no", "member number", "memno"] },
+  { key: "competitionLicenseNumber", label: "Competition license #", synonyms: ["competition license", "license number", "license #", "license"] },
   { key: "registrationStatus", label: "Registration status", synonyms: ["registration status", "status"] },
   { key: "notes", label: "Notes", synonyms: ["notes", "comment", "comments"] },
 ];
+
+/** Lowercased, letters-and-digits-only form — makes "HorseName" and "Horse Name" compare equal. */
+function compact(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 
 /**
  * Best-effort column -> field auto-mapping by normalized header text.
  *
  * Runs as two global passes across all fields, not one pass per field: an
- * exact-match pass first, then a substring-match pass. Substring matching
- * only considers synonyms of 4+ characters, so a short synonym like state's
- * "st" can't falsely match inside an unrelated header like "Membership
- * Status" before that field gets a chance to claim its own exact match.
+ * exact-match pass first (on both space-normalized and compact forms, so
+ * spreadsheet exports with no-space headers like "HorseName" or "MemNo"
+ * still match multi-word synonyms), then a substring-match pass. Substring
+ * matching only considers synonyms of 4+ characters, so a short synonym
+ * like state's "st" can't falsely match inside an unrelated header like
+ * "Membership Status" before that field gets a chance to claim its own
+ * exact match.
  */
 export function guessMapping(
   headers: string[],
   fields: ImportFieldConfig[]
 ): Record<string, number | null> {
   const normalized = headers.map((h) => h.trim().toLowerCase().replace(/\s+/g, " "));
+  const compactHeaders = headers.map((h) => compact(h));
   const mapping: Record<string, number | null> = {};
   const usedColumns = new Set<number>();
   for (const field of fields) mapping[field.key] = null;
 
   for (const field of fields) {
     for (const syn of field.synonyms) {
-      const idx = normalized.findIndex((h, i) => !usedColumns.has(i) && h === syn);
+      const synCompact = compact(syn);
+      const idx = normalized.findIndex(
+        (h, i) => !usedColumns.has(i) && (h === syn || compactHeaders[i] === synCompact)
+      );
       if (idx !== -1) {
         mapping[field.key] = idx;
         usedColumns.add(idx);
@@ -71,7 +83,10 @@ export function guessMapping(
     if (mapping[field.key] !== null) continue;
     for (const syn of field.synonyms) {
       if (syn.length < 4) continue;
-      const idx = normalized.findIndex((h, i) => !usedColumns.has(i) && h.includes(syn));
+      const synCompact = compact(syn);
+      const idx = normalized.findIndex(
+        (h, i) => !usedColumns.has(i) && (h.includes(syn) || compactHeaders[i].includes(synCompact))
+      );
       if (idx !== -1) {
         mapping[field.key] = idx;
         usedColumns.add(idx);
