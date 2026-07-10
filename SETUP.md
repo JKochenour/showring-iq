@@ -233,19 +233,24 @@ Then:
   checklist can't be bypassed by hitting the download URL directly
 - Every generated export is audited (`export.nrha_csv_generated`)
 
-**Scope cut, called out explicitly:** this is the CSV export only. The
-full NRHA submission ZIP (PDF results, per-class score sheets, tally
-sheet, 5% retainage summary, medication fee summary, collected paperwork,
-submission summary, validation report, audit log bundle) is real,
-substantial future work — PDF generation alone needs a new dependency and
-its own design pass. Building it properly was out of reach for this pass;
-flagging it here rather than shipping a rushed, likely-buggy version.
+## PDF results + fee summary (post-Sprint-10 follow-up)
+
+- Exports tab now also generates a full-show PDF (`@react-pdf/renderer`):
+  every official+ class with its placings, back numbers, riders, horses,
+  and scores, one continuous document
+- An informational entry-fees-collected + 5% retainage tally. This is a
+  **fee tally only** — it does not compute or drive any per-placing
+  payout, doesn't include added money, and isn't wired into the CSV's
+  MoneyWon field (which correctly stays "0.00" until a real payout engine
+  exists). CLAUDE.md flags payout formulas as needing exhaustive tests
+  before shipping; a full payout engine (splits by placement, category/
+  youth exceptions, ties, add-back) is deliberately not attempted here.
 
 ## MVP status
 
-This completes every item in CLAUDE.md's 10-sprint plan except the NRHA
-package's non-CSV pieces (PDF results, score sheets, tally/retainage/
-medication summaries, paperwork bundling) and the platform-wide items the
-CLAUDE.md MVP section explicitly defers: AI extraction, offline mode,
-Stripe, public live results, other associations, analytics, SMS, API
-integrations.
+This completes every item in CLAUDE.md's 10-sprint plan, plus PDF
+results. What's left of the NRHA package: per-class score sheets, a
+tally sheet, medication fee summary, collected-paperwork bundling, and
+ZIP packaging. Also still deferred per CLAUDE.md's MVP section: AI
+extraction, offline mode, Stripe, public live results, other
+associations, analytics, SMS, API integrations, and a real payout engine.

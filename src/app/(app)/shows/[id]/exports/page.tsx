@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadNrhaExportData } from "@/lib/load-nrha-export";
+import { loadShowResults } from "@/lib/load-show-results";
+import { formatCents } from "@/lib/money";
 import { IssueList } from "@/components/show/issue-badges";
 import { Alert, ButtonLink, Card, PageHeader } from "@/components/ui";
 
@@ -22,15 +24,18 @@ export default async function ExportsPage({
   if (!show) notFound();
 
   const canExport = await hasOrgPermission(show.organization_id, "result.export");
-  const data = canExport
-    ? await loadNrhaExportData(supabase, id)
-    : null;
+  const [nrhaData, resultsData] = canExport
+    ? await Promise.all([
+        loadNrhaExportData(supabase, id),
+        loadShowResults(supabase, id),
+      ])
+    : [null, null];
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Exports"
-        description="NRHA ReinerSuite CSV — the first association submission target. A class must be marked official (Scoring tab) to be included."
+        description="NRHA ReinerSuite CSV and PDF results. A class must be marked official (Scoring tab) to be included in either."
       />
 
       {!canExport ? (
@@ -41,7 +46,7 @@ export default async function ExportsPage({
         <>
           <Card
             className={
-              data!.ready
+              nrhaData!.ready
                 ? "border-emerald-300 dark:border-emerald-800"
                 : "border-amber-300 dark:border-amber-800"
             }
@@ -52,28 +57,30 @@ export default async function ExportsPage({
                   NRHA Submission:{" "}
                   <span
                     className={
-                      data!.ready
+                      nrhaData!.ready
                         ? "text-emerald-700 dark:text-emerald-400"
                         : "text-amber-700 dark:text-amber-400"
                     }
                   >
-                    {data!.ready ? "Ready" : `${data!.readiness.length} issue${data!.readiness.length === 1 ? "" : "s"}`}
+                    {nrhaData!.ready
+                      ? "Ready"
+                      : `${nrhaData!.readiness.length} issue${nrhaData!.readiness.length === 1 ? "" : "s"}`}
                   </span>
                 </h2>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {data!.includedClassCount} class
-                  {data!.includedClassCount === 1 ? "" : "es"} included ·{" "}
-                  {data!.rows.length} row{data!.rows.length === 1 ? "" : "s"}
+                  {nrhaData!.includedClassCount} class
+                  {nrhaData!.includedClassCount === 1 ? "" : "es"} included ·{" "}
+                  {nrhaData!.rows.length} row{nrhaData!.rows.length === 1 ? "" : "s"}
                 </p>
               </div>
-              {data!.ready && (
+              {nrhaData!.ready && (
                 <ButtonLink href={`/shows/${id}/exports/nrha-csv`}>
                   Download NRHA CSV
                 </ButtonLink>
               )}
             </div>
-            {data!.readiness.length > 0 ? (
-              <IssueList issues={data!.readiness} />
+            {nrhaData!.readiness.length > 0 ? (
+              <IssueList issues={nrhaData!.readiness} />
             ) : (
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 Every check passed.
@@ -81,10 +88,62 @@ export default async function ExportsPage({
             )}
           </Card>
 
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold">PDF results</h2>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Placings and scores for every official class, one document
+                  for the full show.
+                </p>
+              </div>
+              {resultsData!.classes.length > 0 ? (
+                <ButtonLink href={`/shows/${id}/exports/results-pdf`}>
+                  Download PDF results
+                </ButtonLink>
+              ) : (
+                <span className="text-sm text-zinc-400">
+                  No official classes yet
+                </span>
+              )}
+            </div>
+          </Card>
+
+          <Card className="border-dashed">
+            <h2 className="mb-1 text-base font-semibold">
+              Entry fees &amp; retainage (informational)
+            </h2>
+            <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+              A simple tally from official classes&apos; entry fees — not a
+              payout calculation. It does not include added money, and it
+              does not drive the CSV&apos;s MoneyWon field. A full payout
+              engine (splits by placement, category exceptions, ties) is
+              future work and needs its own tests before it can be trusted.
+            </p>
+            <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+              <div className="flex justify-between gap-4 sm:justify-start">
+                <dt className="text-zinc-500 dark:text-zinc-400">
+                  Entry fees collected
+                </dt>
+                <dd className="font-mono">
+                  {formatCents(resultsData!.totalEntryFeeCents)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4 sm:justify-start">
+                <dt className="text-zinc-500 dark:text-zinc-400">
+                  5% retainage
+                </dt>
+                <dd className="font-mono">
+                  {formatCents(resultsData!.retainageCents)}
+                </dd>
+              </div>
+            </dl>
+          </Card>
+
           <p className="text-xs text-zinc-400">
-            v1 exports the ReinerSuite CSV only. The full submission package
-            (PDF results, score sheets, tally sheet, retainage/medication
-            summaries, and collected paperwork) is a planned follow-up.
+            v1 covers the NRHA CSV and PDF results. The full submission
+            package (per-class score sheets, tally sheet, medication fee
+            summary, and collected paperwork) is a planned follow-up.
           </p>
         </>
       )}
