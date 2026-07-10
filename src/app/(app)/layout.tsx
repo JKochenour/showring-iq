@@ -28,6 +28,25 @@ export default async function AppLayout({
       ?.map((m) => m.organization as unknown as { id: string; name: string })
       .filter(Boolean) ?? [];
 
+  const { data: shows } =
+    orgs.length > 0
+      ? await supabase
+          .from("shows")
+          .select("id, name, organization_id")
+          .in(
+            "organization_id",
+            orgs.map((o) => o.id)
+          )
+          .order("start_date", { ascending: false })
+      : { data: [] as { id: string; name: string; organization_id: string }[] };
+
+  const showsByOrg = new Map<string, { id: string; name: string }[]>();
+  for (const s of shows ?? []) {
+    const list = showsByOrg.get(s.organization_id) ?? [];
+    list.push({ id: s.id, name: s.name });
+    showsByOrg.set(s.organization_id, list);
+  }
+
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-zinc-200 bg-white px-4 py-6 dark:border-zinc-800 dark:bg-zinc-900 sm:flex">
@@ -53,7 +72,11 @@ export default async function AppLayout({
                 Your organizations
               </p>
               {orgs.map((org) => (
-                <OrgSidebarNav key={org.id} org={org} />
+                <OrgSidebarNav
+                  key={org.id}
+                  org={org}
+                  shows={showsByOrg.get(org.id) ?? []}
+                />
               ))}
             </div>
           )}
