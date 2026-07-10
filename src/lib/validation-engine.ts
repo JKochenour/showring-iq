@@ -148,12 +148,16 @@ const RULES: ValidationRule[] = [
   },
 ];
 
-const SEVERITY_ORDER: Record<Severity, number> = {
+export const SEVERITY_ORDER: Record<Severity, number> = {
   critical: 0,
   blocking: 1,
   warning: 2,
   info: 3,
 };
+
+export function sortBySeverity(issues: ValidationIssue[]): ValidationIssue[] {
+  return issues.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+}
 
 export function validateEntry(ctx: EntryValidationContext): ValidationIssue[] {
   if (ctx.entryStatus === "scratched") return [];
@@ -163,9 +167,7 @@ export function validateEntry(ctx: EntryValidationContext): ValidationIssue[] {
       issues.push({ code: rule.code, severity: rule.severity, message });
     }
   }
-  return issues.sort(
-    (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
-  );
+  return sortBySeverity(issues);
 }
 
 export function hasBlockingIssues(issues: ValidationIssue[]): boolean {

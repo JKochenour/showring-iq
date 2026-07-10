@@ -5,7 +5,9 @@ import {
   CreateAssociationForm,
   CreateRulePackageForm,
 } from "@/components/org/rule-package-forms";
+import { CreateNrhaStarterButton } from "@/components/org/nrha-starter-button";
 import { Alert, Card, EmptyState, PageHeader } from "@/components/ui";
+import { VALIDATION_DISCLAIMER } from "@/lib/validation-engine";
 import type { Association, RulePackage } from "@/lib/types";
 
 export const metadata = { title: "Rule packages — ShowRing IQ" };
@@ -56,13 +58,13 @@ export default async function RulePackagesPage({
     <div className="space-y-6">
       <PageHeader
         title="Rule packages"
-        description="Foundation for association-specific class codes and eligibility rules — versioned data, not hard-coded logic. Not yet wired into class/entry validation; classes still use the plain NRHA class code field."
+        description="Association-specific class codes and eligibility rules, as versioned data. Link a class to a code (Classes → class detail) and published rule packages' eligibility rules run automatically on the Issues tab."
       />
 
       <Alert tone="info">
-        This is early groundwork per the architecture principle that association
-        rules must be data, not code. Rule packages defined here aren&apos;t yet
-        consulted by the Classes or Issues tabs — that wiring is future work.
+        Only <b>published</b> rule packages drive live validation on the Issues
+        tab — draft/review/tested packages are safe to edit without affecting
+        a real show. {VALIDATION_DISCLAIMER}
       </Alert>
 
       {canCreate && (
@@ -74,6 +76,8 @@ export default async function RulePackagesPage({
           />
         </div>
       )}
+
+      {canCreate && <CreateNrhaStarterButton organizationId={id} />}
 
       {packageRows.length === 0 ? (
         <EmptyState

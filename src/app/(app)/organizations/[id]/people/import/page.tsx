@@ -48,7 +48,7 @@ export default async function ImportPeoplePage({
       />
       {canCreate ? (
         <SpreadsheetImport
-          organizationId={id}
+          scopeId={id}
           backHref={`/organizations/${id}/people`}
           entityLabelPlural="People"
           fields={PEOPLE_IMPORT_FIELDS}

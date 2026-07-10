@@ -1,9 +1,24 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   validateEntry,
+  sortBySeverity,
   type ValidationIssue,
 } from "@/lib/validation-engine";
+import {
+  evaluateEligibilityRules,
+  type ClassCodeFlags,
+  type EligibilityRuleLike,
+} from "@/lib/rule-package-engine";
 import type { Entry } from "@/lib/types";
+
+function ageAt(birthdate: string, atDate: string): number {
+  const b = new Date(birthdate);
+  const a = new Date(atDate);
+  let age = a.getUTCFullYear() - b.getUTCFullYear();
+  const m = a.getUTCMonth() - b.getUTCMonth();
+  if (m < 0 || (m === 0 && a.getUTCDate() < b.getUTCDate())) age--;
+  return age;
+}
 
 /** Associations this show validates against. Comes from the show's rule
  * packages in a later sprint; NRHA is the MVP default. */
@@ -23,7 +38,11 @@ export async function loadValidatedEntries(
   showId: string
 ): Promise<{ showStartDate: string; entries: ValidatedEntry[] }> {
   const [{ data: show }, { data: entries }] = await Promise.all([
-    supabase.from("shows").select("start_date").eq("id", showId).maybeSingle(),
+    supabase
+      .from("shows")
+      .select("start_date, organization_id")
+      .eq("id", showId)
+      .maybeSingle(),
     supabase
       .from("entries")
       .select("*")
@@ -45,10 +64,12 @@ export async function loadValidatedEntries(
     { data: registrations },
     { data: ownerships },
     { data: riders },
+    { data: classes },
+    { data: eligibilityRules },
   ] = await Promise.all([
     supabase
       .from("entry_classes")
-      .select("entry_id, status")
+      .select("entry_id, class_id, status")
       .eq("show_id", showId),
     supabase.from("back_numbers").select("entry_id, number").eq("show_id", showId),
     supabase
@@ -63,9 +84,24 @@ export async function loadValidatedEntries(
       .in("horse_id", horseIds),
     supabase
       .from("horse_ownerships")
-      .select("horse_id")
+      .select("horse_id, owner_person_id")
       .in("horse_id", horseIds),
     supabase.from("people").select("id, birthdate").in("id", riderIds),
+    supabase
+      .from("classes")
+      .select(
+        "id, class_code_id, code:association_class_codes(code, is_youth, is_amateur, is_open, is_non_pro)"
+      )
+      .eq("show_id", showId),
+    show?.organization_id
+      ? supabase
+          .from("association_eligibility_rules")
+          .select(
+            "id, rule_key, applies_to, conditions, severity, message, rule_package:association_rule_packages!inner(status)"
+          )
+          .eq("organization_id", show.organization_id)
+          .eq("rule_package.status", "published")
+      : Promise.resolve({ data: [] as never[] }),
   ]);
 
   const enteredCounts = new Map<string, number>();
@@ -95,12 +131,63 @@ export async function loadValidatedEntries(
   }
 
   const ownershipCounts = new Map<string, number>();
+  const ownerIdsByHorse = new Map<string, Set<string>>();
   for (const o of ownerships ?? []) {
     ownershipCounts.set(o.horse_id, (ownershipCounts.get(o.horse_id) ?? 0) + 1);
+    const set = ownerIdsByHorse.get(o.horse_id) ?? new Set<string>();
+    set.add(o.owner_person_id);
+    ownerIdsByHorse.set(o.horse_id, set);
   }
 
   const birthdateByPerson = new Map<string, string | null>();
   for (const p of riders ?? []) birthdateByPerson.set(p.id, p.birthdate);
+
+  type ClassRow = {
+    id: string;
+    class_code_id: string | null;
+    code: { code: string; is_youth: boolean; is_amateur: boolean; is_open: boolean; is_non_pro: boolean } | null;
+  };
+  const codeFlagsByClass = new Map<string, ClassCodeFlags>();
+  for (const c of (classes as unknown as ClassRow[]) ?? []) {
+    if (c.class_code_id && c.code) {
+      codeFlagsByClass.set(c.id, {
+        code: c.code.code,
+        isYouth: c.code.is_youth,
+        isAmateur: c.code.is_amateur,
+        isOpen: c.code.is_open,
+        isNonPro: c.code.is_non_pro,
+      });
+    }
+  }
+
+  const enteredCodesByEntry = new Map<string, ClassCodeFlags[]>();
+  for (const ec of entryClasses ?? []) {
+    if (ec.status !== "entered") continue;
+    const flags = codeFlagsByClass.get(ec.class_id);
+    if (!flags) continue;
+    const list = enteredCodesByEntry.get(ec.entry_id) ?? [];
+    list.push(flags);
+    enteredCodesByEntry.set(ec.entry_id, list);
+  }
+
+  type EligibilityRuleRow = {
+    id: string;
+    rule_key: string;
+    applies_to: string[];
+    conditions: { field: string; operator: string; value: string }[];
+    severity: ValidationIssue["severity"];
+    message: string;
+  };
+  const rules: EligibilityRuleLike[] = ((eligibilityRules as unknown as EligibilityRuleRow[]) ?? []).map(
+    (r) => ({
+      id: r.id,
+      ruleKey: r.rule_key,
+      appliesTo: r.applies_to ?? [],
+      conditions: r.conditions ?? [],
+      severity: r.severity,
+      message: r.message,
+    })
+  );
 
   const validated = entryRows.map((entry) => {
     const backNumber = backByEntry.get(entry.id) ?? null;
@@ -117,6 +204,29 @@ export async function loadValidatedEntries(
       horseOwnershipCount: ownershipCounts.get(entry.horse_id) ?? 0,
       requiredAssociations: DEFAULT_REQUIRED_ASSOCIATIONS,
     });
+
+    if (entry.status !== "scratched" && rules.length > 0) {
+      const birthdate = birthdateByPerson.get(entry.rider_person_id) ?? null;
+      const owners = ownerIdsByHorse.get(entry.horse_id) ?? new Set<string>();
+      const ruleIssues = evaluateEligibilityRules(
+        rules,
+        {
+          rider: { age: birthdate ? ageAt(birthdate, showStartDate) : null },
+          entry: {
+            hasOwner: entry.owner_person_id !== null,
+            ownerIsRider: entry.owner_person_id === entry.rider_person_id,
+          },
+          horse: {
+            ownershipCount: ownershipCounts.get(entry.horse_id) ?? 0,
+            ownedByRider: owners.has(entry.rider_person_id),
+          },
+        },
+        enteredCodesByEntry.get(entry.id) ?? []
+      );
+      issues.push(...ruleIssues);
+      sortBySeverity(issues);
+    }
+
     return { entry, backNumber, enteredClassCount, issues };
   });
 

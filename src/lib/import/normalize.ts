@@ -65,3 +65,15 @@ export function normalizeYear(raw: string | undefined): string | undefined {
   const m = raw.match(/\b(19|20)\d{2}\b/);
   return m ? m[0] : raw.trim();
 }
+
+const TRUE_VALUES = new Set(["y", "yes", "true", "1", "x"]);
+const FALSE_VALUES = new Set(["n", "no", "false", "0"]);
+
+/** Parses Y/N, true/false, 1/0, x cells; blank/unrecognized falls back to `fallback`. */
+export function normalizeBoolean(raw: string | undefined, fallback: boolean): boolean {
+  if (!raw || !raw.trim()) return fallback;
+  const v = raw.trim().toLowerCase();
+  if (TRUE_VALUES.has(v)) return true;
+  if (FALSE_VALUES.has(v)) return false;
+  return fallback;
+}

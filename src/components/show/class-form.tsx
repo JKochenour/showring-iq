@@ -27,20 +27,24 @@ import {
   Label,
   Select,
 } from "@/components/ui";
+import { FormCombobox, type ComboboxOption } from "@/components/combobox";
 import type { ShowClass } from "@/lib/types";
 
 export function CreateClassForm({
   showId,
   nextClassNumber,
+  classCodeOptions,
 }: {
   showId: string;
   nextClassNumber: number;
+  classCodeOptions: ComboboxOption[];
 }) {
   const [serverError, setServerError] = useState<string>();
   const [isPending, startTransition] = useTransition();
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<CreateClassFormValues, unknown, CreateClassInput>({
     resolver: zodResolver(createClassSchema),
@@ -54,6 +58,7 @@ export function CreateClassForm({
       addedMoney: "",
       scheduledDate: "",
       nrhaClassCode: "",
+      classCodeId: "",
       notes: "",
     },
   });
@@ -71,7 +76,7 @@ export function CreateClassForm({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {serverError && <Alert>{serverError}</Alert>}
         <input type="hidden" {...register("showId")} />
-        <ClassFields register={register} errors={errors} />
+        <ClassFields register={register} errors={errors} control={control} classCodeOptions={classCodeOptions} />
         <Button type="submit" disabled={isPending}>
           {isPending ? "Adding…" : "Add class"}
         </Button>
@@ -80,13 +85,20 @@ export function CreateClassForm({
   );
 }
 
-export function EditClassForm({ showClass }: { showClass: ShowClass }) {
+export function EditClassForm({
+  showClass,
+  classCodeOptions,
+}: {
+  showClass: ShowClass;
+  classCodeOptions: ComboboxOption[];
+}) {
   const [serverError, setServerError] = useState<string>();
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<UpdateClassFormValues, unknown, UpdateClassInput>({
     resolver: zodResolver(updateClassSchema),
@@ -103,6 +115,7 @@ export function EditClassForm({ showClass }: { showClass: ShowClass }) {
       status: showClass.status,
       scheduledDate: showClass.scheduled_date ?? "",
       nrhaClassCode: showClass.nrha_class_code ?? "",
+      classCodeId: showClass.class_code_id ?? "",
       notes: showClass.notes ?? "",
     },
   });
@@ -134,7 +147,7 @@ export function EditClassForm({ showClass }: { showClass: ShowClass }) {
           </Select>
           <FieldError message={errors.status?.message} />
         </div>
-        <ClassFields register={register} errors={errors} />
+        <ClassFields register={register} errors={errors} control={control} classCodeOptions={classCodeOptions} />
         <Button type="submit" disabled={isPending}>
           {isPending ? "Saving…" : "Save changes"}
         </Button>
@@ -146,7 +159,7 @@ export function EditClassForm({ showClass }: { showClass: ShowClass }) {
 /* Shared fields between create and edit. Typed loosely because the two
    forms have different (overlapping) schemas. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ClassFields({ register, errors }: { register: any; errors: any }) {
+function ClassFields({ register, errors, control, classCodeOptions }: { register: any; errors: any; control: any; classCodeOptions: ComboboxOption[] }) {
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-[110px_1fr]">
@@ -203,7 +216,23 @@ function ClassFields({ register, errors }: { register: any; errors: any }) {
         </div>
       </div>
       <div>
-        <Label htmlFor="nrhaClassCode">NRHA class code (optional)</Label>
+        <Label htmlFor="classCodeId">Rule package class code (optional)</Label>
+        <FormCombobox
+          id="classCodeId"
+          control={control}
+          name="classCodeId"
+          options={classCodeOptions}
+          placeholder="— None linked —"
+          clearable
+        />
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          Link this class to a code from a rule package so eligibility rules
+          from that package apply automatically. Codes come from
+          Organization → Rule Packages.
+        </p>
+      </div>
+      <div>
+        <Label htmlFor="nrhaClassCode">Manual NRHA class code (optional)</Label>
         <Input
           id="nrhaClassCode"
           placeholder="e.g. 5300"
@@ -211,7 +240,8 @@ function ClassFields({ register, errors }: { register: any; errors: any }) {
         />
         <FieldError message={errors.nrhaClassCode?.message} />
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          Required for the NRHA ReinerSuite CSV export.
+          Used for the NRHA ReinerSuite CSV export if no rule package code is
+          linked above.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">

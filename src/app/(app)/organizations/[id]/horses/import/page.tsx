@@ -50,7 +50,7 @@ export default async function ImportHorsesPage({
       />
       {canCreate ? (
         <SpreadsheetImport
-          organizationId={id}
+          scopeId={id}
           backHref={`/organizations/${id}/horses`}
           entityLabelPlural="Horses"
           fields={HORSE_IMPORT_FIELDS}

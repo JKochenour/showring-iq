@@ -296,8 +296,12 @@ export function AddEligibilityRuleForm({ rulePackageId }: { rulePackageId: strin
           <FieldError message={errors.ruleKey?.message} />
         </div>
         <div>
-          <Label htmlFor="er-applies">Applies to (comma-separated codes)</Label>
-          <Input id="er-applies" placeholder="e.g. NRHA_NON_PRO" {...register("appliesTo")} />
+          <Label htmlFor="er-applies">Applies to (comma-separated)</Label>
+          <Input id="er-applies" placeholder="e.g. non_pro, youth, or a code like 5300" {...register("appliesTo")} />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Blank = every entry. Otherwise matches an entered class&apos;s linked
+            code (exact code, or category: non_pro/youth/amateur/open).
+          </p>
         </div>
         <div>
           <Label htmlFor="er-severity">Severity</Label>
@@ -314,10 +318,14 @@ export function AddEligibilityRuleForm({ rulePackageId }: { rulePackageId: strin
           <Label htmlFor="er-field">Field</Label>
           <Input
             id="er-field"
-            placeholder="e.g. rider.nrha_non_pro_status"
+            placeholder="e.g. horse.ownedByRider"
             {...register("field")}
           />
           <FieldError message={errors.field?.message} />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            One of: rider.age, entry.hasOwner, entry.ownerIsRider,
+            horse.ownershipCount, horse.ownedByRider.
+          </p>
         </div>
         <div>
           <Label htmlFor="er-operator">Operator</Label>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { CreateClassForm } from "@/components/show/class-form";
+import { getClassCodeOptions } from "@/lib/rule-package-options";
 import { Alert, PageHeader } from "@/components/ui";
 
 export const metadata = { title: "Add class — ShowRing IQ" };
@@ -20,7 +21,7 @@ export default async function NewClassPage({
     .maybeSingle();
   if (!show) notFound();
 
-  const [canCreate, { data: maxRow }] = await Promise.all([
+  const [canCreate, { data: maxRow }, classCodeOptions] = await Promise.all([
     hasOrgPermission(show.organization_id, "class.create"),
     supabase
       .from("classes")
@@ -29,6 +30,7 @@ export default async function NewClassPage({
       .order("class_number", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    getClassCodeOptions(supabase, show.organization_id),
   ]);
 
   const showEditable = show.status === "draft" || show.status === "published";
@@ -43,6 +45,7 @@ export default async function NewClassPage({
         <CreateClassForm
           showId={id}
           nextClassNumber={(maxRow?.class_number ?? 0) + 1}
+          classCodeOptions={classCodeOptions}
         />
       ) : (
         <Alert tone="info">

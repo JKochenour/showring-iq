@@ -4,6 +4,7 @@ import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { EditClassForm } from "@/components/show/class-form";
 import { DeleteClassButton } from "@/components/show/class-row-actions";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
+import { getClassCodeOptions } from "@/lib/rule-package-options";
 import { Alert, Card } from "@/components/ui";
 import { formatCents } from "@/lib/money";
 import type { ShowClass } from "@/lib/types";
@@ -20,7 +21,7 @@ export default async function ClassDetailPage({
 
   const { data: cls } = await supabase
     .from("classes")
-    .select("*, show:shows(status)")
+    .select("*, show:shows(status), linked_code:association_class_codes(code, name)")
     .eq("id", classId)
     .eq("show_id", id)
     .maybeSingle();
@@ -28,13 +29,15 @@ export default async function ClassDetailPage({
 
   const showClass = cls as unknown as ShowClass & {
     show: { status: string } | null;
+    linked_code: { code: string; name: string } | null;
   };
   const showStatus = showClass.show?.status ?? "draft";
   const showEditable = showStatus === "draft" || showStatus === "published";
 
-  const [canEdit, canDelete] = await Promise.all([
+  const [canEdit, canDelete, classCodeOptions] = await Promise.all([
     hasOrgPermission(showClass.organization_id, "class.edit"),
     hasOrgPermission(showClass.organization_id, "class.delete"),
+    getClassCodeOptions(supabase, showClass.organization_id),
   ]);
 
   return (
@@ -55,7 +58,7 @@ export default async function ClassDetailPage({
       </div>
 
       {canEdit && showEditable ? (
-        <EditClassForm showClass={showClass} />
+        <EditClassForm showClass={showClass} classCodeOptions={classCodeOptions} />
       ) : (
         <Card className="max-w-2xl">
           {!showEditable && (
@@ -77,6 +80,14 @@ export default async function ClassDetailPage({
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500 dark:text-zinc-400">Pattern</dt>
               <dd>{showClass.pattern_number ?? "—"}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-zinc-500 dark:text-zinc-400">Rule package code</dt>
+              <dd>
+                {showClass.linked_code
+                  ? `${showClass.linked_code.code} — ${showClass.linked_code.name}`
+                  : "—"}
+              </dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500 dark:text-zinc-400">Entry fee</dt>

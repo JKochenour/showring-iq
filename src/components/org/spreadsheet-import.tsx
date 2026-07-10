@@ -10,13 +10,14 @@ import { Alert, Button, ButtonLink, Card, Select } from "@/components/ui";
 type ImportRowResult = {
   row: number;
   name: string;
-  status: "created" | "skipped" | "error";
+  status: "created" | "skipped" | "updated" | "error";
   message?: string;
 };
 
 type ImportSummary = {
   created: number;
-  skipped: number;
+  skipped?: number;
+  updated?: number;
   errors: number;
   results: ImportRowResult[];
 };
@@ -25,20 +26,21 @@ const MAX_ROWS = 1000;
 const PREVIEW_ROWS = 8;
 
 export function SpreadsheetImport({
-  organizationId,
+  scopeId,
   backHref,
   entityLabelPlural,
   fields,
   sampleRow,
   runImport,
 }: {
-  organizationId: string;
+  /** The id passed as runImport's first argument — an org id, rule package id, etc. */
+  scopeId: string;
   backHref: string;
   entityLabelPlural: string;
   fields: ImportFieldConfig[];
   sampleRow: Record<string, string>;
   runImport: (
-    organizationId: string,
+    scopeId: string,
     rows: Record<string, string>[]
   ) => Promise<ImportSummary | { error?: string }>;
 }) {
@@ -105,7 +107,7 @@ export function SpreadsheetImport({
   function handleImport() {
     setSubmitError(undefined);
     startTransition(async () => {
-      const result = await runImport(organizationId, mappedRows());
+      const result = await runImport(scopeId, mappedRows());
       if ("error" in result && result.error) {
         setSubmitError(result.error);
         return;
@@ -120,7 +122,8 @@ export function SpreadsheetImport({
       <Card>
         <Alert tone={summary.errors > 0 ? "info" : "success"}>
           Imported {summary.created} {entityLabelPlural.toLowerCase()}
-          {summary.skipped > 0 ? `, skipped ${summary.skipped} already-existing` : ""}
+          {summary.updated ? `, updated ${summary.updated} existing` : ""}
+          {summary.skipped ? `, skipped ${summary.skipped} already-existing` : ""}
           {summary.errors > 0 ? `, ${summary.errors} row(s) had errors` : ""}.
         </Alert>
         {problems.length > 0 && (

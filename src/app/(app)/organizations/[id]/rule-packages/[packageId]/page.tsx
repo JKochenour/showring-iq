@@ -6,7 +6,7 @@ import {
   AddEligibilityRuleForm,
 } from "@/components/org/rule-package-forms";
 import { RulePackageStatusActions } from "@/components/org/rule-package-status";
-import { Card, EmptyState } from "@/components/ui";
+import { ButtonLink, Card, EmptyState } from "@/components/ui";
 import type {
   AssociationClassCode,
   AssociationEligibilityRule,
@@ -83,9 +83,19 @@ export default async function RulePackageDetailPage({
       </Card>
 
       <Card>
-        <h3 className="mb-4 text-base font-semibold">
-          Class codes ({codes.length})
-        </h3>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-base font-semibold">
+            Class codes ({codes.length})
+          </h3>
+          {canCreate && (
+            <ButtonLink
+              href={`/organizations/${id}/rule-packages/${packageId}/import-codes`}
+              variant="secondary"
+            >
+              Import from spreadsheet
+            </ButtonLink>
+          )}
+        </div>
         {codes.length === 0 ? (
           <EmptyState title="No class codes yet" />
         ) : (

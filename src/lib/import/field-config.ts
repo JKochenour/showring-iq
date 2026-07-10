@@ -5,6 +5,19 @@ export type ImportFieldConfig = {
   synonyms: string[];
 };
 
+export const CLASS_CODE_IMPORT_FIELDS: ImportFieldConfig[] = [
+  { key: "code", label: "Code", required: true, synonyms: ["code", "class code"] },
+  { key: "name", label: "Name", required: true, synonyms: ["name", "class name"] },
+  { key: "discipline", label: "Discipline", synonyms: ["discipline"] },
+  { key: "division", label: "Division", synonyms: ["division", "category"] },
+  { key: "isYouth", label: "Youth", synonyms: ["youth"] },
+  { key: "isAmateur", label: "Amateur", synonyms: ["amateur"] },
+  { key: "isOpen", label: "Open", synonyms: ["open"] },
+  { key: "isNonPro", label: "Non Pro", synonyms: ["non pro", "nonpro"] },
+  { key: "countsForPoints", label: "Counts for points", synonyms: ["counts for points", "points"] },
+  { key: "countsForMoney", label: "Counts for money", synonyms: ["counts for money", "money"] },
+];
+
 export const PEOPLE_IMPORT_FIELDS: ImportFieldConfig[] = [
   { key: "firstName", label: "First name", required: true, synonyms: ["first name", "first", "fname", "given name"] },
   { key: "lastName", label: "Last name", required: true, synonyms: ["last name", "last", "lname", "surname", "family name"] },

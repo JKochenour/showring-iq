@@ -44,6 +44,7 @@ export async function createClass(
       pattern_number: d.patternNumber ?? null,
       drag_every_n: d.dragEveryN ?? null,
       nrha_class_code: d.nrhaClassCode || null,
+      class_code_id: d.classCodeId || null,
       entry_fee_cents: dollarsToCents(d.entryFee ?? ""),
       added_money_cents: dollarsToCents(d.addedMoney ?? ""),
       scheduled_date: d.scheduledDate || null,
@@ -55,6 +56,9 @@ export async function createClass(
   if (error) {
     if (error.message.includes("classes_show_id_class_number_key")) {
       return { error: `Class number ${d.classNumber} is already used in this show.` };
+    }
+    if (error.message.includes("does not belong to this organization")) {
+      return { error: "That class code doesn't belong to this organization." };
     }
     return { error: error.message };
   }
@@ -106,6 +110,7 @@ export async function updateClass(
     pattern_number: d.patternNumber ?? null,
     drag_every_n: d.dragEveryN ?? null,
     nrha_class_code: d.nrhaClassCode || null,
+    class_code_id: d.classCodeId || null,
     entry_fee_cents: dollarsToCents(d.entryFee ?? ""),
     added_money_cents: dollarsToCents(d.addedMoney ?? ""),
     status: d.status,
@@ -122,6 +127,9 @@ export async function updateClass(
   if (error) {
     if (error.message.includes("classes_show_id_class_number_key")) {
       return { error: `Class number ${d.classNumber} is already used in this show.` };
+    }
+    if (error.message.includes("does not belong to this organization")) {
+      return { error: "That class code doesn't belong to this organization." };
     }
     return { error: error.message };
   }
