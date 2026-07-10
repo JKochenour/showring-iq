@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/authz";
 import { SignOutButton } from "@/components/sign-out-button";
 import { HelpChatWidget } from "@/components/help/help-chat-widget";
+import { OrgSidebarNav } from "@/components/org/org-sidebar-nav";
 
 export default async function AppLayout({
   children,
@@ -52,13 +53,7 @@ export default async function AppLayout({
                 Your organizations
               </p>
               {orgs.map((org) => (
-                <Link
-                  key={org.id}
-                  href={`/organizations/${org.id}`}
-                  className="block truncate rounded-md px-2 py-1.5 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                >
-                  {org.name}
-                </Link>
+                <OrgSidebarNav key={org.id} org={org} />
               ))}
             </div>
           )}
