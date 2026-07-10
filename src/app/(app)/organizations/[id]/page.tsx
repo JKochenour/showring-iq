@@ -17,6 +17,8 @@ export default async function OrganizationOverviewPage({
     { data: org },
     { count: memberCount },
     { count: showCount },
+    { count: peopleCount },
+    { count: horseCount },
     { data: myMembership },
   ] = await Promise.all([
     supabase.from("organizations").select("*").eq("id", id).maybeSingle(),
@@ -27,6 +29,14 @@ export default async function OrganizationOverviewPage({
       .eq("status", "active"),
     supabase
       .from("shows")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", id),
+    supabase
+      .from("people")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", id),
+    supabase
+      .from("horses")
       .select("id", { count: "exact", head: true })
       .eq("organization_id", id),
     supabase
@@ -58,6 +68,18 @@ export default async function OrganizationOverviewPage({
         <Card className="h-full transition-colors hover:border-emerald-600">
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Shows</p>
           <p className="mt-1 text-lg font-semibold">{showCount ?? 0}</p>
+        </Card>
+      </Link>
+      <Link href={`/organizations/${id}/people`}>
+        <Card className="h-full transition-colors hover:border-emerald-600">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">People</p>
+          <p className="mt-1 text-lg font-semibold">{peopleCount ?? 0}</p>
+        </Card>
+      </Link>
+      <Link href={`/organizations/${id}/horses`}>
+        <Card className="h-full transition-colors hover:border-emerald-600">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Horses</p>
+          <p className="mt-1 text-lg font-semibold">{horseCount ?? 0}</p>
         </Card>
       </Link>
       <Card className="sm:col-span-2 lg:col-span-3">

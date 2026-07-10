@@ -110,6 +110,72 @@ export interface ShowClass {
   created_at: string;
 }
 
+export interface Person {
+  id: string;
+  organization_id: string;
+  first_name: string;
+  last_name: string;
+  preferred_name: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  birthdate: string | null;
+  roles: string[];
+  notes: string | null;
+  created_at: string;
+}
+
+export interface PersonMembership {
+  id: string;
+  person_id: string;
+  association: string;
+  membership_number: string;
+  membership_type: string | null;
+  status: string;
+  expiration_date: string | null;
+  verified_at: string | null;
+  notes: string | null;
+}
+
+export interface Horse {
+  id: string;
+  organization_id: string;
+  registered_name: string;
+  barn_name: string | null;
+  breed: string | null;
+  sex: string | null;
+  color: string | null;
+  foal_year: number | null;
+  sire: string | null;
+  dam: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface HorseRegistration {
+  id: string;
+  horse_id: string;
+  association: string;
+  registration_number: string | null;
+  competition_license_number: string | null;
+  status: string;
+  expiration_date: string | null;
+  verified_at: string | null;
+  notes: string | null;
+}
+
+export interface HorseOwnership {
+  id: string;
+  horse_id: string;
+  owner_person_id: string;
+  percentage: number;
+  start_date: string | null;
+  end_date: string | null;
+  notes: string | null;
+  owner: Pick<Person, "id" | "first_name" | "last_name"> | null;
+}
+
 export interface AuditLogRow {
   id: number;
   actor_role: string | null;

@@ -16,6 +16,9 @@ in `supabase/migrations/` **in order**:
    RLS, and audited `create_show` / `set_show_status` RPCs
 3. [`00003_classes.sql`](supabase/migrations/00003_classes.sql) — classes
    with fees in integer cents, schedule order, full class-status enum, RLS
+4. [`00004_people_horses.sql`](supabase/migrations/00004_people_horses.sql) —
+   people (multi-role), association memberships, horses, registrations /
+   competition licenses, ownership records, RLS
 
 `00001_foundation.sql` creates:
 
@@ -94,6 +97,21 @@ Then:
   lifecycle — draws, scoring, official, exported — activates in later sprints)
 - Writes blocked by RLS when the show is locked or archived
 
-## Next: Sprint 4 — People & horses
+## What's in Sprint 4
 
-Riders, owners, trainers, horses, membership/license fields.
+- People tab: riders, owners, trainers, agents, guardians, judges — one
+  profile, multiple roles, saved at the organization level and reused across
+  shows
+- Association memberships per person (NRHA/AQHA/APHA/… number, type, status,
+  expiration) — the numbers exports will need
+- Horses tab: registered/barn name, breed, sex, color, foal year, sire/dam
+- Horse registrations & competition licenses per association
+- Ownership records linking horses to people (with percentages) — feeds Non
+  Pro/amateur eligibility checks later
+- Reads require `org.view` (judges/gate/announcer can't browse people's
+  contact info or birthdates); writes require the person/horse/membership/
+  ownership permissions
+
+## Next: Sprint 5 — Entries
+
+Create entry, horse/rider + class selection, back numbers, entry list/detail.

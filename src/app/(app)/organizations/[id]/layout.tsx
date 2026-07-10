@@ -24,6 +24,8 @@ export default async function OrganizationLayout({
   const tabs = [
     { href: `/organizations/${id}`, label: "Overview" },
     { href: `/organizations/${id}/shows`, label: "Shows" },
+    { href: `/organizations/${id}/people`, label: "People" },
+    { href: `/organizations/${id}/horses`, label: "Horses" },
     { href: `/organizations/${id}/members`, label: "Members" },
     { href: `/organizations/${id}/settings`, label: "Settings" },
     { href: `/organizations/${id}/audit`, label: "Audit log" },
