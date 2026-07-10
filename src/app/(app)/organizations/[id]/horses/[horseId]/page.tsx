@@ -11,9 +11,10 @@ import {
   AddOwnershipForm,
   AddRegistrationForm,
 } from "@/components/org/horse-managers";
+import { DocumentManager } from "@/components/org/document-manager";
 import { RemoveButton } from "@/components/remove-button";
 import { Card } from "@/components/ui";
-import type { Horse, HorseOwnership, HorseRegistration } from "@/lib/types";
+import type { DocumentRow, Horse, HorseOwnership, HorseRegistration } from "@/lib/types";
 
 export const metadata = { title: "Horse — ShowRing IQ" };
 
@@ -30,9 +31,14 @@ export default async function HorseDetailPage({
     { data: registrations },
     { data: ownerships },
     { data: owners },
+    { data: documents },
     canEdit,
     canEditMemberships,
     canEditOwnership,
+    canUploadDocs,
+    canVerifyDocs,
+    canRejectDocs,
+    canDeleteDocs,
   ] = await Promise.all([
     supabase
       .from("horses")
@@ -56,13 +62,23 @@ export default async function HorseDetailPage({
       .eq("organization_id", id)
       .contains("roles", ["owner"])
       .order("last_name"),
+    supabase
+      .from("documents")
+      .select("*")
+      .eq("horse_id", horseId)
+      .order("created_at", { ascending: false }),
     hasOrgPermission(id, "horse.edit"),
     hasOrgPermission(id, "membership.edit"),
     hasOrgPermission(id, "ownership.edit"),
+    hasOrgPermission(id, "document.upload"),
+    hasOrgPermission(id, "document.verify"),
+    hasOrgPermission(id, "document.reject"),
+    hasOrgPermission(id, "document.delete"),
   ]);
 
   if (!horse) notFound();
   const h = horse as Horse;
+  const documentRows = (documents as DocumentRow[]) ?? [];
   const regRows = (registrations as HorseRegistration[]) ?? [];
   const ownershipRows = (ownerships as unknown as HorseOwnership[]) ?? [];
   const ownerOptions =
@@ -189,6 +205,24 @@ export default async function HorseDetailPage({
             </p>
           )
         )}
+      </Card>
+
+      <Card>
+        <h3 className="mb-1 text-base font-semibold">Documents</h3>
+        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+          Coggins, health certificates, registration papers, and other
+          paperwork. Verified documents are included in the show&apos;s NRHA
+          submission package.
+        </p>
+        <DocumentManager
+          organizationId={id}
+          horseId={horseId}
+          documents={documentRows}
+          canUpload={canUploadDocs}
+          canVerify={canVerifyDocs}
+          canReject={canRejectDocs}
+          canDelete={canDeleteDocs}
+        />
       </Card>
 
       {canEdit && (

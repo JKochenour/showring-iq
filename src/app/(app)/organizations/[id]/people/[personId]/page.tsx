@@ -7,9 +7,10 @@ import {
 } from "@/app/(app)/organizations/[id]/people/actions";
 import { EditPersonForm } from "@/components/org/person-form";
 import { AddMembershipForm } from "@/components/org/membership-manager";
+import { DocumentManager } from "@/components/org/document-manager";
 import { RemoveButton } from "@/components/remove-button";
 import { Card } from "@/components/ui";
-import type { Person, PersonMembership } from "@/lib/types";
+import type { DocumentRow, Person, PersonMembership } from "@/lib/types";
 
 export const metadata = { title: "Person — ShowRing IQ" };
 
@@ -21,26 +22,45 @@ export default async function PersonDetailPage({
   const { id, personId } = await params;
   const { supabase } = await requireUser();
 
-  const [{ data: person }, { data: memberships }, canEdit, canEditMemberships] =
-    await Promise.all([
-      supabase
-        .from("people")
-        .select("*")
-        .eq("id", personId)
-        .eq("organization_id", id)
-        .maybeSingle(),
-      supabase
-        .from("person_memberships")
-        .select("*")
-        .eq("person_id", personId)
-        .order("association"),
-      hasOrgPermission(id, "person.edit"),
-      hasOrgPermission(id, "membership.edit"),
-    ]);
+  const [
+    { data: person },
+    { data: memberships },
+    { data: documents },
+    canEdit,
+    canEditMemberships,
+    canUploadDocs,
+    canVerifyDocs,
+    canRejectDocs,
+    canDeleteDocs,
+  ] = await Promise.all([
+    supabase
+      .from("people")
+      .select("*")
+      .eq("id", personId)
+      .eq("organization_id", id)
+      .maybeSingle(),
+    supabase
+      .from("person_memberships")
+      .select("*")
+      .eq("person_id", personId)
+      .order("association"),
+    supabase
+      .from("documents")
+      .select("*")
+      .eq("person_id", personId)
+      .order("created_at", { ascending: false }),
+    hasOrgPermission(id, "person.edit"),
+    hasOrgPermission(id, "membership.edit"),
+    hasOrgPermission(id, "document.upload"),
+    hasOrgPermission(id, "document.verify"),
+    hasOrgPermission(id, "document.reject"),
+    hasOrgPermission(id, "document.delete"),
+  ]);
 
   if (!person) notFound();
   const p = person as Person;
   const membershipRows = (memberships as PersonMembership[]) ?? [];
+  const documentRows = (documents as DocumentRow[]) ?? [];
 
   return (
     <div className="space-y-6">
@@ -106,6 +126,23 @@ export default async function PersonDetailPage({
             </p>
           )
         )}
+      </Card>
+
+      <Card>
+        <h3 className="mb-1 text-base font-semibold">Documents</h3>
+        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+          Membership cards, non-pro declarations, and other paperwork. Verified
+          documents are included in the show&apos;s NRHA submission package.
+        </p>
+        <DocumentManager
+          organizationId={id}
+          personId={personId}
+          documents={documentRows}
+          canUpload={canUploadDocs}
+          canVerify={canVerifyDocs}
+          canReject={canRejectDocs}
+          canDelete={canDeleteDocs}
+        />
       </Card>
 
       {canEdit && (

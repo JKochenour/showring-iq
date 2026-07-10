@@ -303,6 +303,39 @@ export interface Result {
   manual_override: boolean;
 }
 
+export type DocumentType =
+  | "membership_card"
+  | "competition_license"
+  | "coggins"
+  | "health_certificate"
+  | "non_pro_declaration"
+  | "ownership_transfer"
+  | "show_card"
+  | "other";
+
+export type DocumentStatus = "pending" | "verified" | "rejected";
+
+export interface DocumentRow {
+  id: string;
+  organization_id: string;
+  person_id: string | null;
+  horse_id: string | null;
+  show_id: string | null;
+  document_type: DocumentType;
+  file_path: string;
+  file_name: string;
+  file_size_bytes: number | null;
+  mime_type: string | null;
+  expiration_date: string | null;
+  status: DocumentStatus;
+  rejection_reason: string | null;
+  verified_by: string | null;
+  verified_at: string | null;
+  uploaded_by: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 export interface AuditLogRow {
   id: number;
   actor_role: string | null;
