@@ -27,6 +27,7 @@ export default async function ShowLayout({
 
   const tabs = [
     { href: `/shows/${id}/dashboard`, label: "Dashboard" },
+    { href: `/shows/${id}/classes`, label: "Classes" },
     { href: `/shows/${id}/staff`, label: "Staff" },
     { href: `/shows/${id}/settings`, label: "Settings" },
   ];

@@ -1,0 +1,68 @@
+import { z } from "zod";
+import { MONEY_PATTERN } from "@/lib/money";
+
+/** Class statuses a user can set directly in Sprint 3. Later stages
+ * (draw_posted, scoring, official, …) are driven by their own workflows. */
+export const CLASS_STATUS_OPTIONS = [
+  { value: "draft", label: "Draft" },
+  { value: "open", label: "Open for entries" },
+  { value: "entry_closed", label: "Entry closed" },
+  { value: "cancelled", label: "Cancelled" },
+] as const;
+
+export const DISCIPLINES = [
+  "Reining",
+  "Ranch Riding",
+  "Cow Horse",
+  "Cutting",
+  "Western Pleasure",
+  "Trail",
+  "Other",
+] as const;
+
+const money = z
+  .string()
+  .trim()
+  .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00")
+  .or(z.literal(""));
+
+const optionalInt = (max: number) =>
+  z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.coerce.number().int("Whole numbers only").min(1).max(max).optional()
+  );
+
+const classFields = {
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(160),
+  classNumber: z.coerce
+    .number("Enter the class number")
+    .int("Whole numbers only")
+    .min(1)
+    .max(9999),
+  discipline: z.string().trim().max(80).optional(),
+  division: z.string().trim().max(80).optional(),
+  patternNumber: optionalInt(999),
+  entryFee: money,
+  addedMoney: money,
+  scheduledDate: z.iso.date("Enter a valid date").or(z.literal("")).optional(),
+  notes: z.string().trim().max(1000).optional(),
+};
+
+export const createClassSchema = z.object({
+  showId: z.uuid(),
+  ...classFields,
+});
+
+export const updateClassSchema = z.object({
+  classId: z.uuid(),
+  status: z.enum(
+    CLASS_STATUS_OPTIONS.map((s) => s.value) as [string, ...string[]]
+  ),
+  ...classFields,
+});
+
+export type CreateClassInput = z.infer<typeof createClassSchema>;
+export type UpdateClassInput = z.infer<typeof updateClassSchema>;
+// Raw form-value types (before zod coercion of numeric fields)
+export type CreateClassFormValues = z.input<typeof createClassSchema>;
+export type UpdateClassFormValues = z.input<typeof updateClassSchema>;

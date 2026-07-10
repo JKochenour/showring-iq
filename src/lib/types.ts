@@ -76,6 +76,40 @@ export interface ShowStaffRow {
   profile: { email: string; full_name: string | null } | null;
 }
 
+export type ClassStatus =
+  | "draft"
+  | "open"
+  | "entry_closed"
+  | "draw_posted"
+  | "in_progress"
+  | "scoring"
+  | "pending_verification"
+  | "official"
+  | "results_posted"
+  | "exported"
+  | "archived"
+  | "cancelled";
+
+export interface ShowClass {
+  id: string;
+  show_id: string;
+  organization_id: string;
+  class_number: number;
+  display_order: number;
+  name: string;
+  discipline: string | null;
+  division: string | null;
+  pattern_number: number | null;
+  go_type: string;
+  go_number: number;
+  entry_fee_cents: number;
+  added_money_cents: number;
+  status: ClassStatus;
+  scheduled_date: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 export interface AuditLogRow {
   id: number;
   actor_role: string | null;

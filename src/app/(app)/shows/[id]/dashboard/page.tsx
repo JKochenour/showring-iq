@@ -24,14 +24,19 @@ export default async function ShowDashboardPage({
   const { id } = await params;
   const { supabase } = await requireUser();
 
-  const [{ data: show }, { data: staff }] = await Promise.all([
-    supabase.from("shows").select("*").eq("id", id).maybeSingle(),
-    supabase
-      .from("show_staff")
-      .select("id, display_name, staff_role")
-      .eq("show_id", id)
-      .order("created_at"),
-  ]);
+  const [{ data: show }, { data: staff }, { count: classCount }] =
+    await Promise.all([
+      supabase.from("shows").select("*").eq("id", id).maybeSingle(),
+      supabase
+        .from("show_staff")
+        .select("id, display_name, staff_role")
+        .eq("show_id", id)
+        .order("created_at"),
+      supabase
+        .from("classes")
+        .select("id", { count: "exact", head: true })
+        .eq("show_id", id),
+    ]);
 
   if (!show) notFound();
   const s = show as Show;
@@ -75,10 +80,12 @@ export default async function ShowDashboardPage({
           </p>
         </Card>
       </Link>
-      <Card className="border-dashed">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Classes</p>
-        <p className="mt-1 text-lg font-semibold text-zinc-400">Sprint 3</p>
-      </Card>
+      <Link href={`/shows/${id}/classes`}>
+        <Card className="h-full transition-colors hover:border-emerald-600">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Classes</p>
+          <p className="mt-1 text-lg font-semibold">{classCount ?? 0}</p>
+        </Card>
+      </Link>
       <Card className="border-dashed">
         <p className="text-sm text-zinc-500 dark:text-zinc-400">Entries</p>
         <p className="mt-1 text-lg font-semibold text-zinc-400">Sprint 5</p>

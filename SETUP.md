@@ -14,6 +14,8 @@ in `supabase/migrations/` **in order**:
 2. [`00002_shows.sql`](supabase/migrations/00002_shows.sql) — shows with a
    draft → published → locked → archived lifecycle, show staff assignment,
    RLS, and audited `create_show` / `set_show_status` RPCs
+3. [`00003_classes.sql`](supabase/migrations/00003_classes.sql) — classes
+   with fees in integer cents, schedule order, full class-status enum, RLS
 
 `00001_foundation.sql` creates:
 
@@ -82,6 +84,16 @@ Then:
   vets, farriers) by name, with per-show roles
 - Locked/archived shows are read-only, enforced by RLS — not just the UI
 
-## Next: Sprint 3 — Classes
+## What's in Sprint 3
 
-Class CRUD, class list/detail, fees, schedule order.
+- Classes tab on each show: add/edit/delete classes with local class number,
+  name, discipline, division, pattern number
+- Fees as integer cents (entry fee, added money) — never floats
+- Schedule order with move up/down, auto-appended on create
+- Class statuses (draft / open / entry closed / cancelled now; the rest of the
+  lifecycle — draws, scoring, official, exported — activates in later sprints)
+- Writes blocked by RLS when the show is locked or archived
+
+## Next: Sprint 4 — People & horses
+
+Riders, owners, trainers, horses, membership/license fields.
