@@ -13,7 +13,7 @@ create table public.results (
   class_id uuid not null references public.classes (id) on delete cascade,
   show_id uuid not null references public.shows (id) on delete cascade,
   organization_id uuid not null references public.organizations (id) on delete cascade,
-  placing integer check (placing > 0),
+  "placing" integer check ("placing" > 0),
   tie_status text not null default 'none' check (tie_status in ('none', 'tied')),
   money_won_cents integer not null default 0 check (money_won_cents >= 0),
   manual_override boolean not null default false,
@@ -21,7 +21,7 @@ create table public.results (
   updated_at timestamptz not null default now()
 );
 
-create index results_class_idx on public.results (class_id, placing);
+create index results_class_idx on public.results (class_id, "placing");
 
 alter table public.results enable row level security;
 
@@ -74,17 +74,17 @@ begin
       and s.result_status in ('shown', 'zero')
       and s.total_score_tenths is not null
   )
-  insert into public.results (entry_class_id, class_id, show_id, organization_id, placing, tie_status)
+  insert into public.results (entry_class_id, class_id, show_id, organization_id, "placing", tie_status)
   select r.entry_class_id, p_class, v_class.show_id, v_class.organization_id,
          r.computed_placing, case when r.tie_count > 1 then 'tied' else 'none' end
   from ranked r
   on conflict (entry_class_id) do update set
-    placing = excluded.placing,
+    "placing" = excluded."placing",
     tie_status = excluded.tie_status,
     updated_at = now()
   where public.results.manual_override = false;
 
-  insert into public.results (entry_class_id, class_id, show_id, organization_id, placing, tie_status)
+  insert into public.results (entry_class_id, class_id, show_id, organization_id, "placing", tie_status)
   select ec.id, p_class, v_class.show_id, v_class.organization_id, null, 'none'
   from public.entry_classes ec
   left join public.scores s on s.entry_class_id = ec.id
@@ -93,7 +93,7 @@ begin
       s.result_status in ('shown', 'zero') and s.total_score_tenths is not null
     )
   on conflict (entry_class_id) do update set
-    placing = null, tie_status = 'none', updated_at = now()
+    "placing" = null, tie_status = 'none', updated_at = now()
   where public.results.manual_override = false;
 
   perform public.log_audit(v_class.organization_id, 'results.calculated', 'class', p_class::text,
@@ -135,13 +135,13 @@ begin
 
   select * into v_old from public.results where entry_class_id = p_entry_class;
 
-  insert into public.results (entry_class_id, class_id, show_id, organization_id, placing, manual_override)
+  insert into public.results (entry_class_id, class_id, show_id, organization_id, "placing", manual_override)
   values (p_entry_class, v_ec.class_id, v_ec.show_id, v_ec.organization_id, p_placing, true)
   on conflict (entry_class_id) do update set
-    placing = p_placing, manual_override = true, updated_at = now();
+    "placing" = p_placing, manual_override = true, updated_at = now();
 
   perform public.log_audit(v_class.organization_id, 'result.placing_corrected', 'result', p_entry_class::text,
-    jsonb_build_object('placing', v_old.placing, 'correction_type', 'placing_correction'),
+    jsonb_build_object('placing', v_old."placing", 'correction_type', 'placing_correction'),
     jsonb_build_object('placing', p_placing),
     p_reason);
 end;

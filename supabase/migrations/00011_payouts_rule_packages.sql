@@ -80,20 +80,20 @@ begin
   -- Combined percent for each distinct placing value present in results,
   -- split evenly across every entry sharing that placing (tie split).
   with schedule_rows as (
-    select (elem->>'placing')::int as placing, (elem->>'percent')::numeric as percent
+    select (elem->>'placing')::int as "placing", (elem->>'percent')::numeric as percent
     from jsonb_array_elements(v_schedule) elem
   ),
   placing_totals as (
-    select r.placing, count(*) as n_tied, sum(sr.percent) as percent_sum
+    select r."placing", count(*) as n_tied, sum(sr.percent) as percent_sum
     from public.results r
-    join schedule_rows sr on sr.placing = r.placing
-    where r.class_id = p_class and r.placing is not null
-    group by r.placing
+    join schedule_rows sr on sr."placing" = r."placing"
+    where r.class_id = p_class and r."placing" is not null
+    group by r."placing"
   )
   update public.results r
   set money_won_cents = round(v_pool_cents * pt.percent_sum / 100.0 / pt.n_tied)
   from placing_totals pt
-  where r.class_id = p_class and r.placing = pt.placing;
+  where r.class_id = p_class and r."placing" = pt."placing";
 
   perform public.log_audit(v_class.organization_id, 'payout.calculated', 'class', p_class::text,
     null, jsonb_build_object('pool_cents', v_pool_cents, 'retainage_percent', v_class.retainage_percent));
