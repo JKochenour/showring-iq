@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/authz";
 import { Card } from "@/components/ui";
+import { loadValidatedEntries } from "@/lib/validate-entries";
 import { STAFF_ROLES } from "@/lib/validation/show";
 import type { Show, ShowStaffRow } from "@/lib/types";
 
@@ -24,24 +25,37 @@ export default async function ShowDashboardPage({
   const { id } = await params;
   const { supabase } = await requireUser();
 
-  const [{ data: show }, { data: staff }, { count: classCount }, { count: entryCount }] =
-    await Promise.all([
-      supabase.from("shows").select("*").eq("id", id).maybeSingle(),
-      supabase
-        .from("show_staff")
-        .select("id, display_name, staff_role")
-        .eq("show_id", id)
-        .order("created_at"),
-      supabase
-        .from("classes")
-        .select("id", { count: "exact", head: true })
-        .eq("show_id", id),
-      supabase
-        .from("entries")
-        .select("id", { count: "exact", head: true })
-        .eq("show_id", id)
-        .eq("status", "active"),
-    ]);
+  const [
+    { data: show },
+    { data: staff },
+    { count: classCount },
+    { entries: validatedEntries },
+  ] = await Promise.all([
+    supabase.from("shows").select("*").eq("id", id).maybeSingle(),
+    supabase
+      .from("show_staff")
+      .select("id, display_name, staff_role")
+      .eq("show_id", id)
+      .order("created_at"),
+    supabase
+      .from("classes")
+      .select("id", { count: "exact", head: true })
+      .eq("show_id", id),
+    loadValidatedEntries(supabase, id),
+  ]);
+
+  const activeEntries = validatedEntries.filter(
+    (v) => v.entry.status === "active"
+  );
+  const entryCount = activeEntries.length;
+  const checkedInCount = activeEntries.filter(
+    (v) => v.entry.checked_in_at
+  ).length;
+  const issueCount = activeEntries.reduce(
+    (sum, v) =>
+      sum + v.issues.filter((issue) => issue.severity !== "info").length,
+    0
+  );
 
   if (!show) notFound();
   const s = show as Show;
@@ -94,7 +108,31 @@ export default async function ShowDashboardPage({
       <Link href={`/shows/${id}/entries`}>
         <Card className="h-full transition-colors hover:border-emerald-600">
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Entries</p>
-          <p className="mt-1 text-lg font-semibold">{entryCount ?? 0}</p>
+          <p className="mt-1 text-lg font-semibold">{entryCount}</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            {checkedInCount} checked in
+          </p>
+        </Card>
+      </Link>
+      <Link href={`/shows/${id}/issues`}>
+        <Card
+          className={`h-full transition-colors hover:border-emerald-600 ${
+            issueCount > 0 ? "border-amber-300 dark:border-amber-800" : ""
+          }`}
+        >
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Validation issues
+          </p>
+          <p
+            className={`mt-1 text-lg font-semibold ${
+              issueCount > 0 ? "text-amber-700 dark:text-amber-400" : ""
+            }`}
+          >
+            {issueCount}
+          </p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            warnings &amp; blockers
+          </p>
         </Card>
       </Link>
       <Card className="border-dashed">

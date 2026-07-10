@@ -191,6 +191,7 @@ export interface Entry {
   trainer_name: string | null;
   status: "active" | "scratched";
   notes: string | null;
+  checked_in_at: string | null;
   created_at: string;
 }
 

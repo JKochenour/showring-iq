@@ -9,8 +9,10 @@ import {
   ScratchClassButton,
 } from "@/components/show/entry-detail-controls";
 import { RemoveButton } from "@/components/remove-button";
+import { IssueList } from "@/components/show/issue-badges";
 import { Alert, Card } from "@/components/ui";
 import { formatCents } from "@/lib/money";
+import { loadValidatedEntries } from "@/lib/validate-entries";
 import type { Entry, EntryClassRow, Show, ShowClass } from "@/lib/types";
 
 export const metadata = { title: "Entry — ShowRing IQ" };
@@ -40,6 +42,7 @@ export default async function EntryDetailPage({
     { data: entryClasses },
     { data: backNumber },
     { data: allClasses },
+    { entries: validatedEntries },
     canEdit,
     canScratch,
     canReinstate,
@@ -63,6 +66,7 @@ export default async function EntryDetailPage({
       .eq("show_id", id)
       .not("status", "in", "(cancelled,archived)")
       .order("display_order"),
+    loadValidatedEntries(supabase, id),
     hasOrgPermission(e.organization_id, "entry.edit"),
     hasOrgPermission(e.organization_id, "entry.scratch"),
     hasOrgPermission(e.organization_id, "entry.reinstate"),
@@ -83,6 +87,9 @@ export default async function EntryDetailPage({
   const feeTotal = classRows
     .filter((ec) => ec.status === "entered")
     .reduce((sum, ec) => sum + ec.fee_cents, 0);
+
+  const issues =
+    validatedEntries.find((v) => v.entry.id === entryId)?.issues ?? [];
 
   return (
     <div className="space-y-6">
@@ -115,6 +122,13 @@ export default async function EntryDetailPage({
         <Alert tone="info">
           This show is {showStatus}; the entry is read-only.
         </Alert>
+      )}
+
+      {issues.length > 0 && (
+        <Card className="border-amber-200 dark:border-amber-900">
+          <h3 className="mb-3 text-base font-semibold">Validation</h3>
+          <IssueList issues={issues} />
+        </Card>
       )}
 
       <Card>

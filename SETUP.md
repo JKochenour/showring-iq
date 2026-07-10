@@ -23,6 +23,9 @@ in `supabase/migrations/` **in order**:
    (per-show entry numbers, name snapshots), entry_classes (fee snapshots,
    scratch status), back_numbers (unique per show, RPC-only writes), audited
    scratch/reinstate/back-number RPCs
+6. [`00006_checkin_validation.sql`](supabase/migrations/00006_checkin_validation.sql) —
+   check-in state on entries with audited check-in/undo RPCs (overrides
+   require a reason)
 
 `00001_foundation.sql` creates:
 
@@ -129,7 +132,20 @@ Then:
 - People/horses/classes with entries can't be deleted (friendly errors point
   to scratching/cancelling instead)
 
-## Next: Sprint 6 — Check-in & validation
+## What's in Sprint 6
 
-Missing-info flags, basic eligibility, check-in screen, missing paperwork
-dashboard.
+- Validation engine: rules as data (code/severity/predicate) with the
+  info/warning/blocking/critical severity ladder; NRHA is the default
+  required association until rule packages arrive
+- Checks: missing/expired rider memberships, missing/expired horse
+  registrations, no back number (blocking), no entered classes, no owner,
+  missing birthdate, no ownership records
+- Issues tab: severity counts and a per-entry breakdown across the show
+- Check-in tab: one-tap check-in/undo; blocking issues require an override
+  reason, recorded in the audit log
+- Validation surfaces on the entry detail page and the show dashboard
+  (issue count and checked-in count cards)
+
+## Next: Sprint 7 — Draws & gate
+
+Draw generation, manual reorder, gate screen, announcer screen.
