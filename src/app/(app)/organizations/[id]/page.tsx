@@ -13,21 +13,29 @@ export default async function OrganizationOverviewPage({
   const { id } = await params;
   const { supabase, user } = await requireUser();
 
-  const [{ data: org }, { count: memberCount }, { data: myMembership }] =
-    await Promise.all([
-      supabase.from("organizations").select("*").eq("id", id).maybeSingle(),
-      supabase
-        .from("organization_members")
-        .select("id", { count: "exact", head: true })
-        .eq("organization_id", id)
-        .eq("status", "active"),
-      supabase
-        .from("organization_members")
-        .select("role:organization_roles(name)")
-        .eq("organization_id", id)
-        .eq("user_id", user.id)
-        .maybeSingle(),
-    ]);
+  const [
+    { data: org },
+    { count: memberCount },
+    { count: showCount },
+    { data: myMembership },
+  ] = await Promise.all([
+    supabase.from("organizations").select("*").eq("id", id).maybeSingle(),
+    supabase
+      .from("organization_members")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", id)
+      .eq("status", "active"),
+    supabase
+      .from("shows")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", id),
+    supabase
+      .from("organization_members")
+      .select("role:organization_roles(name)")
+      .eq("organization_id", id)
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
 
   if (!org) notFound();
 
@@ -46,12 +54,12 @@ export default async function OrganizationOverviewPage({
           <p className="mt-1 text-lg font-semibold">{memberCount ?? 0}</p>
         </Card>
       </Link>
-      <Card className="border-dashed">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Shows</p>
-        <p className="mt-1 text-lg font-semibold text-zinc-400">
-          Coming in Sprint 2
-        </p>
-      </Card>
+      <Link href={`/organizations/${id}/shows`}>
+        <Card className="h-full transition-colors hover:border-emerald-600">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Shows</p>
+          <p className="mt-1 text-lg font-semibold">{showCount ?? 0}</p>
+        </Card>
+      </Link>
       <Card className="sm:col-span-2 lg:col-span-3">
         <h2 className="mb-2 text-base font-semibold">Details</h2>
         <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">

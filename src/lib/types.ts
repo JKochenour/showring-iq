@@ -44,6 +44,38 @@ export interface PendingInvite {
   created_at: string;
 }
 
+export type ShowStatus = "draft" | "published" | "locked" | "archived";
+
+export interface Show {
+  id: string;
+  organization_id: string;
+  name: string;
+  slug: string;
+  status: ShowStatus;
+  start_date: string;
+  end_date: string;
+  timezone: string;
+  venue_name: string | null;
+  city: string | null;
+  state: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  description: string | null;
+  created_at: string;
+}
+
+export interface ShowStaffRow {
+  id: string;
+  show_id: string;
+  user_id: string | null;
+  display_name: string;
+  staff_role: string;
+  notes: string | null;
+  created_at: string;
+  profile: { email: string; full_name: string | null } | null;
+}
+
 export interface AuditLogRow {
   id: number;
   actor_role: string | null;

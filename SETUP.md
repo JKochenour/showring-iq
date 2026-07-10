@@ -5,11 +5,17 @@
 1. Go to [supabase.com](https://supabase.com) → New project (any name, e.g. `showring-iq`).
 2. Wait for the project to provision.
 
-## 2. Run the database migration
+## 2. Run the database migrations
 
-Open your project's **SQL Editor** in the Supabase dashboard, paste the entire
-contents of [`supabase/migrations/00001_foundation.sql`](supabase/migrations/00001_foundation.sql),
-and run it. It creates:
+Open your project's **SQL Editor** in the Supabase dashboard and run each file
+in `supabase/migrations/` **in order**:
+
+1. [`00001_foundation.sql`](supabase/migrations/00001_foundation.sql)
+2. [`00002_shows.sql`](supabase/migrations/00002_shows.sql) — shows with a
+   draft → published → locked → archived lifecycle, show staff assignment,
+   RLS, and audited `create_show` / `set_show_status` RPCs
+
+`00001_foundation.sql` creates:
 
 - `profiles` (auto-created for every new signup via trigger)
 - `organizations`, `organization_members`, `organization_invites`
@@ -67,6 +73,15 @@ Then:
   Secretary, Assistant Secretary, Judge, Gate, Announcer, Treasurer, Score Verifier)
 - Audit log (viewable with `audit.view` permission)
 
-## Next: Sprint 2 — Show creation
+## What's in Sprint 2
 
-Create show, show dashboard, settings, staff assignment.
+- Shows: create (org → Shows tab), dashboard, settings
+- Status lifecycle: draft ↔ published → locked (unlock requires a reason,
+  audited) → archived; drafts can be deleted with `show.delete`
+- Staff assignment: link organization members or add outside people (judges,
+  vets, farriers) by name, with per-show roles
+- Locked/archived shows are read-only, enforced by RLS — not just the UI
+
+## Next: Sprint 3 — Classes
+
+Class CRUD, class list/detail, fees, schedule order.

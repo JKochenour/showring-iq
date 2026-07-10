@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/authz";
+import { StatusBadge } from "@/components/show/show-status-actions";
+import type { Show } from "@/lib/types";
 
-export default async function OrganizationLayout({
+export default async function ShowLayout({
   children,
   params,
 }: {
@@ -12,21 +14,21 @@ export default async function OrganizationLayout({
   const { id } = await params;
   const { supabase } = await requireUser();
 
-  // RLS: non-members get no row back
-  const { data: org } = await supabase
-    .from("organizations")
-    .select("id, name, slug")
+  const { data: show } = await supabase
+    .from("shows")
+    .select("id, name, status, organization_id, organization:organizations(name)")
     .eq("id", id)
     .maybeSingle();
 
-  if (!org) notFound();
+  if (!show) notFound();
+
+  const orgName =
+    (show.organization as unknown as { name: string } | null)?.name ?? "";
 
   const tabs = [
-    { href: `/organizations/${id}`, label: "Overview" },
-    { href: `/organizations/${id}/shows`, label: "Shows" },
-    { href: `/organizations/${id}/members`, label: "Members" },
-    { href: `/organizations/${id}/settings`, label: "Settings" },
-    { href: `/organizations/${id}/audit`, label: "Audit log" },
+    { href: `/shows/${id}/dashboard`, label: "Dashboard" },
+    { href: `/shows/${id}/staff`, label: "Staff" },
+    { href: `/shows/${id}/settings`, label: "Settings" },
   ];
 
   return (
@@ -36,9 +38,19 @@ export default async function OrganizationLayout({
           <Link href="/organizations" className="hover:underline">
             Organizations
           </Link>{" "}
-          / {org.name}
+          /{" "}
+          <Link
+            href={`/organizations/${show.organization_id}/shows`}
+            className="hover:underline"
+          >
+            {orgName}
+          </Link>{" "}
+          / {show.name}
         </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">{org.name}</h1>
+        <div className="mt-1 flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">{show.name}</h1>
+          <StatusBadge status={show.status as Show["status"]} />
+        </div>
         <nav className="mt-4 flex gap-1 border-b border-zinc-200 dark:border-zinc-800">
           {tabs.map((tab) => (
             <Link
