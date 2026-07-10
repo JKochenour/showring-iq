@@ -413,3 +413,66 @@ export async function bulkImportPeople(
   revalidatePath(`/organizations/${organizationId}/people`);
   return { created, skipped, errors, results };
 }
+
+export type BulkDeleteRowResult = { name: string; status: "deleted" | "error"; message?: string };
+export type BulkDeleteSummary = { deleted: number; failed: number; results: BulkDeleteRowResult[] };
+
+export async function bulkDeletePeople(
+  organizationId: string,
+  personIds: string[]
+): Promise<BulkDeleteSummary | ActionResult> {
+  if (!(await hasOrgPermission(organizationId, "person.edit"))) {
+    return { error: "You don't have permission to delete people in this organization." };
+  }
+
+  const supabase = await createClient();
+  const ids = Array.from(new Set(personIds)).slice(0, MAX_IMPORT_ROWS);
+
+  const results: BulkDeleteRowResult[] = [];
+  const deletedNames: string[] = [];
+
+  for (const personId of ids) {
+    const { data: person } = await supabase
+      .from("people")
+      .select("first_name, last_name")
+      .eq("id", personId)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+    const name = person ? `${person.first_name} ${person.last_name}` : personId;
+
+    const { data: removed, error } = await supabase
+      .from("people")
+      .delete()
+      .eq("id", personId)
+      .eq("organization_id", organizationId)
+      .select("id");
+
+    if (error) {
+      const message = error.message.includes("violates foreign key constraint")
+        ? "Has show entries — scratch their entries first"
+        : error.message;
+      results.push({ name, status: "error", message });
+      continue;
+    }
+    if (!removed || removed.length === 0) {
+      results.push({ name, status: "error", message: "Not deleted — check permissions." });
+      continue;
+    }
+    deletedNames.push(name);
+    results.push({ name, status: "deleted" });
+  }
+
+  if (deletedNames.length > 0) {
+    await supabase.rpc("log_audit", {
+      p_org: organizationId,
+      p_action: "person.bulk_deleted",
+      p_entity_type: "people",
+      p_entity_id: null,
+      p_old: { count: deletedNames.length, names: deletedNames.slice(0, 100) },
+      p_new: null,
+    });
+  }
+
+  revalidatePath(`/organizations/${organizationId}/people`);
+  return { deleted: deletedNames.length, failed: results.length - deletedNames.length, results };
+}

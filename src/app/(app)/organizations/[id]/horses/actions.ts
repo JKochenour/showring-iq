@@ -585,3 +585,66 @@ export async function bulkImportHorses(
   revalidatePath(`/organizations/${organizationId}/horses`);
   return { created, skipped, errors, results };
 }
+
+export type BulkDeleteRowResult = { name: string; status: "deleted" | "error"; message?: string };
+export type BulkDeleteSummary = { deleted: number; failed: number; results: BulkDeleteRowResult[] };
+
+export async function bulkDeleteHorses(
+  organizationId: string,
+  horseIds: string[]
+): Promise<BulkDeleteSummary | ActionResult> {
+  if (!(await hasOrgPermission(organizationId, "horse.edit"))) {
+    return { error: "You don't have permission to delete horses in this organization." };
+  }
+
+  const supabase = await createClient();
+  const ids = Array.from(new Set(horseIds)).slice(0, MAX_IMPORT_ROWS);
+
+  const results: BulkDeleteRowResult[] = [];
+  const deletedNames: string[] = [];
+
+  for (const horseId of ids) {
+    const { data: horse } = await supabase
+      .from("horses")
+      .select("registered_name")
+      .eq("id", horseId)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+    const name = horse?.registered_name ?? horseId;
+
+    const { data: removed, error } = await supabase
+      .from("horses")
+      .delete()
+      .eq("id", horseId)
+      .eq("organization_id", organizationId)
+      .select("id");
+
+    if (error) {
+      const message = error.message.includes("violates foreign key constraint")
+        ? "Has show entries — scratch its entries first"
+        : error.message;
+      results.push({ name, status: "error", message });
+      continue;
+    }
+    if (!removed || removed.length === 0) {
+      results.push({ name, status: "error", message: "Not deleted — check permissions." });
+      continue;
+    }
+    deletedNames.push(name);
+    results.push({ name, status: "deleted" });
+  }
+
+  if (deletedNames.length > 0) {
+    await supabase.rpc("log_audit", {
+      p_org: organizationId,
+      p_action: "horse.bulk_deleted",
+      p_entity_type: "horses",
+      p_entity_id: null,
+      p_old: { count: deletedNames.length, names: deletedNames.slice(0, 100) },
+      p_new: null,
+    });
+  }
+
+  revalidatePath(`/organizations/${organizationId}/horses`);
+  return { deleted: deletedNames.length, failed: results.length - deletedNames.length, results };
+}

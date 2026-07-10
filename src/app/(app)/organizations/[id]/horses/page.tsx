@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
-import { ButtonLink, Card, EmptyState, PageHeader } from "@/components/ui";
+import { ButtonLink, EmptyState, PageHeader } from "@/components/ui";
+import { HorsesTable, type HorseRow } from "@/components/org/horses-table";
 import type { Horse, HorseOwnership, HorseRegistration } from "@/lib/types";
 
 export const metadata = { title: "Horses — ShowRing IQ" };
@@ -20,6 +20,7 @@ export default async function HorsesPage({
     { data: registrations },
     { data: ownerships },
     canCreate,
+    canDelete,
   ] = await Promise.all([
     supabase.from("organizations").select("id").eq("id", id).maybeSingle(),
     supabase
@@ -36,11 +37,12 @@ export default async function HorsesPage({
       .select("horse_id, percentage, owner:people(id, first_name, last_name)")
       .eq("organization_id", id),
     hasOrgPermission(id, "horse.create"),
+    hasOrgPermission(id, "horse.edit"),
   ]);
 
   if (!org) notFound();
 
-  const rows = (horses as Horse[]) ?? [];
+  const horseRows = (horses as Horse[]) ?? [];
 
   const regsByHorse = new Map<string, string[]>();
   for (const r of (registrations as Pick<
@@ -66,6 +68,18 @@ export default async function HorsesPage({
     );
     ownersByHorse.set(o.horse_id, list);
   }
+
+  const rows: HorseRow[] = horseRows.map((horse) => ({
+    id: horse.id,
+    registeredName: horse.registered_name,
+    barnName: horse.barn_name,
+    details:
+      [horse.breed, horse.sex, horse.color, horse.foal_year ? `foaled ${horse.foal_year}` : null]
+        .filter(Boolean)
+        .join(" · ") || "—",
+    registrations: regsByHorse.get(horse.id)?.join(", ") ?? "—",
+    owners: ownersByHorse.get(horse.id)?.join(", ") ?? "—",
+  }));
 
   return (
     <div>
@@ -104,55 +118,7 @@ export default async function HorsesPage({
           }
         />
       ) : (
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-                  <th className="py-2 pr-4 font-medium">Horse</th>
-                  <th className="py-2 pr-4 font-medium">Details</th>
-                  <th className="py-2 pr-4 font-medium">Registrations</th>
-                  <th className="py-2 font-medium">Owners</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {rows.map((horse) => (
-                  <tr key={horse.id}>
-                    <td className="py-3 pr-4">
-                      <Link
-                        href={`/organizations/${id}/horses/${horse.id}`}
-                        className="font-medium text-emerald-700 hover:underline dark:text-emerald-500"
-                      >
-                        {horse.registered_name}
-                      </Link>
-                      {horse.barn_name && (
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          “{horse.barn_name}”
-                        </p>
-                      )}
-                    </td>
-                    <td className="py-3 pr-4 text-zinc-500 dark:text-zinc-400">
-                      {[
-                        horse.breed,
-                        horse.sex,
-                        horse.color,
-                        horse.foal_year ? `foaled ${horse.foal_year}` : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ") || "—"}
-                    </td>
-                    <td className="py-3 pr-4 text-zinc-500 dark:text-zinc-400">
-                      {regsByHorse.get(horse.id)?.join(", ") ?? "—"}
-                    </td>
-                    <td className="py-3 text-zinc-500 dark:text-zinc-400">
-                      {ownersByHorse.get(horse.id)?.join(", ") ?? "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <HorsesTable organizationId={id} rows={rows} canDelete={canDelete} />
       )}
     </div>
   );
