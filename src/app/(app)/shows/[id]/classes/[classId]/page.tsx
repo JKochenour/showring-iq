@@ -4,10 +4,11 @@ import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { EditClassForm } from "@/components/show/class-form";
 import { DeleteClassButton } from "@/components/show/class-row-actions";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
+import { ClassJudgesManager } from "@/components/show/class-judges-manager";
 import { getClassCodeOptions } from "@/lib/rule-package-options";
 import { Alert, Card } from "@/components/ui";
 import { formatCents } from "@/lib/money";
-import type { ShowClass } from "@/lib/types";
+import type { ClassJudgeRow, ShowClass } from "@/lib/types";
 
 export const metadata = { title: "Class — ShowRing IQ" };
 
@@ -34,11 +35,28 @@ export default async function ClassDetailPage({
   const showStatus = showClass.show?.status ?? "draft";
   const showEditable = showStatus === "draft" || showStatus === "published";
 
-  const [canEdit, canDelete, classCodeOptions] = await Promise.all([
-    hasOrgPermission(showClass.organization_id, "class.edit"),
-    hasOrgPermission(showClass.organization_id, "class.delete"),
-    getClassCodeOptions(supabase, showClass.organization_id),
-  ]);
+  const [canEdit, canDelete, classCodeOptions, { data: judgeStaff }, { data: classJudges }] =
+    await Promise.all([
+      hasOrgPermission(showClass.organization_id, "class.edit"),
+      hasOrgPermission(showClass.organization_id, "class.delete"),
+      getClassCodeOptions(supabase, showClass.organization_id),
+      supabase
+        .from("show_staff")
+        .select("id, display_name")
+        .eq("show_id", id)
+        .eq("staff_role", "judge"),
+      supabase
+        .from("class_judges")
+        .select(
+          "id, class_id, show_staff_id, assigned_at, show_staff:show_staff(id, display_name, user_id)"
+        )
+        .eq("class_id", classId)
+        .order("assigned_at"),
+    ]);
+
+  const judgeOptions =
+    judgeStaff?.map((j) => ({ id: j.id as string, label: j.display_name as string })) ??
+    [];
 
   return (
     <div className="space-y-6">
@@ -110,6 +128,13 @@ export default async function ClassDetailPage({
           </dl>
         </Card>
       )}
+
+      <ClassJudgesManager
+        classId={showClass.id}
+        assignments={(classJudges as unknown as ClassJudgeRow[]) ?? []}
+        judgeOptions={judgeOptions}
+        editable={canEdit && showEditable}
+      />
 
       {canDelete && showEditable && (
         <Card className="max-w-2xl border-red-200 dark:border-red-900">

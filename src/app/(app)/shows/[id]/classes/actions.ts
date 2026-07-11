@@ -201,6 +201,108 @@ export async function deleteClass(
   redirect(`/shows/${cls.show_id}/classes`);
 }
 
+export async function assignClassJudge(
+  classId: string,
+  showStaffId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("show_id, organization_id, class_number, name")
+    .eq("id", classId)
+    .maybeSingle();
+  if (!cls) return { error: "Class not found." };
+
+  const { data: staff } = await supabase
+    .from("show_staff")
+    .select("display_name, staff_role")
+    .eq("id", showStaffId)
+    .maybeSingle();
+  if (!staff) return { error: "Judge not found." };
+
+  const { data: inserted, error } = await supabase
+    .from("class_judges")
+    .insert({ class_id: classId, show_staff_id: showStaffId })
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    if (error.message.includes("class_judges_class_id_show_staff_id_key")) {
+      return { error: "This judge is already assigned to this class." };
+    }
+    return { error: error.message };
+  }
+  if (!inserted) {
+    return {
+      error:
+        "Assignment was not applied. It requires the class.edit permission on an unlocked show.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: cls.organization_id,
+    p_action: "class.judge_assigned",
+    p_entity_type: "class",
+    p_entity_id: classId,
+    p_old: null,
+    p_new: { class_number: cls.class_number, judge: staff.display_name },
+  });
+
+  revalidatePath(`/shows/${cls.show_id}/classes/${classId}`);
+  revalidatePath(`/shows/${cls.show_id}/scoring`);
+  return {};
+}
+
+export async function unassignClassJudge(
+  classJudgeId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: assignment } = await supabase
+    .from("class_judges")
+    .select(
+      "class_id, show_id, organization_id, show_staff:show_staff(display_name), class:classes(class_number)"
+    )
+    .eq("id", classJudgeId)
+    .maybeSingle();
+  if (!assignment) return { error: "Assignment not found." };
+
+  const staffName = (
+    assignment.show_staff as unknown as { display_name: string } | null
+  )?.display_name;
+  const classNumber = (
+    assignment.class as unknown as { class_number: number } | null
+  )?.class_number;
+
+  const { data: deleted, error } = await supabase
+    .from("class_judges")
+    .delete()
+    .eq("id", classJudgeId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!deleted || deleted.length === 0) {
+    return {
+      error:
+        "Remove was not applied. It requires the class.edit permission on an unlocked show.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: assignment.organization_id,
+    p_action: "class.judge_unassigned",
+    p_entity_type: "class",
+    p_entity_id: assignment.class_id,
+    p_old: { class_number: classNumber, judge: staffName },
+    p_new: null,
+  });
+
+  revalidatePath(`/shows/${assignment.show_id}/classes/${assignment.class_id}`);
+  revalidatePath(`/shows/${assignment.show_id}/scoring`);
+  return {};
+}
+
 export async function moveClass(
   classId: string,
   direction: "up" | "down"

@@ -78,6 +78,14 @@ export interface ShowStaffRow {
   profile: { email: string; full_name: string | null } | null;
 }
 
+export interface ClassJudgeRow {
+  id: string;
+  class_id: string;
+  show_staff_id: string;
+  assigned_at: string;
+  show_staff: Pick<ShowStaffRow, "id" | "display_name" | "user_id"> | null;
+}
+
 export type ClassStatus =
   | "draft"
   | "open"
