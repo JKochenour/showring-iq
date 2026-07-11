@@ -141,6 +141,7 @@ export interface ShowClass {
   scheduled_date: string | null;
   drag_every_n: number | null;
   avg_run_minutes: number;
+  concurrent_group_id: string | null;
   nrha_class_code: string | null;
   class_code_id: string | null;
   retainage_percent: number;

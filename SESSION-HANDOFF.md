@@ -5,7 +5,97 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: public live-results (00021), guest-access share-link/QR + per-show billing (00022), standard per-entry charges (00023), AND schedule with estimated start times (00024) are all built, all four migrations applied, all fully browser-verified live. Nothing outstanding on any of these. Stripe/online payments and exhibitor email notifications remain explicitly deferred (Resend isn't wired up yet — no API key/dependency/code at all despite being named in CLAUDE.md's tech stack). See "2026-07-11 (5th session)" for the newest work; older sections below are prior-session history.
+## Status: public live-results (00021), guest-access share-link/QR + per-show billing (00022), standard per-entry charges (00023), schedule with estimated start times (00024), AND concurrent classes (00025) are all built, all five migrations applied, all fully browser-verified live. Nothing outstanding on any of these. A rulebook-derived punch list of further gaps (tie run-off workflow, single-purse aged-show payouts, youth results reporting, fee-cap validation, etc.) is recorded in memory (`nrha-rulebook-punch-list.md`) for the user to prioritize next — none of it started. Stripe/online payments and exhibitor email notifications also remain explicitly deferred (Resend isn't wired up — no API key/dependency/code at all despite being named in CLAUDE.md's tech stack). See "2026-07-11 (6th session)" for the newest work; older sections below are prior-session history.
+
+## 2026-07-11 (6th session): concurrent classes (NRHA Show Rules)
+
+The user uploaded the NRHA Show Rules & Regulations PDF (Membership
+through Payback Schedules, ~40 pages) and asked to build support for
+classes that run concurrently — how EPRHA actually runs shows — and
+separately, for a punch list of everything else in the rulebook worth
+building later.
+
+**What "concurrent" means per NRHA rules** (cited, not assumed):
+several class pairings — Rookie Professional + Category 1 Open,
+Rookie Level 1 + Level 2 + Prime Time Rookie, Prime Time Open +
+Category 2 levels — run as one physical go. Rule F(10): "When classes
+run concurrently... a horse may be shown only once." Ancillary/Jackpot
+rules add: only the highest judge's fee is charged, not one per class.
+Confirmed scope with the user first (3 questions, all recommended):
+grouping via a simple field on the class edit page (not a separate
+manager screen), and draw + gate status + score entry/corrections all
+auto-propagate (not just score entry).
+
+**What was built** — migration `00025_concurrent_classes.sql`:
+- `classes.concurrent_group_id` (shared uuid across grouped classes)
+  and `class_draws.shared_run_id` (ties together the class_draws rows
+  across different classes that represent the *same physical run*).
+- New `mirror_score_to_concurrent_siblings(entry_class_id)` helper,
+  called from the tail of `enter_score`, `submit_score`, `verify_score`,
+  `reopen_score`, and `correct_score` — whatever one class's score
+  becomes, every sibling class's score for the same run becomes too
+  (judge assignment, signature, timestamps, everything).
+- `set_run_status` (gate actions) now propagates status and scratches
+  across every class_draws row sharing a `shared_run_id`, and the
+  "marking in-arena auto-completes the previous in-arena run" check
+  now looks across the whole concurrent group, not just one class.
+- `src/app/(app)/shows/[id]/draws/actions.ts` — `generateDraw`
+  rewritten to draw once across every class in a group (one entry
+  entered in two grouped classes gets one shared run, appearing in
+  both classes' draws at the same position); `appendToDraw` (late
+  entries) joins an existing sibling run if one already exists for
+  that entry, rather than creating a duplicate.
+- New "Runs concurrent with" checkbox section on the class edit page
+  (`src/components/show/class-concurrency-manager.tsx`, action
+  `updateClassConcurrency` in `classes/actions.ts`) — correctly merges
+  pre-existing groups when classes from two different groups get
+  linked together, so nobody's silently orphaned.
+- **Deliberately generic, not hard-coded to any NRHA pairing** — a
+  secretary links whichever classes they want; the specific NRHA rules
+  about which categories *may* run concurrent stay a judgment call for
+  the secretary/rule package, per CLAUDE.md's "rules are data, not
+  code." `calculate_results` needed zero changes — it already computes
+  independently per class from that class's own entry_classes/scores,
+  which now just happen to be correctly kept in sync.
+- **Known limitation, not solved**: `moveDrawRow` (manual reordering)
+  isn't group-aware — reordering a run within one class's draw list
+  doesn't reposition it in a sibling class's list. Display-order only;
+  doesn't affect correctness of gate/scoring propagation, which is
+  driven by `shared_run_id`, not position number.
+
+**Verified live**, against the real EPRHA Summer Slide 2026 show:
+grouped Class 1 (Green Reiner Level 1) and Class 2 (Green Reiner Level
+2) — a realistic concurrent pairing, left grouped afterward rather
+than un-done. Reinstated a scratched entry so it was actively entered
+in both classes. One "Generate draw" click on Class 1 produced a
+matching one-entry draw in Class 2 automatically. Marking the run
+"in arena" from Class 1's gate screen instantly showed in arena on
+Class 2's gate screen with no action taken there. Entering a draft
+score (68.0) on Class 1 instantly appeared on Class 2's scoring
+screen; submitting/signing it on Class 1 mirrored the exact signature
+and timestamp to Class 2; verifying on Class 1 mirrored verified
+status to Class 2 too. Marked both classes official and calculated
+results independently — each correctly showed placing 1 / score 68.0
+computed from its own (now-synced) data, confirming `calculate_results`
+needed no changes. Hit one real UI-interaction snag during
+verification (not a bug): "Mark official" opens a confirm dialog
+before calling its RPC — an accessibility-tree-ref click opened the
+dialog but didn't submit it, so nothing changed until the dialog's own
+confirm button was clicked; a `document.querySelector` + `.click()`
+plus screenshotting the resulting dialog resolved it. Build and lint
+clean throughout (only the 2 pre-existing benign RHF `watch()`
+warnings).
+
+**Rulebook punch list, not started** — the rest of the NRHA Show
+Rules document (tie run-off/co-champion workflow, single-purse
+tiered aged-show payouts, youth class results/retainage exemption,
+event-classification staffing requirements, fee-cap validation, the
+two Payback Schedule tables) is written up in memory
+(`nrha-rulebook-punch-list.md`) as agreed with the user, split into
+genuine app-code gaps vs. items that just need rule-package data entry
+the user can do themselves. Nothing from it has been built — next
+session should ask the user which item(s) to prioritize before
+starting any of it.
 
 ## 2026-07-11 (5th session): schedule with estimated start times
 
@@ -358,14 +448,16 @@ RHF `watch()` warnings).
 
 ## Database
 
-**Migrations 00021 through 00024 are applied** — 00021
+**Migrations 00021 through 00025 are applied** — 00021
 (`00021_public_live_results.sql`, public live-results RPCs), 00022
 (`00022_show_billing.sql`, misc_charges table + billing RPCs), 00023
 (`00023_standard_entry_charges.sql`, standard per-entry charges
-auto-applied via `assign_back_number`), and 00024
-(`00024_schedule.sql`, schedule settings + avg_run_minutes), all
-confirmed live and browser-verified (2026-07-11, 3rd–5th sessions).
-All 24 migrations are now live. Details below are from earlier
+auto-applied via `assign_back_number`), 00024
+(`00024_schedule.sql`, schedule settings + avg_run_minutes), and 00025
+(`00025_concurrent_classes.sql`, concurrent class grouping + draw/gate/
+score propagation), all confirmed live and browser-verified
+(2026-07-11, 3rd–6th sessions).
+All 25 migrations are now live. Details below are from earlier
 sessions and still
 accurate for 00001–00020:
 

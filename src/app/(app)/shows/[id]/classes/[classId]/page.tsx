@@ -7,6 +7,7 @@ import { ClassStatusBadge } from "@/components/show/class-status-badge";
 import { ClassJudgesManager } from "@/components/show/class-judges-manager";
 import { ClassPatternEditor } from "@/components/show/class-pattern-editor";
 import { ClassAffiliationsManager } from "@/components/show/class-affiliations-manager";
+import { ClassConcurrencyManager } from "@/components/show/class-concurrency-manager";
 import { getClassCodeOptions, getClassCodeAffiliationMeta } from "@/lib/rule-package-options";
 import { Alert, Card } from "@/components/ui";
 import { formatCents } from "@/lib/money";
@@ -52,6 +53,7 @@ export default async function ClassDetailPage({
     { data: classAffiliations },
     { data: patternRow },
     { data: showDocuments },
+    { data: otherClassesRaw },
   ] = await Promise.all([
     hasOrgPermission(showClass.organization_id, "class.edit"),
     hasOrgPermission(showClass.organization_id, "class.delete"),
@@ -86,7 +88,24 @@ export default async function ClassDetailPage({
       .select("id, file_name, document_type")
       .eq("show_id", id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("classes")
+      .select("id, class_number, name, concurrent_group_id")
+      .eq("show_id", id)
+      .neq("id", classId)
+      .order("display_order"),
   ]);
+
+  const otherClasses = (otherClassesRaw ?? []).map((c) => ({
+    id: c.id as string,
+    classNumber: c.class_number as number,
+    name: c.name as string,
+  }));
+  const currentlyConcurrentWith = showClass.concurrent_group_id
+    ? (otherClassesRaw ?? [])
+        .filter((c) => c.concurrent_group_id === showClass.concurrent_group_id)
+        .map((c) => c.id as string)
+    : [];
 
   const judgeOptions =
     judgeStaff?.map((j) => ({ id: j.id as string, label: j.display_name as string })) ??
@@ -167,6 +186,13 @@ export default async function ClassDetailPage({
           </dl>
         </Card>
       )}
+
+      <ClassConcurrencyManager
+        classId={showClass.id}
+        otherClasses={otherClasses}
+        currentlyConcurrentWith={currentlyConcurrentWith}
+        editable={canEdit && showEditable}
+      />
 
       <ClassAffiliationsManager
         classId={showClass.id}

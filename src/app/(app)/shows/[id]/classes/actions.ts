@@ -712,3 +712,112 @@ export async function moveClass(
   revalidatePath(`/shows/${cls.show_id}/classes`);
   return {};
 }
+
+/** Links/unlinks classId with concurrentWithClassIds (all in the same
+ * show) as one "runs concurrent" group — a single shared_run_id per
+ * physical run across every grouped class's draw. Merges any
+ * pre-existing groups the touched classes already belonged to, so a
+ * class already grouped with others doesn't get silently orphaned.
+ * An empty concurrentWithClassIds removes classId from its group (and
+ * dissolves the group entirely if only one class would remain in it). */
+export async function updateClassConcurrency(
+  classId: string,
+  concurrentWithClassIds: string[]
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: cls, error: clsError } = await supabase
+    .from("classes")
+    .select("id, show_id, organization_id, class_number, concurrent_group_id")
+    .eq("id", classId)
+    .maybeSingle();
+  if (clsError) return { error: clsError.message };
+  if (!cls) return { error: "Class not found." };
+
+  if (concurrentWithClassIds.length === 0) {
+    if (!cls.concurrent_group_id) return {};
+
+    const { error: clearError } = await supabase
+      .from("classes")
+      .update({ concurrent_group_id: null })
+      .eq("id", classId);
+    if (clearError) return { error: clearError.message };
+
+    const { data: remaining } = await supabase
+      .from("classes")
+      .select("id")
+      .eq("concurrent_group_id", cls.concurrent_group_id);
+    if (remaining && remaining.length === 1) {
+      await supabase
+        .from("classes")
+        .update({ concurrent_group_id: null })
+        .eq("id", remaining[0].id);
+    }
+
+    await supabase.rpc("log_audit", {
+      p_org: cls.organization_id,
+      p_action: "class.concurrency_updated",
+      p_entity_type: "class",
+      p_entity_id: classId,
+      p_old: { concurrent_group_id: cls.concurrent_group_id },
+      p_new: { concurrent_group_id: null },
+      p_show: cls.show_id,
+    });
+
+    revalidatePath(`/shows/${cls.show_id}/classes/${classId}`);
+    revalidatePath(`/shows/${cls.show_id}/classes`);
+    return {};
+  }
+
+  const { data: targets, error: targetsError } = await supabase
+    .from("classes")
+    .select("id, show_id, class_number, concurrent_group_id")
+    .in("id", concurrentWithClassIds);
+  if (targetsError) return { error: targetsError.message };
+  if (!targets || targets.length !== concurrentWithClassIds.length) {
+    return { error: "One or more selected classes were not found." };
+  }
+  if (targets.some((t) => t.show_id !== cls.show_id)) {
+    return {
+      error: "Classes can only run concurrent with other classes in the same show.",
+    };
+  }
+
+  const touchedGroupIds = [
+    cls.concurrent_group_id,
+    ...targets.map((t) => t.concurrent_group_id),
+  ].filter((g): g is string => !!g);
+  const groupId = touchedGroupIds[0] ?? crypto.randomUUID();
+
+  const allAffectedIds = new Set<string>([classId, ...concurrentWithClassIds]);
+  if (touchedGroupIds.length > 0) {
+    const { data: groupMembers } = await supabase
+      .from("classes")
+      .select("id")
+      .in("concurrent_group_id", touchedGroupIds);
+    for (const m of groupMembers ?? []) allAffectedIds.add(m.id as string);
+  }
+
+  const { error: updateError } = await supabase
+    .from("classes")
+    .update({ concurrent_group_id: groupId })
+    .in("id", [...allAffectedIds]);
+  if (updateError) return { error: updateError.message };
+
+  await supabase.rpc("log_audit", {
+    p_org: cls.organization_id,
+    p_action: "class.concurrency_updated",
+    p_entity_type: "class",
+    p_entity_id: classId,
+    p_old: null,
+    p_new: {
+      class_number: cls.class_number,
+      runs_concurrent_with: targets.map((t) => t.class_number),
+    },
+    p_show: cls.show_id,
+  });
+
+  revalidatePath(`/shows/${cls.show_id}/classes/${classId}`);
+  revalidatePath(`/shows/${cls.show_id}/classes`);
+  return {};
+}
