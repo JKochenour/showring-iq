@@ -209,11 +209,13 @@ begin
   perform public.log_audit(v_score.organization_id, 'score.submitted', 'score', v_score.id::text,
     jsonb_build_object('status', 'pending'),
     jsonb_build_object('status', 'submitted', 'total_score_tenths', v_score.total_score_tenths,
-                       'result_status', v_score.result_status));
+                       'result_status', v_score.result_status),
+    null, v_score.show_id);
 
   perform public.log_audit(v_score.organization_id, 'score.signed', 'score', v_score.id::text,
     null,
-    jsonb_build_object('signature_name', v_signature, 'signed_by_staff_id', v_score.judge_staff_id));
+    jsonb_build_object('signature_name', v_signature, 'signed_by_staff_id', v_score.judge_staff_id),
+    null, v_score.show_id);
 end;
 $$;
 
@@ -266,7 +268,7 @@ begin
   perform public.log_audit(v_score.organization_id, 'score.reopened', 'score', v_score.id::text,
     jsonb_build_object('status', v_score.status),
     jsonb_build_object('status', v_new_status),
-    p_reason);
+    p_reason, v_score.show_id);
 end;
 $$;
 
