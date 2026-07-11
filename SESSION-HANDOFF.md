@@ -5,7 +5,7 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: MVP + follow-on features + 4 post-MVP features, all committed. Exhibitor flow live-verified; the 4 newest features are NOT yet browser-tested.
+## Status: MVP + follow-on features + 4 post-MVP features, all committed. Exhibitor flow live-verified. Migrations 00016-19 now confirmed applied live. The 4 newest features are NOT yet browser-tested.
 
 40 commits on `main`, working tree clean:
 
@@ -33,14 +33,14 @@ leftover worktrees first.
 
 ## Database
 
-All 19 migrations (`supabase/migrations/00001`–`00019`) are believed
-current in the repo. **Not yet confirmed applied to the live Supabase
-project** (`dmyejohfauijbuizboos.supabase.co`) — migrations
-00001–00015 were confirmed live in an earlier session; 00016–00019
-(class_judges, audit log show_id, class patterns/signoff,
-class_affiliations) were written and build/lint-verified this session
-but never run against the real database or exercised in a browser.
-**This is the actual next step — see below.**
+All 19 migrations (`supabase/migrations/00001`–`00019`) are confirmed
+applied to the live Supabase project (`dmyejohfauijbuizboos.supabase.co`)
+— 00001–00015 confirmed in an earlier session, 00016–00019 confirmed
+by the user this session (applied via the SQL Editor in run order;
+one paste of 00016 initially got truncated mid-file by the editor/
+copy step, causing an "unterminated dollar-quoted string" error — not
+a bad migration — re-pasting the full file fixed it). **Nothing DB-side
+is blocking anymore.**
 
 ## What's built
 
@@ -97,35 +97,33 @@ server"` file), and four new post-MVP features:
   within-class draw spacing (rider/trainer) exists today
   (`src/lib/draw.ts`).
 
-## The actual next step: apply migrations 00016–00019 live, then browser-verify all 4 new features
+## The actual next step: browser-verify all 4 new features
 
-Migrations 00001–00015 were confirmed applied to the live Supabase
-project in an earlier session. **00016–00019 have not been.** Before
-any of the 4 new features (class_judges, audit show_id, class
-patterns/signoff, multi-affiliation) can be tested for real:
+Migrations 00001–00019 are all confirmed applied live — nothing DB-side
+is blocking anymore. None of the 4 newest features have been clicked
+through in a browser yet:
 
-1. Apply migrations 00016–00019 to the Supabase project (SQL Editor or
-   CLI — check `SETUP.md`/`AGENTS.md` for how this project's migration
-   workflow normally runs; there's no `supabase/config.toml` so it's
-   not the local CLI stack, it's direct-to-hosted).
-2. Sign in to ShowRing IQ in the preview browser yourself (Claude
+1. Sign in to ShowRing IQ in the preview browser yourself (Claude
    cannot sign in — hard boundary, even for dev/test accounts it
    creates itself; ask Claude to drive everything else).
-3. **class_judges**: on a class detail page, assign a judge (a
+2. **class_judges**: on a class detail page, assign a judge (a
    `people` row with role `judge` needs to exist as `show_staff` with
    `staff_role = 'judge'` first — check whether the org has one, or
    create one). Confirm a judge-only account only sees/can score their
    assigned class, and gets a 404 on an unassigned one.
-4. **class patterns + signoff**: add a pattern to a class, confirm it
+3. **class patterns + signoff**: add a pattern to a class, confirm it
    shows on the scoring screen, submit a score card and confirm the
    signature prompt/display works, confirm reopening clears the
    signature.
-5. **multi-affiliation**: add a second affiliation to an existing
+4. **multi-affiliation**: add a second affiliation to an existing
    class (different rule package/code), confirm eligibility evaluates
    per-affiliation on the Issues tab and exhibitor entry screen, and
    confirm the NRHA CSV export only pulls the NRHA-affiliation's code.
-6. **audit log**: trigger a few show-scoped actions, generate an NRHA
-   export ZIP, confirm `audit_log.txt` is present and populated.
+5. **audit log**: trigger a few show-scoped actions, generate an NRHA
+   export ZIP, confirm `audit_log.txt` is present and populated with a
+   `show_id` on every row (including score.submitted/score.signed/
+   score.reopened — the thing fixed in the 00019 regression, worth
+   specifically double-checking).
 
 The exhibitor flow (invite → signup → accept → profile → horses →
 enter show → scratch) IS fully verified live from an earlier session
@@ -133,8 +131,8 @@ in this same day — no need to re-test that unless something regressed.
 
 ## Environment / secrets
 
-- Supabase: connected, `.env.local` filled in. Migrations 00001–00015
-  confirmed live; 00016–00019 not yet applied (see above).
+- Supabase: connected, `.env.local` filled in. All 19 migrations
+  (00001–00019) confirmed applied live.
 - `ANTHROPIC_API_KEY`: check whether this was ever filled in — as of
   the last confirmed state it was still a placeholder, so the Help
   chat widget would report "not configured."
