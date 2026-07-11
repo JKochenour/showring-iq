@@ -36,7 +36,7 @@ export async function createExhibitorEntry(input: {
 
   const { data: classes } = await supabase
     .from("classes")
-    .select("id, fee_cents")
+    .select("id, entry_fee_cents")
     .eq("show_id", input.showId)
     .in("id", input.classIds);
   if (!classes || classes.length === 0) return { error: "Selected classes not found." };
@@ -68,7 +68,7 @@ export async function createExhibitorEntry(input: {
     classes.map((c) => ({
       entry_id: entry.id,
       class_id: c.id,
-      fee_cents: c.fee_cents,
+      fee_cents: c.entry_fee_cents,
     }))
   );
   if (classesError) return { error: classesError.message };
