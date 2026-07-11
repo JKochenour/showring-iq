@@ -16,7 +16,7 @@ export default async function ClassScoringPage({
   params: Promise<{ id: string; classId: string }>;
 }) {
   const { id, classId } = await params;
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
 
   const { data: cls } = await supabase
     .from("classes")
@@ -37,6 +37,7 @@ export default async function ClassScoringPage({
     canCorrectUnofficial,
     canCorrectOfficial,
     canFinalize,
+    { data: myAssignment },
   ] = await Promise.all([
     loadClassDraw(supabase, id, classId),
     supabase
@@ -56,16 +57,36 @@ export default async function ClassScoringPage({
     hasOrgPermission(showClass.organization_id, "score.edit_unofficial"),
     hasOrgPermission(showClass.organization_id, "score.correct_official"),
     hasOrgPermission(showClass.organization_id, "score.finalize"),
+    supabase
+      .from("class_judges")
+      .select("show_staff_id, show_staff:show_staff!inner(user_id)")
+      .eq("class_id", classId)
+      .eq("show_staff.user_id", user.id)
+      .maybeSingle(),
   ]);
+
+  // Office staff (score.edit_unofficial) may view/act on any class, as
+  // today. Judge-only actors (score.enter without the office override)
+  // may only view/act on classes they're assigned to judge; the scoring
+  // RPCs enforce this too, but we also hide the page entirely so a judge
+  // can't browse other judges' pre-submission scores by guessing a URL.
+  const isOfficeStaff = canCorrectUnofficial;
+  if (!isOfficeStaff && canEnter && !myAssignment) notFound();
 
   const scoreByEntryClass = new Map<string, Score>();
   for (const s of (scores as Score[]) ?? []) {
     scoreByEntryClass.set(s.entry_class_id, s);
   }
 
-  const judgeOptions =
+  const allJudgeOptions =
     judgeStaff?.map((j) => ({ id: j.id as string, label: j.display_name as string })) ??
     [];
+  // Judge-only actors can only enter under their own judge assignment —
+  // narrow the dropdown to match what the RPC will actually accept.
+  const judgeOptions =
+    !isOfficeStaff && myAssignment
+      ? allJudgeOptions.filter((j) => j.id === myAssignment.show_staff_id)
+      : allJudgeOptions;
 
   // Order by draw position when a draw exists; otherwise entry order.
   const drawnIds = new Set(drawRows.map((r) => r.entry_class_id));

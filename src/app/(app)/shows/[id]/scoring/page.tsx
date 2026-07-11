@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/authz";
+import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
 import { Card, EmptyState, PageHeader } from "@/components/ui";
 import type { ShowClass } from "@/lib/types";
@@ -13,14 +13,29 @@ export default async function ScoringPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
 
   const { data: show } = await supabase
     .from("shows")
-    .select("id")
+    .select("id, organization_id")
     .eq("id", id)
     .maybeSingle();
   if (!show) notFound();
+
+  // Office staff (score.edit_unofficial) see every class, as today.
+  // Judge-only actors (score.enter without the office override) only
+  // see classes they're assigned to via class_judges.
+  const [isOfficeStaff, { data: assignedClassIds }] = await Promise.all([
+    hasOrgPermission(show.organization_id, "score.edit_unofficial"),
+    supabase
+      .from("class_judges")
+      .select("class_id, show_staff:show_staff!inner(user_id)")
+      .eq("show_id", id)
+      .eq("show_staff.user_id", user.id),
+  ]);
+  const assignedIds = new Set(
+    (assignedClassIds ?? []).map((r) => r.class_id as string)
+  );
 
   const [{ data: classes }, { data: entryClasses }, { data: scores }] =
     await Promise.all([
@@ -38,7 +53,10 @@ export default async function ScoringPage({
       supabase.from("scores").select("class_id, status").eq("show_id", id),
     ]);
 
-  const rows = (classes as ShowClass[]) ?? [];
+  const allRows = (classes as ShowClass[]) ?? [];
+  const rows = isOfficeStaff
+    ? allRows
+    : allRows.filter((c) => assignedIds.has(c.id));
 
   const enteredByClass = new Map<string, number>();
   for (const ec of entryClasses ?? []) {
