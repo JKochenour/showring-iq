@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SLUG_PATTERN } from "@/lib/validation/organization";
+import { MONEY_PATTERN } from "@/lib/money";
 
 export const US_TIMEZONES = [
   { value: "America/New_York", label: "Eastern (New York)" },
@@ -108,6 +109,31 @@ export const addStaffSchema = z
     path: ["displayName"],
   });
 
+export const standardChargeRowSchema = z.object({
+  label: z.string().trim().min(1, "Label is required").max(60),
+  amount: z
+    .string()
+    .trim()
+    .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00")
+    .or(z.literal("")),
+});
+
+export const updateStandardChargesSchema = z.object({
+  showId: z.uuid(),
+  charges: z.array(standardChargeRowSchema).max(20),
+});
+
+/** A one-click starting point for the common set (e.g. EPRHA's stall,
+ * office, and drug/medication fee) — fully renameable/removable, not a
+ * fixed enum. Amounts are left blank for the office to fill in. */
+export const STANDARD_CHARGE_STARTER_SET = [
+  { label: "Stall", amount: "" },
+  { label: "Office fee", amount: "" },
+  { label: "Drug fee", amount: "" },
+];
+
 export type CreateShowInput = z.infer<typeof createShowSchema>;
 export type UpdateShowInput = z.infer<typeof updateShowSchema>;
 export type AddStaffInput = z.infer<typeof addStaffSchema>;
+export type StandardChargeRow = z.infer<typeof standardChargeRowSchema>;
+export type UpdateStandardChargesInput = z.infer<typeof updateStandardChargesSchema>;

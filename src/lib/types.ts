@@ -64,6 +64,7 @@ export interface Show {
   description: string | null;
   nrha_show_number: string | null;
   medication_fee_cents: number;
+  standard_entry_charges: { label: string; amount_cents: number }[];
   created_at: string;
 }
 

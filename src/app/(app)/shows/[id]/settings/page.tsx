@@ -2,9 +2,11 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { getSiteOrigin } from "@/lib/site-url";
+import { centsToInput } from "@/lib/money";
 import { ShowSettingsForm } from "@/components/show/show-settings-form";
 import { ShowStatusActions } from "@/components/show/show-status-actions";
 import { PublicLinkCard } from "@/components/show/public-link-card";
+import { StandardChargesEditor } from "@/components/show/standard-charges-editor";
 import { Alert, Card } from "@/components/ui";
 import type { Show } from "@/lib/types";
 
@@ -90,6 +92,22 @@ export default async function ShowSettingsPage({
               : "You don't have permission to edit this show."}
           </Alert>
         )}
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-base font-semibold">
+          Standard per-entry charges
+        </h2>
+        <Card>
+          <StandardChargesEditor
+            showId={s.id}
+            charges={(s.standard_entry_charges ?? []).map((c) => ({
+              label: c.label,
+              amount: centsToInput(c.amount_cents),
+            }))}
+            canEdit={editable}
+          />
+        </Card>
       </section>
     </div>
   );

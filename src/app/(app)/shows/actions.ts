@@ -8,9 +8,11 @@ import {
   addStaffSchema,
   createShowSchema,
   updateShowSchema,
+  updateStandardChargesSchema,
   type AddStaffInput,
   type CreateShowInput,
   type UpdateShowInput,
+  type UpdateStandardChargesInput,
 } from "@/lib/validation/show";
 import type { ShowStatus } from "@/lib/types";
 
@@ -113,6 +115,57 @@ export async function updateShow(input: UpdateShowInput): Promise<ActionResult> 
   });
 
   revalidatePath(`/shows/${d.showId}`, "layout");
+  return {};
+}
+
+export async function updateStandardCharges(
+  input: UpdateStandardChargesInput
+): Promise<ActionResult> {
+  const parsed = updateStandardChargesSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+
+  const { data: before, error: beforeError } = await supabase
+    .from("shows")
+    .select("organization_id, standard_entry_charges")
+    .eq("id", d.showId)
+    .maybeSingle();
+  if (beforeError) return { error: beforeError.message };
+  if (!before) return { error: "Show not found." };
+
+  const charges = d.charges
+    .filter((c) => c.label.trim() !== "" && c.amount.trim() !== "")
+    .map((c) => ({ label: c.label.trim(), amount_cents: dollarsToCents(c.amount) }));
+
+  const { data: updated, error } = await supabase
+    .from("shows")
+    .update({ standard_entry_charges: charges })
+    .eq("id", d.showId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error:
+        "Update was not applied. You may lack the show.edit permission, or the show is locked/archived.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: before.organization_id,
+    p_action: "show.standard_charges_updated",
+    p_entity_type: "show",
+    p_entity_id: d.showId,
+    p_old: { standard_entry_charges: before.standard_entry_charges },
+    p_new: { standard_entry_charges: charges },
+    p_show: d.showId,
+  });
+
+  revalidatePath(`/shows/${d.showId}/settings`);
   return {};
 }
 

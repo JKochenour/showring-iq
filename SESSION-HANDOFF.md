@@ -5,7 +5,68 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: public live-results page (migration 00021) AND per-show billing + share-link/QR (migration 00022) are both built, both migrations applied, both fully browser-verified live. Nothing outstanding on either feature. Stripe/online payments remain explicitly deferred — this session's billing feature is deliberately "charges only," see "2026-07-11 (3rd session)" below. Older sections below that are prior-session history.
+## Status: public live-results (00021), guest-access share-link/QR + per-show billing (00022), AND standard per-entry charges (00023, e.g. EPRHA's stall/office/drug fee, auto-applied per back number) are all built, all three migrations applied, all fully browser-verified live. Nothing outstanding on any of these. Stripe/online payments remain explicitly deferred. See "2026-07-11 (4th session)" for the newest work; older sections below are prior-session history.
+
+## 2026-07-11 (4th session): standard per-entry charges (stall/office/drug fee, auto-applied)
+
+Built on top of the billing feature from the 3rd session. The user
+wanted EPRHA's per-back-number stall/office/drug fee to stop being
+manual — configure the amount once at show setup, then every back
+number gets it automatically.
+
+- `supabase/migrations/00023_standard_entry_charges.sql` — new
+  `shows.standard_entry_charges` jsonb column (array of
+  `{label, amount_cents}`), and `assign_back_number` (existing RPC,
+  same signature, `create or replace`) now loops over the show's
+  configured charges and inserts a `misc_charges` row for each one
+  the *first* time a back number is assigned to an entry — not on
+  renumbering/reassignment (verified: renumbering entry 2 from #2 to
+  #99 did not add a second set of charges). Billed party is the same
+  owner-or-rider rule the billing feature already uses. **Deliberately
+  generic, not hard-coded to EPRHA or any association** — the field
+  is a free-form label+amount list per show; an empty list (the
+  default) means no behavior change for any other show. This directly
+  reuses `misc_charges`/the billing feature from the 3rd session, so
+  an auto-applied charge shows up and can be removed exactly like a
+  manually-added one.
+- UI: new "Standard per-entry charges" section on `/shows/[id]/settings`
+  (`src/components/show/standard-charges-editor.tsx`), a dynamic
+  label+$ row editor mirroring the existing `PayoutScheduleEditor`
+  pattern, with a "Load stall / office / drug fee starter set"
+  one-click button (fully renameable/removable after loading, not a
+  fixed enum).
+- Left the existing `shows.medication_fee_cents` field (used only for
+  the NRHA export tally-sheet estimate) untouched — deliberately did
+  not consolidate it with this new feature, since that's a
+  "must be perfect" export code path per CLAUDE.md and the user didn't
+  ask for that change. Worth reconciling later if it becomes
+  confusing to have two "medication fee" concepts.
+- **A real bug caught during verification**: first attempt to save
+  standard charges failed with a misleading "Show not found" error —
+  actually caused by migration 00023 not being applied yet (the
+  `standard_entry_charges` column didn't exist, so the `before` select
+  errored and only `data` was destructured, masking the real Postgrest
+  error — the same known bug class as the earlier `profiles`-embed FK
+  bugs). Fixed the error handling in `updateStandardCharges`
+  (`src/app/(app)/shows/actions.ts`) to surface the real Supabase error
+  instead of assuming "not found" — worth doing this defensively in
+  new actions generally, not just after hitting it.
+- Full verification, live against the real EPRHA Summer Slide 2026
+  show: configured Stall $50 / Office fee $25 / Drug fee $35, saved
+  and confirmed it persisted across a page reload; created a second
+  entry for Jamie Tester (new horse pairing, class 2 only, back number
+  auto-assigned as #2) — her bill correctly showed both back numbers
+  (#1, #2), $30 entry fees (2× class 2, one from each entry), and
+  exactly one new set of the three standard charges ($110), NOT
+  applied retroactively to the pre-existing back number #1 — total
+  $140. Confirmed all 5 actions (`entry.created`, `back_number.assigned`,
+  3× `misc_charge.added` tagged `"source":"standard_entry_charge"`)
+  landed in the audit log correctly. Confirmed renumbering an existing
+  back number (Set # → 99) does not add a second set of charges.
+  Cleaned up all test entries/charges afterward, leaving the real
+  Stall/Office/Drug configuration in place on the show (that part is
+  real setup, not test data). Build and lint both clean throughout
+  (only the 2 pre-existing benign RHF `watch()` warnings).
 
 ## 2026-07-11 (3rd session): guest-access share link/QR + per-show billing
 
@@ -237,12 +298,14 @@ RHF `watch()` warnings).
 
 ## Database
 
-**Migrations 00021 and 00022 are applied** — 00021
-(`00021_public_live_results.sql`, public live-results RPCs) and 00022
-(`00022_show_billing.sql`, misc_charges table + billing RPCs), both
-confirmed live and browser-verified this session (2026-07-11, 3rd
-session). All 22 migrations are now live. Details below are from
-earlier sessions and still accurate for 00001–00020:
+**Migrations 00021, 00022, and 00023 are applied** — 00021
+(`00021_public_live_results.sql`, public live-results RPCs), 00022
+(`00022_show_billing.sql`, misc_charges table + billing RPCs), and
+00023 (`00023_standard_entry_charges.sql`, standard per-entry charges
+auto-applied via `assign_back_number`), all confirmed live and
+browser-verified (2026-07-11, 3rd and 4th sessions). All 23 migrations
+are now live. Details below are from earlier sessions and still
+accurate for 00001–00020:
 
 **Migration 00020 (`00020_fix_log_audit_overload.sql`) is applied** —
 confirmed by the user via the Supabase SQL Editor on 2026-07-11. All 20
