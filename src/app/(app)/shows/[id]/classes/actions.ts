@@ -10,6 +10,10 @@ import {
   type CreateClassInput,
   type UpdateClassInput,
 } from "@/lib/validation/class";
+import {
+  setClassPatternSchema,
+  type SetClassPatternInput,
+} from "@/lib/validation/class-pattern";
 
 export type ActionResult = { error?: string };
 
@@ -199,6 +203,113 @@ export async function deleteClass(
 
   revalidatePath(`/shows/${cls.show_id}/classes`);
   redirect(`/shows/${cls.show_id}/classes`);
+}
+
+export async function setClassPattern(
+  input: SetClassPatternInput
+): Promise<ActionResult> {
+  const parsed = setClassPatternSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("show_id, organization_id, class_number")
+    .eq("id", d.classId)
+    .maybeSingle();
+  if (!cls) return { error: "Class not found." };
+
+  const { data: existing } = await supabase
+    .from("class_patterns")
+    .select("id")
+    .eq("class_id", d.classId)
+    .maybeSingle();
+
+  const values = {
+    class_id: d.classId,
+    pattern_text: d.patternText?.trim() || null,
+    document_id: d.documentId || null,
+  };
+
+  const { data: saved, error } = existing
+    ? await supabase
+        .from("class_patterns")
+        .update(values)
+        .eq("id", existing.id)
+        .select("id")
+        .maybeSingle()
+    : await supabase
+        .from("class_patterns")
+        .insert(values)
+        .select("id")
+        .maybeSingle();
+
+  if (error) return { error: error.message };
+  if (!saved) {
+    return {
+      error:
+        "Pattern was not saved. It requires the class.edit permission on an unlocked show.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: cls.organization_id,
+    p_action: "class.pattern_updated",
+    p_entity_type: "class",
+    p_entity_id: d.classId,
+    p_old: null,
+    p_new: {
+      class_number: cls.class_number,
+      has_text: !!values.pattern_text,
+      has_document: !!values.document_id,
+    },
+  });
+
+  revalidatePath(`/shows/${cls.show_id}/classes/${d.classId}`);
+  revalidatePath(`/shows/${cls.show_id}/scoring/${d.classId}`);
+  return {};
+}
+
+export async function deleteClassPattern(classId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("show_id, organization_id, class_number")
+    .eq("id", classId)
+    .maybeSingle();
+  if (!cls) return { error: "Class not found." };
+
+  const { data: deleted, error } = await supabase
+    .from("class_patterns")
+    .delete()
+    .eq("class_id", classId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!deleted || deleted.length === 0) {
+    return {
+      error:
+        "Remove was not applied. It requires the class.edit permission on an unlocked show.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: cls.organization_id,
+    p_action: "class.pattern_updated",
+    p_entity_type: "class",
+    p_entity_id: classId,
+    p_old: { class_number: cls.class_number },
+    p_new: null,
+  });
+
+  revalidatePath(`/shows/${cls.show_id}/classes/${classId}`);
+  revalidatePath(`/shows/${cls.show_id}/scoring/${classId}`);
+  return {};
 }
 
 export async function assignClassJudge(

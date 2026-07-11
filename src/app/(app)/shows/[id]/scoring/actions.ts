@@ -54,13 +54,20 @@ export async function enterScore(input: EnterScoreInput): Promise<ActionResult> 
   return {};
 }
 
-export async function submitScore(entryClassId: string): Promise<ActionResult> {
+export async function submitScore(
+  entryClassId: string,
+  signatureName: string
+): Promise<ActionResult> {
+  if (!signatureName.trim()) {
+    return { error: "A signature (typed name) is required to submit a score card." };
+  }
   const supabase = await createClient();
   const location = await classIdForEntryClass(supabase, entryClassId);
   if (!location) return { error: "Entry not found." };
 
   const { error } = await supabase.rpc("submit_score", {
     p_entry_class: entryClassId,
+    p_signature_name: signatureName.trim(),
   });
   if (error) return { error: error.message };
 

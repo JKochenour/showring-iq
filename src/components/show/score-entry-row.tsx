@@ -82,6 +82,12 @@ export function ScoreEntryRow({
               `${formatScore(score.penalty_points_tenths)} penalty · `}
             {score.notes}
           </p>
+          {score.signature_name && score.signed_at && (
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Signed by {score.signature_name} at{" "}
+              {new Date(score.signed_at).toLocaleString()}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <ScoreStatusBadge status={score.status} />
@@ -89,7 +95,14 @@ export function ScoreEntryRow({
             <Button
               variant="secondary"
               disabled={isPending}
-              onClick={() => run(() => submitScore(entryClassId))}
+              onClick={() => {
+                const signature = window.prompt(
+                  "Type your full name to sign and submit this score card:",
+                  score.judge_name ?? ""
+                );
+                if (signature === null || signature.trim() === "") return;
+                run(() => submitScore(entryClassId, signature.trim()));
+              }}
             >
               {isPending ? "…" : "Submit"}
             </Button>

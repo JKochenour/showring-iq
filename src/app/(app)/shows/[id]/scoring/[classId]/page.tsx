@@ -3,10 +3,11 @@ import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadClassDraw } from "@/lib/load-draw";
 import { ClassScoringActions } from "@/components/show/class-scoring-actions";
+import { ClassPatternCard } from "@/components/show/class-pattern-editor";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
 import { ScoreEntryRow } from "@/components/show/score-entry-row";
 import { Card } from "@/components/ui";
-import type { Score, ShowClass } from "@/lib/types";
+import type { ClassPatternRow, Score, ShowClass } from "@/lib/types";
 
 export const metadata = { title: "Class scoring — ShowRing IQ" };
 
@@ -38,6 +39,8 @@ export default async function ClassScoringPage({
     canCorrectOfficial,
     canFinalize,
     { data: myAssignment },
+    { data: patternRow },
+    { data: showDocuments },
   ] = await Promise.all([
     loadClassDraw(supabase, id, classId),
     supabase
@@ -63,6 +66,15 @@ export default async function ClassScoringPage({
       .eq("class_id", classId)
       .eq("show_staff.user_id", user.id)
       .maybeSingle(),
+    supabase
+      .from("class_patterns")
+      .select("id, class_id, pattern_text, document_id, updated_at")
+      .eq("class_id", classId)
+      .maybeSingle(),
+    supabase
+      .from("documents")
+      .select("id, file_name")
+      .eq("show_id", id),
   ]);
 
   // Office staff (score.edit_unofficial) may view/act on any class, as
@@ -77,6 +89,12 @@ export default async function ClassScoringPage({
   for (const s of (scores as Score[]) ?? []) {
     scoreByEntryClass.set(s.entry_class_id, s);
   }
+
+  const documentOptions =
+    showDocuments?.map((d) => ({
+      id: d.id as string,
+      label: d.file_name as string,
+    })) ?? [];
 
   const allJudgeOptions =
     judgeStaff?.map((j) => ({ id: j.id as string, label: j.display_name as string })) ??
@@ -132,6 +150,11 @@ export default async function ClassScoringPage({
         classStatus={showClass.status}
         canVerify={canVerify}
         canFinalize={canFinalize}
+      />
+
+      <ClassPatternCard
+        pattern={(patternRow as ClassPatternRow | null) ?? null}
+        documentOptions={documentOptions}
       />
 
       <Card>
