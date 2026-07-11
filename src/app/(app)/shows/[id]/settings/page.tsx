@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
+import QRCode from "qrcode";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
+import { getSiteOrigin } from "@/lib/site-url";
 import { ShowSettingsForm } from "@/components/show/show-settings-form";
 import { ShowStatusActions } from "@/components/show/show-status-actions";
-import { Alert } from "@/components/ui";
+import { PublicLinkCard } from "@/components/show/public-link-card";
+import { Alert, Card } from "@/components/ui";
 import type { Show } from "@/lib/types";
 
 export const metadata = { title: "Show settings — ShowRing IQ" };
@@ -17,11 +20,18 @@ export default async function ShowSettingsPage({
 
   const { data: show } = await supabase
     .from("shows")
-    .select("*")
+    .select("*, organization:organizations(slug)")
     .eq("id", id)
     .maybeSingle();
   if (!show) notFound();
   const s = show as Show;
+  const orgSlug = (show.organization as unknown as { slug: string } | null)?.slug;
+  const publicUrl = orgSlug
+    ? `${await getSiteOrigin()}/${orgSlug}/${s.slug}`
+    : null;
+  const qrSvg = publicUrl
+    ? await QRCode.toString(publicUrl, { type: "svg", margin: 1, width: 176 })
+    : null;
 
   const [canEdit, canPublish, canLock, canArchive, canDelete] =
     await Promise.all([
@@ -45,6 +55,25 @@ export default async function ShowSettingsPage({
         canArchive={canArchive}
         canDelete={canDelete}
       />
+
+      <section>
+        <h2 className="mb-3 text-base font-semibold">Public page</h2>
+        {publicUrl && qrSvg ? (
+          <Card>
+            <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
+              Anyone with this link can see the schedule, current class, draw
+              order, live scores, and posted results — no account needed.
+              {s.status !== "published" &&
+                " The show is not published yet, so the link won't resolve until it is."}
+            </p>
+            <PublicLinkCard url={publicUrl} qrSvg={qrSvg} />
+          </Card>
+        ) : (
+          <Alert tone="info">
+            Couldn&apos;t determine this organization&apos;s URL slug.
+          </Alert>
+        )}
+      </section>
 
       <section>
         <h2 className="mb-3 text-base font-semibold">Show details</h2>
