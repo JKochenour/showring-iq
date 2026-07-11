@@ -2,6 +2,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import JSZip from "jszip";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
+import { formatAuditLogText, loadAuditLogExcerpt } from "@/lib/load-audit-log";
 import { loadNrhaExportData } from "@/lib/load-nrha-export";
 import { loadShowResults } from "@/lib/load-show-results";
 import { ResultsDocument } from "@/lib/pdf/results-document";
@@ -10,10 +11,8 @@ import { TallyDocument } from "@/lib/pdf/tally-document";
 
 /**
  * v1 submission package: CSV + results PDF + score sheets + tally sheet
- * + verified collected paperwork + a submission summary. Not included:
- * an audit log excerpt (log_audit doesn't tag entries with show_id, so a
- * reliable per-show filter isn't available without a schema change) —
- * flagged rather than faked.
+ * + verified collected paperwork + a submission summary + a show-scoped
+ * audit log excerpt.
  */
 export async function GET(
   _request: NextRequest,
@@ -116,20 +115,21 @@ export async function GET(
     paperworkCount++;
   }
 
+  const auditEntries = await loadAuditLogExcerpt(supabase, show.organization_id, id);
+  const auditLogText = formatAuditLogText(auditEntries, show.name);
+
   const summaryLines = [
     `${show.name} — NRHA Submission Summary`,
     `Generated: ${new Date().toISOString()}`,
     `Classes included: ${nrhaData.includedClassCount}`,
     `CSV rows: ${nrhaData.rows.length}`,
     `Collected paperwork included: ${paperworkCount} verified document(s)`,
+    `Audit log entries included: ${auditEntries.length}`,
     "",
     "Readiness checks:",
     ...(nrhaData.readiness.length === 0
       ? ["  All checks passed."]
       : nrhaData.readiness.map((i) => `  [${i.severity}] ${i.message}`)),
-    "",
-    "Not included in this package: an audit log excerpt (requires a schema",
-    "change to tag audit entries with show_id for reliable filtering).",
   ];
 
   zip.file("nrha_reinersuite_results.csv", nrhaData.csv);
@@ -137,6 +137,7 @@ export async function GET(
   zip.file("score_sheets.pdf", scoreSheetsPdf);
   zip.file("tally_and_fees.pdf", tallyPdf);
   zip.file("submission_summary.txt", summaryLines.join("\n"));
+  zip.file("audit_log.txt", auditLogText);
 
   const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
 
@@ -147,6 +148,7 @@ export async function GET(
     p_entity_id: id,
     p_old: null,
     p_new: { classes: nrhaData.includedClassCount, rows: nrhaData.rows.length },
+    p_show: id,
   });
 
   const filename = `${show.slug || "show"}-nrha-submission.zip`;

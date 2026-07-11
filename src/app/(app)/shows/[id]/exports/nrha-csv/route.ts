@@ -47,6 +47,7 @@ export async function GET(
       classes: data.includedClassCount,
       rows: data.rows.length,
     },
+    p_show: id,
   });
 
   const filename = `${show.slug || "show"}-nrha-reinersuite.csv`;

@@ -109,6 +109,7 @@ export async function updateShow(input: UpdateShowInput): Promise<ActionResult> 
     p_entity_id: d.showId,
     p_old: beforeValues,
     p_new: updates,
+    p_show: d.showId,
   });
 
   revalidatePath(`/shows/${d.showId}`, "layout");
@@ -166,6 +167,7 @@ export async function deleteShow(
     p_entity_id: showId,
     p_old: { name: show.name, slug: show.slug, status: show.status },
     p_new: null,
+    p_show: showId,
   });
 
   revalidatePath(`/organizations/${organizationId}/shows`);
@@ -226,6 +228,7 @@ export async function addStaff(input: AddStaffInput): Promise<ActionResult> {
     p_entity_id: inserted?.id ?? null,
     p_old: null,
     p_new: { show_id: d.showId, name: displayName, role: d.staffRole },
+    p_show: d.showId,
   });
 
   revalidatePath(`/shows/${d.showId}/staff`);
@@ -240,7 +243,7 @@ export async function removeStaff(
 
   const { data: staff } = await supabase
     .from("show_staff")
-    .select("organization_id, display_name, staff_role")
+    .select("organization_id, display_name, staff_role, show_id")
     .eq("id", staffId)
     .maybeSingle();
   if (!staff) return { error: "Staff assignment not found." };
@@ -266,6 +269,7 @@ export async function removeStaff(
     p_entity_id: staffId,
     p_old: { name: staff.display_name, role: staff.staff_role },
     p_new: null,
+    p_show: staff.show_id,
   });
 
   revalidatePath(`/shows/${showId}/staff`);

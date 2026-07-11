@@ -92,6 +92,7 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult> 
     p_entity_id: created.id,
     p_old: null,
     p_new: { document_type: d.documentType, file_name: file.name },
+    p_show: d.showId || null,
   });
 
   revalidatePath(`/organizations/${organizationId}`, "layout");
@@ -101,7 +102,7 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult> 
 async function loadDocForAudit(supabase: Awaited<ReturnType<typeof createClient>>, documentId: string) {
   return supabase
     .from("documents")
-    .select("organization_id, document_type, file_name, status")
+    .select("organization_id, document_type, file_name, status, show_id")
     .eq("id", documentId)
     .maybeSingle();
 }
@@ -129,6 +130,7 @@ export async function verifyDocument(documentId: string): Promise<ActionResult> 
     p_entity_id: documentId,
     p_old: { status: doc.status },
     p_new: { status: "verified" },
+    p_show: doc.show_id,
   });
 
   revalidatePath(`/organizations/${doc.organization_id}`, "layout");
@@ -167,6 +169,7 @@ export async function rejectDocument(input: {
     p_entity_id: d.documentId,
     p_old: { status: doc.status },
     p_new: { status: "rejected", reason: d.rejectionReason },
+    p_show: doc.show_id,
   });
 
   revalidatePath(`/organizations/${doc.organization_id}`, "layout");
@@ -177,7 +180,7 @@ export async function deleteDocument(documentId: string): Promise<ActionResult> 
   const supabase = await createClient();
   const { data: doc } = await supabase
     .from("documents")
-    .select("organization_id, file_path, document_type, file_name")
+    .select("organization_id, file_path, document_type, file_name, show_id")
     .eq("id", documentId)
     .maybeSingle();
   if (!doc) return { error: "Document not found." };
@@ -202,6 +205,7 @@ export async function deleteDocument(documentId: string): Promise<ActionResult> 
     p_entity_id: documentId,
     p_old: { document_type: doc.document_type, file_name: doc.file_name },
     p_new: null,
+    p_show: doc.show_id,
   });
 
   revalidatePath(`/organizations/${doc.organization_id}`, "layout");

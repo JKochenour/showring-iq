@@ -44,6 +44,7 @@ export async function GET(
     p_entity_id: id,
     p_old: null,
     p_new: { classes: data.classes.length },
+    p_show: id,
   });
 
   const filename = `${show.slug || "show"}-results.pdf`;

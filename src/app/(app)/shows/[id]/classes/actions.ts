@@ -76,6 +76,7 @@ export async function createClass(
     p_entity_id: created.id,
     p_old: null,
     p_new: { show_id: d.showId, class_number: d.classNumber, name: d.name },
+    p_show: d.showId,
   });
 
   revalidatePath(`/shows/${d.showId}/classes`);
@@ -148,6 +149,7 @@ export async function updateClass(
     p_entity_id: d.classId,
     p_old: beforeValues,
     p_new: updates,
+    p_show: show_id,
   });
 
   revalidatePath(`/shows/${show_id}/classes`, "layout");
@@ -195,6 +197,7 @@ export async function deleteClass(
     p_entity_id: classId,
     p_old: { class_number: cls.class_number, name: cls.name },
     p_new: null,
+    p_show: cls.show_id,
   });
 
   revalidatePath(`/shows/${cls.show_id}/classes`);
@@ -247,6 +250,7 @@ export async function assignClassJudge(
     p_entity_id: classId,
     p_old: null,
     p_new: { class_number: cls.class_number, judge: staff.display_name },
+    p_show: cls.show_id,
   });
 
   revalidatePath(`/shows/${cls.show_id}/classes/${classId}`);
@@ -296,6 +300,7 @@ export async function unassignClassJudge(
     p_entity_id: assignment.class_id,
     p_old: { class_number: classNumber, judge: staffName },
     p_new: null,
+    p_show: assignment.show_id,
   });
 
   revalidatePath(`/shows/${assignment.show_id}/classes/${assignment.class_id}`);
@@ -360,6 +365,7 @@ export async function moveClass(
     p_entity_id: cls.id,
     p_old: { position: cls.display_order },
     p_new: { position: neighbor.display_order, swapped_with_class: neighbor.class_number },
+    p_show: cls.show_id,
   });
 
   revalidatePath(`/shows/${cls.show_id}/classes`);

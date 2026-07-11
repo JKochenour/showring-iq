@@ -80,6 +80,7 @@ export async function createExhibitorEntry(input: {
     p_entity_id: entry.id,
     p_old: null,
     p_new: { show_id: input.showId, horse_name: horse.registered_name, source: "exhibitor" },
+    p_show: input.showId,
   });
 
   revalidatePath(`/exhibitor/${input.organizationId}/entries`);

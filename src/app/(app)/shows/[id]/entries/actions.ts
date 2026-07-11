@@ -134,6 +134,7 @@ export async function createEntry(
       horse: horse.registered_name,
       classes: classes.map((c) => c.class_number),
     },
+    p_show: d.showId,
   });
 
   if (d.backNumberMode !== "none") {
@@ -220,6 +221,7 @@ export async function addEntryClass(
       class: cls.class_number,
       fee_cents: cls.entry_fee_cents,
     },
+    p_show: entry.show_id,
   });
 
   revalidatePath(`/shows/${entry.show_id}/entries/${d.entryId}`);
@@ -262,6 +264,7 @@ export async function removeEntryClass(
       class: (row.class as unknown as { class_number: number } | null)?.class_number,
     },
     p_new: null,
+    p_show: row.show_id,
   });
 
   revalidatePath(`/shows/${row.show_id}/entries/${row.entry_id}`);
@@ -429,6 +432,7 @@ export async function deleteEntry(entryId: string): Promise<ActionResult> {
       horse: entry.horse_name,
     },
     p_new: null,
+    p_show: entry.show_id,
   });
 
   revalidatePath(`/shows/${entry.show_id}/entries`);

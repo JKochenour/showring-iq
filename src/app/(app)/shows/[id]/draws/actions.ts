@@ -98,6 +98,7 @@ export async function generateDraw(
       rider_spacing: 1,
     },
     p_reason: isRedraw ? "Re-draw" : null,
+    p_show: cls.show_id,
   });
 
   // Best effort: advance class status to draw_posted (needs class.edit)
@@ -165,6 +166,7 @@ export async function appendToDraw(
     p_entity_id: created.id,
     p_old: null,
     p_new: { class_id: ec.class_id, position: (maxRow?.position ?? 0) + 1 },
+    p_show: ec.show_id,
   });
 
   revalidateDrawPages(ec.show_id, ec.class_id);
@@ -250,6 +252,7 @@ export async function removeFromDraw(rowId: string): Promise<ActionResult> {
     p_entity_id: rowId,
     p_old: { class_id: row.class_id, position: row.position },
     p_new: null,
+    p_show: row.show_id,
   });
 
   revalidateDrawPages(row.show_id, row.class_id);
