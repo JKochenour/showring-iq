@@ -5,7 +5,82 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: public live-results page is built, migration 00021 applied, and fully browser-verified live (all 3 states: not-started, running with live scores, results-posted). See "2026-07-11 (2nd session): public live results" section right below. Below that, "2026-07-11 update" and "Roadmap" sections are the prior session's history.
+## Status: public live-results page (migration 00021) AND per-show billing + share-link/QR (migration 00022) are both built, both migrations applied, both fully browser-verified live. Nothing outstanding on either feature. Stripe/online payments remain explicitly deferred — this session's billing feature is deliberately "charges only," see "2026-07-11 (3rd session)" below. Older sections below that are prior-session history.
+
+## 2026-07-11 (3rd session): guest-access share link/QR + per-show billing
+
+Two features, both built after confirming scope with the user first
+(same pattern as the live-results page), both applied and
+browser-verified live against the real EPRHA Summer Slide 2026 show.
+
+**1. Guest-access share link + QR.** The live-results page from the
+2nd session had no discoverable entry point — you'd have to already
+know the `/[org]/[show]` URL. Added a "Public page" card to
+`/shows/[id]/settings` (`src/components/show/public-link-card.tsx`,
+`src/lib/site-url.ts`) showing the full public URL as copyable text
+plus a QR code (new `qrcode` npm dependency, generated server-side as
+inline SVG — no external QR API call). Verified live: correct URL,
+correct QR, nav tab present. The copy-to-clipboard button itself
+couldn't be verified in this sandboxed browser (clipboard-write is
+denied there, confirmed via a direct `navigator.clipboard.writeText()`
+call returning `NotAllowedError`) — the button fails silently by
+design in that case (link text stays visible/selectable), and this is
+a sandbox limitation, not an app bug; a real browser tab has no such
+restriction. A platform-wide "find a show" directory was explicitly
+scoped OUT of this pass per the user's choice — flagged as a future
+follow-up, not started.
+
+**2. Per-show billing.** New `/shows/[id]/financials` tab: search
+every entered rider/owner by name or back number, pull up an itemized
+bill (`src/lib/billing.ts`, `src/app/(app)/shows/[id]/financials/`).
+Auto entry-fee line items are read live from `entry_classes.fee_cents`
+(not duplicated anywhere), plus manual misc charges (ice, sponsorship,
+apparel, etc. — free-text category with quick-pick buttons) that
+office staff can add and remove, gated by the `invoice.edit`
+permission that already existed but had never been used. Every
+removal requires a typed reason, audit-logged like every other
+money-affecting action in this app. New migration 00022
+(`misc_charges` table + `add_misc_charge`/`remove_misc_charge` RPCs) —
+reuses the existing `invoice.view`/`invoice.edit` permissions, no new
+role grants needed.
+
+Key product decisions, confirmed with the user before building:
+billing party per entry is **the owner if one is set, otherwise the
+rider** (not always the rider — an owner who isn't riding gets the
+bill); scope is **charges only, no payment recording** (Stripe/online
+payments stay deferred; there's no way yet to mark a bill "paid" —
+that's future work alongside real payment processing).
+
+**A real bug caught during verification, not before:** the first pass
+summed *every* `entry_classes.fee_cents` for a person's entries,
+including scratched classes — $30.00 instead of the correct $20.00 for
+the test entry (1 scratched class + 2 active, $10 each). The existing
+Entries list page (`src/app/(app)/shows/[id]/entries/page.tsx`)
+already excludes scratched fees from its total; the financials
+feature now matches that convention exactly — scratched line items
+still display (struck through, with a "Scratched" badge) so staff has
+full visibility, but don't count toward the subtotal. Worth
+remembering: any *new* money-total computation in this app should
+cross-check against how the Entries page already handles scratches
+before assuming a naive sum is correct.
+
+Full verification pass, live against the real EPRHA Summer Slide 2026
+show: public link/QR card renders with the correct URL; financials
+roster shows Jamie Tester (back #1) at the correct $20.00 (matching
+the Entries page); search resolves by both name and back number
+correctly, and shows "No match" for a bogus number; the person detail
+page shows the scratched Class 1 fee struck through and excluded from
+the subtotal; added a $5.00 "Ice" misc charge (quick-pick category
+button confirmed setting the field), total correctly became $25.00 on
+both the detail page and the roster; removed it with a required reason
+via the same `useConfirmDialog` reason-field pattern used elsewhere
+(override placing, reopen score), total correctly reverted to $20.00;
+confirmed both `misc_charge.added` and `misc_charge.removed` appear in
+the org audit log with the reason attached. Build and lint both clean
+throughout (only the 2 pre-existing benign RHF `watch()` warnings).
+
+Committed in two commits: `c10d23b` (public live-results, prior
+session) and `8633ede` (this session's share-link/QR + billing).
 
 ## 2026-07-11 (2nd session): public live results — code done, DB + verification pending
 
@@ -161,6 +236,13 @@ Build and lint both clean throughout (only the 2 pre-existing benign
 RHF `watch()` warnings).
 
 ## Database
+
+**Migrations 00021 and 00022 are applied** — 00021
+(`00021_public_live_results.sql`, public live-results RPCs) and 00022
+(`00022_show_billing.sql`, misc_charges table + billing RPCs), both
+confirmed live and browser-verified this session (2026-07-11, 3rd
+session). All 22 migrations are now live. Details below are from
+earlier sessions and still accurate for 00001–00020:
 
 **Migration 00020 (`00020_fix_log_audit_overload.sql`) is applied** —
 confirmed by the user via the Supabase SQL Editor on 2026-07-11. All 20
@@ -367,33 +449,33 @@ guided show-setup wizard (template → classes → fees → open entries);
 test gate/scoring screens on actual phones in sunlight (not yet
 audited for this).
 
-**Gaps, in priority order**: (1) no online payments — no Stripe, no
-pay-at-entry, no exhibitor settlement statement; Stripe Connect
-(org-per-connected-account) is the natural fit for this app's org-first
-architecture and matches CLAUDE.md's already-deferred "Payments:
-Stripe" line. (2) no public/unauthenticated live results — gate page
-already has the right auto-refreshing data shape, just not reachable
-without login. (3) no scheduling/estimated start times across a full
-day. (4) no offline resilience (PWA/IndexedDB was deferred in CLAUDE.md
-and still is). (5) no exhibitor SMS/email notifications (Resend is
-already in the stack). (6) no stabling/shavings/RV orders. (7)
-`DEFAULT_REQUIRED_ASSOCIATIONS` in `validate-entries.ts` is still a
-hard-coded `["NRHA"]` fallback rather than derived from the show's real
-affiliations — worth fixing before a second association.
+**Gaps, in priority order (status as of 2026-07-11, 3rd session)**:
+(1) no online payments — **partially addressed**: there's now an
+itemized per-person bill (entry fees + misc charges) at
+`/shows/[id]/financials`, but it's charges-only, no payment recording
+and no Stripe — the user explicitly chose to skip Stripe Connect for
+now, so real pay-at-entry and marking a bill "paid" are still
+unbuilt. (2) no public/unauthenticated live results — **done**, see
+the 2nd and 3rd session sections above (live-results page + share
+link/QR for discoverability). (3) no scheduling/estimated start times
+across a full day — still open. (4) no offline resilience — still
+deferred per CLAUDE.md. (5) no exhibitor SMS/email notifications —
+still open (Resend is already in the stack). (6) no stabling/shavings/
+RV orders — the misc-charges feature could carry ad hoc versions of
+these today (add a "Stabling" charge manually) but there's no
+dedicated order/inventory flow. (7) `DEFAULT_REQUIRED_ASSOCIATIONS`
+hard-coding — still open, unchanged.
 
-**Agreed sequence**: public live results (fast, self-contained, also a
-marketing surface) → Stripe Connect payments + settlement (removes the
-biggest competitive objection) → SMS/email → schedule with time
-estimates → offline-tolerant scoring/gate PWA → second association
-(likely AQHA) → stabling orders.
+**Sequence, updated 2026-07-11 (3rd session)**: public live results
+→ guest-access discoverability + per-show billing (this session,
+Stripe explicitly skipped) → next up is user's call: SMS/email,
+schedule with time estimates, offline-tolerant scoring/gate PWA,
+second association, stabling orders, or coming back to Stripe Connect
+payments once ready.
 
-**Immediate next step, nothing coded yet**: build the public live
-results page (route TBD, e.g. `/live/[showId]`) — current class, draw
-order, at-gate status, live scores, posted results. Explicitly agreed
-to design the RLS policy first (new anonymous read access — scope to
-current class/draw/posted results only, never fees/contact
-info/birthdates) and confirm scope with the user before writing any UI
-code.
+**No longer "immediate next step"** — the public live-results page and
+guest-access discoverability are both done and verified (see the 2nd
+and 3rd session sections above).
 
 **Also still open**: judge-role permission *enforcement* (a judge
 account only seeing their assigned class) hasn't been verified
