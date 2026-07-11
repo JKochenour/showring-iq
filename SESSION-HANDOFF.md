@@ -1,13 +1,13 @@
-# ShowRing IQ — Session Handoff (updated 2026-07-10)
+# ShowRing IQ — Session Handoff (updated 2026-07-11)
 
 This is a plain-text snapshot of where this project stands. Claude's
 persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: MVP + follow-on features + 4 post-MVP features, all committed. Exhibitor flow live-verified. Migrations 00016-19 now confirmed applied live. The 4 newest features are NOT yet browser-tested.
+## Status: MVP + follow-on features + 4 post-MVP features, all committed and now live-verified in browser. Full visual redesign done. 4 more real bugs found and fixed along the way. See "2026-07-11 update" section below for the current picture — the table right underneath is the pre-2026-07-11 history.
 
-40 commits on `main`, working tree clean:
+42 commits on `main`, working tree clean:
 
 | Commit | What |
 |---|---|
@@ -31,7 +31,65 @@ ESLint's own ignore list doesn't know that. Prefer `npx eslint src`
 for a clean signal, or `git worktree list` / `git worktree remove` any
 leftover worktrees first.
 
+## 2026-07-11 update: full visual redesign + all 4 features live-verified + 4 more real bugs fixed
+
+Two commits: `1798660` (design system overhaul + landing/auth redesign
++ two silent-query bug fixes) and `5fa63a2` (native-dialog replacement
++ two more bug fixes). Full detail in memory
+(`design-overhaul-and-bugfixes.md`); summary:
+
+**Design:** replaced the generic Tailwind emerald/zinc palette with a
+custom hunter-green `brand` + brass `accent` theme, paired Fraunces
+(headings) with the existing Geist (body/UI), rebuilt the landing page,
+auth screens, and app shell sidebar — all through the shared
+`src/components/ui.tsx` primitives so it cascades everywhere with
+minimal per-page edits. Replaced every `window.confirm()`/
+`window.prompt()` in the app (33 call sites, 20 files) with a single
+shared, styled, promise-based modal (`src/components/confirm-dialog.tsx`)
+— native dialogs don't theme and, it turns out, aren't reliably
+scriptable by browser automation either.
+
+**All 4 post-MVP features live-verified** (class_judges assignment,
+class patterns + judge signoff including reopen-clears-signature,
+multi-affiliation classes exactly matching CLAUDE.md's NRHA+EPRHA
+example, and the audit-log-in-NRHA-export). One gap remains: judge-role
+*permission enforcement* (a judge account only seeing their assigned
+class) still needs a real second login to verify — Claude can't sign
+in as another user itself.
+
+**4 more real bugs found and fixed:**
+1. `show_staff` and `organization_members` list pages always showed
+   zero rows — both embedded `profiles` via a `user_id` column that
+   only FKs to `auth.users`, not directly to `profiles`, so every
+   query errored (silently, since only `{ data }` was destructured).
+2. The org Audit Log page had the exact same bug (via an explicit-but-
+   wrong FK-name hint), found while verifying feature #4 — a repo-wide
+   grep for `profiles(`/`profiles!` embeds is worth running any time
+   this bug class is suspected.
+3. `log_audit()` has been ambiguous since migration 00017 added an 8th
+   param via `create or replace function` without dropping the old
+   7-arg overload — broke every org-level audit-logged action (rule
+   package publish, member invites, org/person/horse CRUD) with
+   "function log_audit(...) is not unique". **Fixed by migration
+   `00020_fix_log_audit_overload.sql`, which the user has already
+   applied via the Supabase SQL Editor.**
+4. Editing ANY field on a class that's progressed past Draft/Open/
+   Entry-closed/Cancelled (i.e. anything in scoring or later) silently
+   failed on every save — the update form's Zod schema only accepted
+   those 4 statuses, so the hidden current-status default always
+   failed validation. Widened the schema to the full 12-status set and
+   made the Status field read-only once a class is past the early,
+   user-settable stages.
+
+Build and lint both clean throughout (only the 2 pre-existing benign
+RHF `watch()` warnings).
+
 ## Database
+
+**Migration 00020 (`00020_fix_log_audit_overload.sql`) is applied** —
+confirmed by the user via the Supabase SQL Editor on 2026-07-11. All 20
+migrations are now live. Details below are from the prior session and
+still accurate for 00001–00019:
 
 All 19 migrations (`supabase/migrations/00001`–`00019`) are confirmed
 applied to the live Supabase project (`dmyejohfauijbuizboos.supabase.co`)
