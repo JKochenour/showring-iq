@@ -19,6 +19,7 @@ import {
   Select,
 } from "@/components/ui";
 import { FormCombobox } from "@/components/combobox";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export function AddStaffForm({
   showId,
@@ -137,14 +138,21 @@ export function RemoveStaffButton({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   return (
     <div>
       <Button
         variant="danger"
         disabled={isPending}
-        onClick={() => {
-          if (!window.confirm(`Remove ${label} from show staff?`)) return;
+        onClick={async () => {
+          const result = await confirm({
+            title: "Remove staff",
+            message: `Remove ${label} from show staff?`,
+            tone: "danger",
+            confirmLabel: "Remove",
+          });
+          if (!result) return;
           setError(undefined);
           startTransition(async () => {
             const result = await removeStaff(showId, staffId);

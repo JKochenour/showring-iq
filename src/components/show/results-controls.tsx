@@ -8,6 +8,7 @@ import {
   unpublishResults,
 } from "@/app/(app)/shows/[id]/results/actions";
 import { Alert, Button } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export function ResultsClassActions({
   classId,
@@ -26,6 +27,7 @@ export function ResultsClassActions({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const run = (fn: () => Promise<{ error?: string }>) => {
     setError(undefined);
@@ -65,9 +67,14 @@ export function ResultsClassActions({
           <Button
             variant="danger"
             disabled={isPending}
-            onClick={() => {
-              if (window.confirm("Unpost these results? The class returns to official."))
-                run(() => unpublishResults(classId, showId));
+            onClick={async () => {
+              const result = await confirm({
+                title: "Unpost results",
+                message: "Unpost these results? The class returns to official.",
+                tone: "danger",
+                confirmLabel: "Unpost",
+              });
+              if (result) run(() => unpublishResults(classId, showId));
             }}
           >
             {isPending ? "Working…" : "Unpost"}
@@ -91,33 +98,47 @@ export function OverridePlacingButton({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   return (
     <div>
       <Button
         variant="secondary"
         disabled={isPending}
-        onClick={() => {
-          const placingStr = window.prompt(
-            "Set placing (whole number):",
-            currentPlacing ? String(currentPlacing) : ""
-          );
-          if (placingStr === null || placingStr.trim() === "") return;
-          const placing = parseInt(placingStr, 10);
+        onClick={async () => {
+          const result = await confirm({
+            title: "Override placing",
+            tone: "danger",
+            confirmLabel: "Save",
+            fields: [
+              {
+                name: "placing",
+                label: "Placing (whole number)",
+                defaultValue: currentPlacing ? String(currentPlacing) : "",
+                required: true,
+              },
+              {
+                name: "reason",
+                label: "Reason (required)",
+                type: "textarea",
+                required: true,
+              },
+            ],
+          });
+          if (!result) return;
+          const placing = parseInt(result.placing, 10);
           if (Number.isNaN(placing)) {
             setError("Enter a whole number.");
             return;
           }
-          const reason = window.prompt("Reason for this placing correction (required):");
-          if (!reason || reason.trim() === "") return;
           setError(undefined);
           startTransition(async () => {
-            const result = await overridePlacing(
-              { entryClassId, placing, reason: reason.trim() },
+            const actionResult = await overridePlacing(
+              { entryClassId, placing, reason: result.reason.trim() },
               showId,
               classId
             );
-            if (result?.error) setError(result.error);
+            if (actionResult?.error) setError(actionResult.error);
           });
         }}
       >

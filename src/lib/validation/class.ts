@@ -10,6 +10,28 @@ export const CLASS_STATUS_OPTIONS = [
   { value: "cancelled", label: "Cancelled" },
 ] as const;
 
+/** Full status set, matching the classes.status check constraint. The
+ * update form only exposes CLASS_STATUS_OPTIONS as choices (later
+ * stages are workflow-driven), but validation must still accept a
+ * class's current later-stage status when the form round-trips it
+ * unchanged — otherwise every edit to an in-progress class (e.g. a
+ * pattern number tweak) fails with "invalid status" even though status
+ * itself was never touched. */
+export const ALL_CLASS_STATUSES = [
+  "draft",
+  "open",
+  "entry_closed",
+  "draw_posted",
+  "in_progress",
+  "scoring",
+  "pending_verification",
+  "official",
+  "results_posted",
+  "exported",
+  "archived",
+  "cancelled",
+] as const;
+
 export const DISCIPLINES = [
   "Reining",
   "Ranch Riding",
@@ -58,9 +80,7 @@ export const createClassSchema = z.object({
 
 export const updateClassSchema = z.object({
   classId: z.uuid(),
-  status: z.enum(
-    CLASS_STATUS_OPTIONS.map((s) => s.value) as [string, ...string[]]
-  ),
+  status: z.enum(ALL_CLASS_STATUSES),
   ...classFields,
 });
 

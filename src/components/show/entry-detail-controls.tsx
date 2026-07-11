@@ -11,6 +11,7 @@ import {
   scratchEntryClass,
 } from "@/app/(app)/shows/[id]/entries/actions";
 import { Alert, Button, Input, Select } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export function BackNumberControl({
   entryId,
@@ -24,6 +25,7 @@ export function BackNumberControl({
   const [error, setError] = useState<string>();
   const [manual, setManual] = useState("");
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const run = (fn: () => Promise<{ error?: string }>) => {
     setError(undefined);
@@ -73,9 +75,14 @@ export function BackNumberControl({
               <Button
                 variant="danger"
                 disabled={isPending}
-                onClick={() => {
-                  if (window.confirm(`Release back number ${currentNumber}?`))
-                    run(() => releaseBackNumber(entryId));
+                onClick={async () => {
+                  const result = await confirm({
+                    title: "Release back number",
+                    message: `Release back number ${currentNumber}?`,
+                    tone: "danger",
+                    confirmLabel: "Release",
+                  });
+                  if (result) run(() => releaseBackNumber(entryId));
                 }}
               >
                 Release
@@ -154,6 +161,7 @@ export function ScratchClassButton({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   if (status === "entered" && !canScratch) return null;
   if (status === "scratched" && !canReinstate) return null;
@@ -163,16 +171,20 @@ export function ScratchClassButton({
       <Button
         variant={status === "entered" ? "danger" : "secondary"}
         disabled={isPending}
-        onClick={() => {
+        onClick={async () => {
           setError(undefined);
           if (status === "entered") {
-            const reason = window.prompt(
-              "Scratch this class. Reason (optional):"
-            );
-            if (reason === null) return; // cancelled
+            const result = await confirm({
+              title: "Scratch class",
+              message: "Scratch this class from the entry?",
+              tone: "danger",
+              confirmLabel: "Scratch",
+              fields: [{ name: "reason", label: "Reason (optional)" }],
+            });
+            if (!result) return;
             startTransition(async () => {
-              const result = await scratchEntryClass(entryClassId, reason);
-              if (result?.error) setError(result.error);
+              const scratchResult = await scratchEntryClass(entryClassId, result.reason);
+              if (scratchResult?.error) setError(scratchResult.error);
             });
           } else {
             startTransition(async () => {
@@ -208,6 +220,7 @@ export function EntryScratchControls({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   if (status === "active" && !canScratch) return null;
   if (status === "scratched" && !canReinstate) return null;
@@ -223,14 +236,18 @@ export function EntryScratchControls({
         <Button
           variant="danger"
           disabled={isPending}
-          onClick={() => {
-            const reason = window.prompt(
-              "Scratch the entire entry (all classes). Reason (optional):"
-            );
-            if (reason === null) return;
+          onClick={async () => {
+            const confirmResult = await confirm({
+              title: "Scratch entire entry",
+              message: "Scratch the entire entry (all classes)?",
+              tone: "danger",
+              confirmLabel: "Scratch",
+              fields: [{ name: "reason", label: "Reason (optional)" }],
+            });
+            if (!confirmResult) return;
             setError(undefined);
             startTransition(async () => {
-              const result = await scratchEntry(entryId, reason);
+              const result = await scratchEntry(entryId, confirmResult.reason);
               if (result?.error) setError(result.error);
             });
           }}

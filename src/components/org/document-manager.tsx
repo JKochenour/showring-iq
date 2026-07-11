@@ -10,6 +10,7 @@ import {
 } from "@/app/(app)/organizations/[id]/documents/actions";
 import { DOCUMENT_TYPES } from "@/lib/validation/document";
 import { Alert, Button, Input, Label, Select } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import type { DocumentRow } from "@/lib/types";
 
 function formatBytes(n: number | null): string {
@@ -136,6 +137,7 @@ export function DocumentManager({
   const [isUploading, startUpload] = useTransition();
   const [rowError, setRowError] = useState<string>();
   const [isRowPending, startRowTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -202,8 +204,14 @@ export function DocumentManager({
                       type="button"
                       className="text-red-600 hover:underline disabled:opacity-50 dark:text-red-400"
                       disabled={isRowPending}
-                      onClick={() => {
-                        if (!window.confirm(`Delete ${doc.file_name}? This cannot be undone.`)) return;
+                      onClick={async () => {
+                        const result = await confirm({
+                          title: "Delete document",
+                          message: `Delete ${doc.file_name}? This cannot be undone.`,
+                          tone: "danger",
+                          confirmLabel: "Delete",
+                        });
+                        if (!result) return;
                         setRowError(undefined);
                         startRowTransition(async () => {
                           const result = await deleteDocument(doc.id);

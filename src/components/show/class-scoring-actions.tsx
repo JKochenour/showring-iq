@@ -6,6 +6,7 @@ import {
   markClassScoringComplete,
 } from "@/app/(app)/shows/[id]/scoring/actions";
 import { Button } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export function ClassScoringActions({
   classId,
@@ -22,6 +23,7 @@ export function ClassScoringActions({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const run = (fn: () => Promise<{ error?: string }>) => {
     setError(undefined);
@@ -46,9 +48,13 @@ export function ClassScoringActions({
         {classStatus === "pending_verification" && canFinalize && (
           <Button
             disabled={isPending}
-            onClick={() => {
-              if (window.confirm("Mark this class official? Results can be posted next."))
-                run(() => markClassOfficial(classId, showId));
+            onClick={async () => {
+              const result = await confirm({
+                title: "Mark class official",
+                message: "Mark this class official? Results can be posted next.",
+                confirmLabel: "Mark official",
+              });
+              if (result) run(() => markClassOfficial(classId, showId));
             }}
           >
             {isPending ? "Working…" : "Mark official"}

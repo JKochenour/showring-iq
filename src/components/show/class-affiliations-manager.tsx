@@ -8,6 +8,7 @@ import {
 } from "@/app/(app)/shows/[id]/classes/actions";
 import { Button, Card } from "@/components/ui";
 import { Combobox, type ComboboxOption } from "@/components/combobox";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import type { ClassAffiliationRow } from "@/lib/types";
 import type { ClassCodeAffiliationMeta } from "@/lib/rule-package-options";
 
@@ -38,6 +39,7 @@ export function ClassAffiliationsManager({
   const [isPrimary, setIsPrimary] = useState(affiliations.length === 0);
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const linkedCodeIds = new Set(affiliations.map((a) => a.association_class_code_id));
   const availableOptions = classCodeOptions.filter((o) => !linkedCodeIds.has(o.id));
@@ -91,8 +93,14 @@ export function ClassAffiliationsManager({
     });
   };
 
-  const onRemove = (id: string, label: string) => {
-    if (!window.confirm(`Remove the ${label} affiliation from this class?`)) return;
+  const onRemove = async (id: string, label: string) => {
+    const result = await confirm({
+      title: "Remove affiliation",
+      message: `Remove the ${label} affiliation from this class?`,
+      tone: "danger",
+      confirmLabel: "Remove",
+    });
+    if (!result) return;
     setError(undefined);
     startTransition(async () => {
       const result = await removeClassAffiliation(id);

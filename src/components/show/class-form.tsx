@@ -28,6 +28,7 @@ import {
   Select,
 } from "@/components/ui";
 import { FormCombobox, type ComboboxOption } from "@/components/combobox";
+import { ClassStatusBadge } from "@/components/show/class-status-badge";
 import type { ShowClass } from "@/lib/types";
 
 export function CreateClassForm({
@@ -130,6 +131,10 @@ export function EditClassForm({
     });
   };
 
+  const isEarlyStage = CLASS_STATUS_OPTIONS.some(
+    (s) => s.value === showClass.status
+  );
+
   return (
     <Card className="max-w-2xl">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -138,13 +143,26 @@ export function EditClassForm({
         <input type="hidden" {...register("classId")} />
         <div>
           <Label htmlFor="status">Status</Label>
-          <Select id="status" {...register("status")}>
-            {CLASS_STATUS_OPTIONS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </Select>
+          {isEarlyStage ? (
+            <Select id="status" {...register("status")}>
+              {CLASS_STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </Select>
+          ) : (
+            <>
+              <input type="hidden" {...register("status")} />
+              <div>
+                <ClassStatusBadge status={showClass.status} />
+              </div>
+              <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                This status is set automatically by the class&apos;s workflow
+                (draw, scoring, results) and can&apos;t be changed here.
+              </p>
+            </>
+          )}
           <FieldError message={errors.status?.message} />
         </div>
         <ClassFields register={register} errors={errors} control={control} classCodeOptions={classCodeOptions} />

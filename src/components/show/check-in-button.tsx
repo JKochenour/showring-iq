@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { checkInEntry, undoCheckIn } from "@/app/(app)/shows/[id]/check-in/actions";
 import { Button } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export function CheckInButton({
   entryId,
@@ -15,6 +16,7 @@ export function CheckInButton({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const run = (fn: () => Promise<{ error?: string }>) => {
     setError(undefined);
@@ -30,9 +32,12 @@ export function CheckInButton({
         <Button
           variant="secondary"
           disabled={isPending}
-          onClick={() => {
-            if (window.confirm("Undo check-in for this entry?"))
-              run(() => undoCheckIn(entryId));
+          onClick={async () => {
+            const result = await confirm({
+              title: "Undo check-in",
+              message: "Undo check-in for this entry?",
+            });
+            if (result) run(() => undoCheckIn(entryId));
           }}
         >
           {isPending ? "Working…" : "Undo"}
@@ -40,19 +45,25 @@ export function CheckInButton({
       ) : (
         <Button
           disabled={isPending}
-          onClick={() => {
+          onClick={async () => {
             if (blockingMessages.length > 0) {
-              const reason = window.prompt(
-                `This entry has blocking issues:\n\n• ${blockingMessages.join(
+              const result = await confirm({
+                title: "Override blocking issues",
+                message: `This entry has blocking issues:\n\n• ${blockingMessages.join(
                   "\n• "
-                )}\n\nEnter an override reason to check in anyway (required):`
-              );
-              if (reason === null) return;
-              if (reason.trim() === "") {
-                setError("An override reason is required.");
-                return;
-              }
-              run(() => checkInEntry(entryId, reason.trim()));
+                )}`,
+                tone: "danger",
+                confirmLabel: "Check in anyway",
+                fields: [
+                  {
+                    name: "reason",
+                    label: "Override reason (required)",
+                    required: true,
+                  },
+                ],
+              });
+              if (!result) return;
+              run(() => checkInEntry(entryId, result.reason.trim()));
             } else {
               run(() => checkInEntry(entryId));
             }

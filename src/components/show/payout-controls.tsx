@@ -8,6 +8,7 @@ import {
 } from "@/app/(app)/shows/[id]/results/actions";
 import { EXAMPLE_PAYOUT_SCHEDULE } from "@/lib/validation/payout";
 import { Alert, Button, Input, Label } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import type { PayoutScheduleEntry } from "@/lib/types";
 
 export function PayoutScheduleEditor({
@@ -171,6 +172,7 @@ export function PayoutActions({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const run = (fn: () => Promise<{ error?: string }>) => {
     setError(undefined);
@@ -200,13 +202,14 @@ export function PayoutActions({
         {canApprove && (
           <Button
             disabled={isPending}
-            onClick={() => {
-              if (
-                window.confirm(
-                  "Approve these payout amounts? This records the approval in the audit log."
-                )
-              )
-                run(() => approvePayouts(classId, showId));
+            onClick={async () => {
+              const result = await confirm({
+                title: "Approve payouts",
+                message:
+                  "Approve these payout amounts? This records the approval in the audit log.",
+                confirmLabel: "Approve",
+              });
+              if (result) run(() => approvePayouts(classId, showId));
             }}
           >
             {isPending ? "Working…" : "Approve payouts"}

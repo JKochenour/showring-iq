@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { setRulePackageStatus } from "@/app/(app)/organizations/[id]/rule-packages/actions";
 import { Button } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import type { RulePackageStatus } from "@/lib/types";
 
 const NEXT_STEPS: Partial<Record<RulePackageStatus, { status: RulePackageStatus; label: string }[]>> = {
@@ -33,6 +34,7 @@ export function RulePackageStatusActions({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   if (!canPublish) return null;
   const steps = NEXT_STEPS[status] ?? [];
@@ -64,8 +66,14 @@ export function RulePackageStatusActions({
           <Button
             variant="danger"
             disabled={isPending}
-            onClick={() => {
-              if (!window.confirm("Archive this rule package?")) return;
+            onClick={async () => {
+              const result = await confirm({
+                title: "Archive rule package",
+                message: "Archive this rule package?",
+                tone: "danger",
+                confirmLabel: "Archive",
+              });
+              if (!result) return;
               setError(undefined);
               startTransition(async () => {
                 const result = await setRulePackageStatus(

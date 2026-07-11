@@ -7,6 +7,7 @@ import {
   setMemberRole,
 } from "@/app/(app)/organizations/actions";
 import { Button, Select } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export function MemberRoleSelect({
   organizationId,
@@ -65,15 +66,22 @@ export function RemoveMemberButton({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   return (
     <div>
       <Button
         variant="danger"
         disabled={isPending}
-        onClick={() => {
+        onClick={async () => {
           const verb = isSelf ? "Leave this organization" : `Remove ${memberLabel}`;
-          if (!window.confirm(`${verb}? This can be undone by re-inviting.`)) return;
+          const result = await confirm({
+            title: verb,
+            message: `${verb}? This can be undone by re-inviting.`,
+            tone: "danger",
+            confirmLabel: isSelf ? "Leave" : "Remove",
+          });
+          if (!result) return;
           setError(undefined);
           startTransition(async () => {
             const result = await removeMember(organizationId, memberId);

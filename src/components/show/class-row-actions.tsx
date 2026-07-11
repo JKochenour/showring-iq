@@ -6,6 +6,7 @@ import {
   moveClass,
 } from "@/app/(app)/shows/[id]/classes/actions";
 import { Button } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export function ReorderButtons({
   classId,
@@ -61,19 +62,21 @@ export function DeleteClassButton({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   return (
     <div>
       <Button
         variant="danger"
         disabled={isPending}
-        onClick={() => {
-          if (
-            !window.confirm(
-              `Permanently delete ${label}? This cannot be undone.`
-            )
-          )
-            return;
+        onClick={async () => {
+          const result = await confirm({
+            title: "Delete class",
+            message: `Permanently delete ${label}? This cannot be undone.`,
+            tone: "danger",
+            confirmLabel: "Delete",
+          });
+          if (!result) return;
           setError(undefined);
           startTransition(async () => {
             const result = await deleteClass(classId);

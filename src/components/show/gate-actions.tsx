@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { setRunStatus } from "@/app/(app)/shows/[id]/draws/actions";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 const ACTIONS: {
   status: string;
@@ -43,6 +44,7 @@ export function GateActionButtons({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const run = (status: string, reason?: string) => {
     setError(undefined);
@@ -62,14 +64,19 @@ export function GateActionButtons({
             key={action.status}
             disabled={isPending}
             className={`rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${TONE_STYLES[action.tone]}`}
-            onClick={() => {
-              if (action.confirm && !window.confirm(action.confirm)) return;
-              if (action.promptReason) {
-                const reason = window.prompt(
-                  `${action.label} — reason (optional):`
-                );
-                if (reason === null) return;
-                run(action.status, reason);
+            onClick={async () => {
+              if (action.confirm || action.promptReason) {
+                const result = await confirm({
+                  title: action.label,
+                  message: action.confirm,
+                  tone: action.tone === "danger" ? "danger" : "default",
+                  confirmLabel: action.label,
+                  fields: action.promptReason
+                    ? [{ name: "reason", label: "Reason (optional)" }]
+                    : undefined,
+                });
+                if (!result) return;
+                run(action.status, result.reason);
               } else {
                 run(action.status);
               }

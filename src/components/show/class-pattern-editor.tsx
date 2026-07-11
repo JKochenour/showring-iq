@@ -7,6 +7,7 @@ import {
 } from "@/app/(app)/shows/[id]/classes/actions";
 import { getDocumentSignedUrl } from "@/app/(app)/organizations/[id]/documents/actions";
 import { Button, Card, Label, Select, Textarea } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import type { ClassPatternRow } from "@/lib/types";
 
 export interface DocumentOption {
@@ -34,6 +35,7 @@ export function ClassPatternEditor({
   const [documentId, setDocumentId] = useState(pattern?.document_id ?? "");
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const save = () => {
     setError(undefined);
@@ -44,8 +46,14 @@ export function ClassPatternEditor({
     });
   };
 
-  const remove = () => {
-    if (!window.confirm("Remove this pattern?")) return;
+  const remove = async () => {
+    const result = await confirm({
+      title: "Remove pattern",
+      message: "Remove this pattern?",
+      tone: "danger",
+      confirmLabel: "Remove",
+    });
+    if (!result) return;
     setError(undefined);
     startTransition(async () => {
       const result = await deleteClassPattern(classId);

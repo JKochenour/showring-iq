@@ -7,6 +7,7 @@ import {
 } from "@/app/(app)/shows/[id]/classes/actions";
 import { Button, Card } from "@/components/ui";
 import { Combobox, type ComboboxOption } from "@/components/combobox";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import type { ClassJudgeRow } from "@/lib/types";
 
 export function ClassJudgesManager({
@@ -23,6 +24,7 @@ export function ClassJudgesManager({
   const [selected, setSelected] = useState("");
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const assignedStaffIds = new Set(assignments.map((a) => a.show_staff_id));
   const availableOptions = judgeOptions.filter((o) => !assignedStaffIds.has(o.id));
@@ -37,8 +39,14 @@ export function ClassJudgesManager({
     });
   };
 
-  const onRemove = (classJudgeId: string, label: string) => {
-    if (!window.confirm(`Remove ${label} as judge for this class?`)) return;
+  const onRemove = async (classJudgeId: string, label: string) => {
+    const result = await confirm({
+      title: "Remove judge",
+      message: `Remove ${label} as judge for this class?`,
+      tone: "danger",
+      confirmLabel: "Remove",
+    });
+    if (!result) return;
     setError(undefined);
     startTransition(async () => {
       const result = await unassignClassJudge(classJudgeId);

@@ -5,6 +5,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { bulkDeleteHorses } from "@/app/(app)/organizations/[id]/horses/actions";
 import { Alert, Button, Card } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export type HorseRow = {
   id: string;
@@ -29,6 +30,7 @@ export function HorsesTable({
   const [error, setError] = useState<string>();
   const [summary, setSummary] = useState<{ deleted: number; failed: number; messages: string[] }>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const allSelected = rows.length > 0 && selected.size === rows.length;
 
@@ -50,12 +52,15 @@ export function HorsesTable({
     [rows, selected]
   );
 
-  function handleDelete() {
+  async function handleDelete() {
     if (selected.size === 0) return;
-    const confirmed = window.confirm(
-      `Permanently delete ${selected.size} horse${selected.size === 1 ? "" : "s"}? This cannot be undone.\n\n${selectedNames.slice(0, 10).join(", ")}${selectedNames.length > 10 ? `, +${selectedNames.length - 10} more` : ""}`
-    );
-    if (!confirmed) return;
+    const result = await confirm({
+      title: "Delete horses",
+      message: `Permanently delete ${selected.size} horse${selected.size === 1 ? "" : "s"}? This cannot be undone.\n\n${selectedNames.slice(0, 10).join(", ")}${selectedNames.length > 10 ? `, +${selectedNames.length - 10} more` : ""}`,
+      tone: "danger",
+      confirmLabel: "Delete",
+    });
+    if (!result) return;
 
     setError(undefined);
     setSummary(undefined);

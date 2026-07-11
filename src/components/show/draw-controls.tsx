@@ -8,6 +8,7 @@ import {
   removeFromDraw,
 } from "@/app/(app)/shows/[id]/draws/actions";
 import { Button, Input, Label } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export function GenerateDrawButton({
   classId,
@@ -19,6 +20,7 @@ export function GenerateDrawButton({
   const [error, setError] = useState<string>();
   const [seed, setSeed] = useState("");
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   return (
     <div>
@@ -35,14 +37,17 @@ export function GenerateDrawButton({
         </div>
         <Button
           disabled={isPending}
-          onClick={() => {
-            if (
-              hasExistingDraw &&
-              !window.confirm(
-                "Re-draw this class? The existing order is replaced and the re-draw is recorded in the audit log."
-              )
-            )
-              return;
+          onClick={async () => {
+            if (hasExistingDraw) {
+              const result = await confirm({
+                title: "Re-draw class",
+                message:
+                  "Re-draw this class? The existing order is replaced and the re-draw is recorded in the audit log.",
+                tone: "danger",
+                confirmLabel: "Re-draw",
+              });
+              if (!result) return;
+            }
             setError(undefined);
             startTransition(async () => {
               const result = await generateDraw(classId, seed || undefined);
@@ -142,14 +147,21 @@ export function AppendToDrawButton({ entryClassId }: { entryClassId: string }) {
 export function RemoveFromDrawButton({ rowId }: { rowId: string }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   return (
     <div>
       <Button
         variant="danger"
         disabled={isPending}
-        onClick={() => {
-          if (!window.confirm("Remove this run from the draw?")) return;
+        onClick={async () => {
+          const result = await confirm({
+            title: "Remove from draw",
+            message: "Remove this run from the draw?",
+            tone: "danger",
+            confirmLabel: "Remove",
+          });
+          if (!result) return;
           setError(undefined);
           startTransition(async () => {
             const result = await removeFromDraw(rowId);

@@ -30,16 +30,28 @@ export default async function AuditLogPage({
     );
   }
 
-  const { data: logs } = await supabase
+  const { data: logsBase } = await supabase
     .from("audit_logs")
     .select(
-      "id, actor_role, action_type, entity_type, entity_id, old_value, new_value, reason, created_at, actor:profiles!audit_logs_actor_user_id_fkey(email, full_name)"
+      "id, actor_user_id, actor_role, action_type, entity_type, entity_id, old_value, new_value, reason, created_at"
     )
     .eq("organization_id", id)
     .order("created_at", { ascending: false })
     .limit(100);
 
-  const rows = (logs as unknown as AuditLogRow[]) ?? [];
+  const actorIds = [
+    ...new Set((logsBase ?? []).map((l) => l.actor_user_id).filter((v): v is string => !!v)),
+  ];
+  const { data: actorProfiles } =
+    actorIds.length > 0
+      ? await supabase.from("profiles").select("id, email, full_name").in("id", actorIds)
+      : { data: [] as { id: string; email: string; full_name: string | null }[] };
+  const actorById = new Map((actorProfiles ?? []).map((p) => [p.id, p]));
+
+  const rows: AuditLogRow[] = (logsBase ?? []).map((l) => ({
+    ...l,
+    actor: l.actor_user_id ? (actorById.get(l.actor_user_id) ?? null) : null,
+  }));
 
   if (rows.length === 0) {
     return (

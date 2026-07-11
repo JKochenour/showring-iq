@@ -12,6 +12,7 @@ import { formatScore, tenthsToInput } from "@/lib/score";
 import { RESULT_STATUS_OPTIONS } from "@/lib/validation/score";
 import { Alert, Button, Input, Select } from "@/components/ui";
 import { ScoreStatusBadge } from "@/components/show/score-status-badge";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import type { ResultStatus, Score } from "@/lib/types";
 
 export interface JudgeOption {
@@ -39,6 +40,7 @@ export function ScoreEntryRow({
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!score);
+  const confirm = useConfirmDialog();
 
   const [resultStatus, setResultStatus] = useState<ResultStatus>(
     score?.result_status ?? "shown"
@@ -95,13 +97,22 @@ export function ScoreEntryRow({
             <Button
               variant="secondary"
               disabled={isPending}
-              onClick={() => {
-                const signature = window.prompt(
-                  "Type your full name to sign and submit this score card:",
-                  score.judge_name ?? ""
-                );
-                if (signature === null || signature.trim() === "") return;
-                run(() => submitScore(entryClassId, signature.trim()));
+              onClick={async () => {
+                const result = await confirm({
+                  title: "Sign and submit score card",
+                  message: "Type your full name to certify this card is accurate.",
+                  confirmLabel: "Sign & submit",
+                  fields: [
+                    {
+                      name: "signature",
+                      label: "Full name",
+                      defaultValue: score.judge_name ?? "",
+                      required: true,
+                    },
+                  ],
+                });
+                if (!result) return;
+                run(() => submitScore(entryClassId, result.signature.trim()));
               }}
             >
               {isPending ? "…" : "Submit"}
@@ -122,12 +133,16 @@ export function ScoreEntryRow({
                 isPending ||
                 !(status === "submitted" ? canEnter || canVerify : canVerify)
               }
-              onClick={() => {
-                const reason = window.prompt(
-                  `Reopen this score for editing? Reason:`
-                );
-                if (reason === null || reason.trim() === "") return;
-                run(() => reopenScore(entryClassId, reason.trim()));
+              onClick={async () => {
+                const result = await confirm({
+                  title: "Reopen score",
+                  message: "Reopen this score for editing?",
+                  tone: "danger",
+                  confirmLabel: "Reopen",
+                  fields: [{ name: "reason", label: "Reason", required: true }],
+                });
+                if (!result) return;
+                run(() => reopenScore(entryClassId, result.reason.trim()));
               }}
             >
               Reopen
@@ -193,15 +208,32 @@ export function ScoreEntryRow({
       <div className="flex flex-wrap gap-2">
         <Button
           disabled={isPending}
-          onClick={() => {
+          onClick={async () => {
             if (isCorrection) {
-              const correctionType = window.prompt(
-                'Correction type: "judge_sheet_correction" or "data_entry_correction"?',
-                "data_entry_correction"
-              );
-              if (!correctionType) return;
-              const reason = window.prompt("Reason for this correction (required):");
-              if (!reason || reason.trim() === "") return;
+              const result = await confirm({
+                title: "Correct this score",
+                tone: "danger",
+                confirmLabel: "Save correction",
+                fields: [
+                  {
+                    name: "correctionType",
+                    label: "Correction type",
+                    type: "select",
+                    defaultValue: "data_entry_correction",
+                    options: [
+                      { value: "data_entry_correction", label: "Data entry correction" },
+                      { value: "judge_sheet_correction", label: "Judge sheet correction" },
+                    ],
+                  },
+                  {
+                    name: "reason",
+                    label: "Reason (required)",
+                    type: "textarea",
+                    required: true,
+                  },
+                ],
+              });
+              if (!result) return;
               run(() =>
                 correctScore({
                   entryClassId,
@@ -210,10 +242,10 @@ export function ScoreEntryRow({
                   penaltyPoints,
                   judgeStaffId,
                   notes,
-                  correctionType: correctionType.trim() as
+                  correctionType: result.correctionType as
                     | "judge_sheet_correction"
                     | "data_entry_correction",
-                  reason: reason.trim(),
+                  reason: result.reason.trim(),
                 })
               );
             } else {

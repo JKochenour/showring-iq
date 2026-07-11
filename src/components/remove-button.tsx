@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 /** Generic destructive-action button. Pass a pre-bound server action. */
 export function RemoveButton({
@@ -19,14 +20,23 @@ export function RemoveButton({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   return (
     <div>
       <Button
         variant={variant}
         disabled={isPending}
-        onClick={() => {
-          if (confirmText && !window.confirm(confirmText)) return;
+        onClick={async () => {
+          if (confirmText) {
+            const result = await confirm({
+              title: label,
+              message: confirmText,
+              tone: "danger",
+              confirmLabel: label,
+            });
+            if (!result) return;
+          }
           setError(undefined);
           startTransition(async () => {
             const result = await action();

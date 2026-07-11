@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { exhibitorScratchEntryClass } from "@/app/(exhibitor)/exhibitor/[orgId]/actions";
 import { Button } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export function ExhibitorScratchButton({
   entryClassId,
@@ -15,6 +16,7 @@ export function ExhibitorScratchButton({
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   return (
     <div>
@@ -23,8 +25,14 @@ export function ExhibitorScratchButton({
         variant="danger"
         className="px-2 py-1 text-xs"
         disabled={isPending}
-        onClick={() => {
-          if (!window.confirm(`Scratch ${label}?`)) return;
+        onClick={async () => {
+          const result = await confirm({
+            title: "Scratch entry",
+            message: `Scratch ${label}?`,
+            tone: "danger",
+            confirmLabel: "Scratch",
+          });
+          if (!result) return;
           setError(undefined);
           startTransition(async () => {
             const result = await exhibitorScratchEntryClass(entryClassId, organizationId);

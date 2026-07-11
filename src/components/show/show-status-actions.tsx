@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { deleteShow, setShowStatus } from "@/app/(app)/shows/actions";
 import { Alert, Button, Card, Input, Label } from "@/components/ui";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import type { ShowStatus } from "@/lib/types";
 
 export function ShowStatusActions({
@@ -25,6 +26,7 @@ export function ShowStatusActions({
   const [error, setError] = useState<string>();
   const [unlockReason, setUnlockReason] = useState("");
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
 
   const transition = (next: ShowStatus, reason?: string) => {
     setError(undefined);
@@ -64,13 +66,13 @@ export function ShowStatusActions({
           <Button
             variant="secondary"
             disabled={isPending}
-            onClick={() => {
-              if (
-                window.confirm(
-                  "Lock this show? Editing is blocked until it is unlocked."
-                )
-              )
-                transition("locked");
+            onClick={async () => {
+              const result = await confirm({
+                title: "Lock show",
+                message: "Lock this show? Editing is blocked until it is unlocked.",
+                confirmLabel: "Lock",
+              });
+              if (result) transition("locked");
             }}
           >
             Lock show
@@ -100,8 +102,13 @@ export function ShowStatusActions({
           <Button
             variant="secondary"
             disabled={isPending}
-            onClick={() => {
-              if (window.confirm("Archive this show?")) transition("archived");
+            onClick={async () => {
+              const result = await confirm({
+                title: "Archive show",
+                message: "Archive this show?",
+                confirmLabel: "Archive",
+              });
+              if (result) transition("archived");
             }}
           >
             Archive
@@ -120,16 +127,18 @@ export function ShowStatusActions({
           <Button
             variant="danger"
             disabled={isPending}
-            onClick={() => {
-              if (
-                window.confirm(
-                  "Permanently delete this draft show? This cannot be undone."
-                )
-              ) {
+            onClick={async () => {
+              const result = await confirm({
+                title: "Delete show",
+                message: "Permanently delete this draft show? This cannot be undone.",
+                tone: "danger",
+                confirmLabel: "Delete",
+              });
+              if (result) {
                 setError(undefined);
                 startTransition(async () => {
-                  const result = await deleteShow(showId, organizationId);
-                  if (result?.error) setError(result.error);
+                  const deleteResult = await deleteShow(showId, organizationId);
+                  if (deleteResult?.error) setError(deleteResult.error);
                 });
               }
             }}
