@@ -5,9 +5,9 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: MVP sprints + three major follow-on features, all committed, DB-verified live
+## Status: MVP sprints + four major follow-on features, all committed, DB-verified live
 
-29 commits on `main`, working tree clean:
+30 commits on `main`, working tree clean:
 
 | Commit | What |
 |---|---|
@@ -28,7 +28,8 @@ yourself.
 | 69bc1e3 | Delete for class codes, eligibility rules, draft rule packages |
 | 2e4bc89 | **Document management**: upload, verify, NRHA export inclusion |
 | 540d2ba | **Exhibitor-facing self-service entry** |
-| 3e187ff | This handoff file |
+| 3e187ff, 93c3ede | Handoff doc (added, then refreshed) |
+| 8960213 | **Exhibitor self-service profile/horses + staff "missing paperwork" widget** |
 
 Build (`npm run build`) and lint (`npm run lint`) passed after every
 commit. Only known noise: 2 benign react-compiler warnings about RHF's
@@ -36,7 +37,7 @@ commit. Only known noise: 2 benign react-compiler warnings about RHF's
 
 ## Database
 
-All 14 migrations (`supabase/migrations/00001`–`00014`) are applied and
+All 15 migrations (`supabase/migrations/00001`–`00015`) are applied and
 verified live in the Supabase project `dmyejohfauijbuizboos.supabase.co`,
 confirmed by the user directly in the SQL Editor.
 
@@ -73,30 +74,30 @@ scoring, results, NRHA CSV export), plus:
   cards, Coggins, health certs, etc., attached to a person and/or
   horse. Private Supabase Storage bucket, signed URLs only. Verified
   documents auto-include in the NRHA ZIP export's `paperwork/` folder.
+  Staff show dashboard has a "Missing paperwork" card summarizing
+  riders/horses with no verified docs, docs awaiting verification, and
+  expired documents.
 - **Exhibitor-facing self-service entry** — the biggest architectural
   addition. A `people` row can now link to a login (`people.user_id`).
-  A new zero-permission "Exhibitor" org role gets access entirely
-  through dedicated self-scoped RLS policies (own person/horses/
-  entries/documents only, never the broad office-role permission
-  grants) — one exhibitor architecturally cannot see another's data.
-  Staff invites a person as an exhibitor from their Person detail page
-  (reuses the existing invite/accept-invite system, extended to
-  pre-link a `person_id`). New `/exhibitor/[orgId]/...` routes:
-  dashboard, published-shows list, a self-entry flow with live
-  eligibility feedback (✕ reasons shown inline, reusing the same
-  rule-package engine), and self-scratch while a show is still
-  published. No payment processing — Stripe is still deliberately
-  deferred; fees shown are informational only.
+  A zero-permission "Exhibitor" org role gets access entirely through
+  dedicated self-scoped RLS policies (own person/horses/entries/
+  documents only, never the broad office-role permission grants) — one
+  exhibitor architecturally cannot see another's data. Staff invites a
+  person as an exhibitor from their Person detail page (reuses the
+  existing invite/accept-invite system, extended to pre-link a
+  `person_id`). Full `/exhibitor/[orgId]/...` route set: dashboard,
+  published-shows list, self-entry flow with live eligibility feedback
+  (✕ reasons shown inline, reusing the rule-package engine), self-
+  scratch while a show is published, **self-service profile editing**
+  (contact info only — name/roles stay staff-managed), and **self-
+  service horse management** (add/edit their own horses; registered
+  name locked after creation, via dedicated RPCs rather than raw table
+  grants — see Gotchas). No payment processing — Stripe is still
+  deliberately deferred; fees shown are informational only.
 
 ## What's explicitly NOT done (deliberate, not oversight)
 
 - Real payment processing (Stripe) — informational fees only everywhere.
-- Exhibitor self-service profile/horse editing — today exhibitors are
-  read-only on their own profile/horses until staff sets things up;
-  they can only submit entries and self-scratch.
-- A "missing paperwork" dashboard widget for staff (CLAUDE.md mentions
-  this on the show dashboard) — documents exist and feed the NRHA ZIP,
-  but there's no summary view yet of who's missing what.
 - No `class_judges` assignment table (any `score.enter` holder can act
   as any judge).
 - No audit-log excerpt in the NRHA ZIP (`log_audit` isn't tagged with
@@ -109,25 +110,29 @@ scoring, results, NRHA CSV export), plus:
 ## The actual next step: live browser verification of the exhibitor flow
 
 Rule packages and document management were both verified live in the
-browser this session (created a real rule package, imported real NRHA
-codes, uploaded a test document, confirmed graceful error handling).
-The **exhibitor flow was built and passed lint/build but was never
-verified live** — the browser session's login expired partway through
-and Claude cannot sign back in (a boundary it holds even for its own
-dev/test accounts).
+browser (created a real rule package, imported real NRHA codes,
+uploaded a test document, confirmed graceful error handling). **The
+entire exhibitor flow (invite, profile, horses, entry, scratch) was
+built and passed lint/build cleanly but has never been verified live
+in a browser.** All the SQL migrations behind it (00012–00015) are now
+confirmed applied, so nothing should be blocking a real end-to-end
+test anymore except actually clicking through it.
 
-**To resume:** sign in to ShowRing IQ in the preview browser, then ask
-Claude to: open a Person's detail page → "Invite as exhibitor" with a
-test email → sign in as that exhibitor (or accept the invite in the
-current session, if the same email) → confirm the person/horses claim
-correctly → visit `/exhibitor/[orgId]/dashboard` → enter a published
-show, confirm eligible-by-default / ineligible-with-reasons rendering
-→ submit an entry → confirm it shows up in the office's Entries tab →
-self-scratch a class → confirm the office sees the scratch.
+**To resume:** sign in to ShowRing IQ in the preview browser yourself
+(Claude cannot sign in — that's a hard boundary, even for its own dev/
+test accounts), then ask Claude to: open a Person's detail page →
+"Invite as exhibitor" with a test email → sign in as that exhibitor (or
+accept the invite in the current session, if using the same email) →
+confirm the person/horses claim correctly → visit
+`/exhibitor/[orgId]/dashboard` → try "My profile" and "My horses" self-
+edit → enter a published show, confirm eligible-by-default/ineligible-
+with-reasons rendering → submit an entry → confirm it shows up in the
+office's Entries tab and the "Missing paperwork" dashboard card reacts
+correctly → self-scratch a class → confirm the office sees the scratch.
 
 ## Environment / secrets
 
-- Supabase: connected, `.env.local` filled in, all 14 migrations live.
+- Supabase: connected, `.env.local` filled in, all 15 migrations live.
 - `ANTHROPIC_API_KEY`: check whether this was ever filled in — as of
   the last confirmed state it was still a placeholder, so the Help
   chat widget would report "not configured."
@@ -158,6 +163,11 @@ self-scratch a class → confirm the office sees the scratch.
   role deliberately has *zero* catalog permissions and relies entirely
   on row-ownership RLS policies instead, to avoid one exhibitor seeing
   another's data.
+- Self-service UPDATE/INSERT for exhibitors (profile, horses) goes
+  through security-definer RPCs with an explicit column whitelist, not
+  raw table RLS policies — the default column grants on `people`/
+  `horses` are broad (needed for staff), so a naive UPDATE policy would
+  let an exhibitor set fields like `roles` that must stay staff-managed.
 - Project folder name "New Horse Show" isn't npm-safe; package is
   `showring-iq`.
 
@@ -165,5 +175,5 @@ self-scratch a class → confirm the office sees the scratch.
 
 Every sprint's per-file breakdown, architecture rationale, and design
 decisions are also in Claude's persistent memory (`sprint-progress.md`
-and newer memory files), which loads automatically in any future
-conversation about this project.
+and `rule-packages-documents-exhibitor.md`), which loads automatically
+in any future conversation about this project.

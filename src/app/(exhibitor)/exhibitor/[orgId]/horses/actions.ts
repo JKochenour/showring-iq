@@ -1,52 +1,16 @@
 "use server";
 
-import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/authz";
-import { HORSE_SEXES } from "@/lib/validation/horse";
+import {
+  createOwnHorseSchema,
+  updateOwnHorseSchema,
+  type CreateOwnHorseInput,
+  type UpdateOwnHorseInput,
+} from "@/lib/validation/horse";
 
 export type ActionResult = { error?: string };
-
-const optionalYear = z.preprocess(
-  (v) => (v === "" || v === null || v === undefined ? undefined : v),
-  z.coerce
-    .number()
-    .int("Whole years only")
-    .min(1980, "Enter a 4-digit year")
-    .max(2100, "Enter a 4-digit year")
-    .optional()
-);
-
-const ownHorseFields = {
-  barnName: z.string().trim().max(80).optional(),
-  breed: z.string().trim().max(80).optional(),
-  sex: z
-    .enum(HORSE_SEXES.map((s) => s.value) as [string, ...string[]])
-    .or(z.literal(""))
-    .optional(),
-  color: z.string().trim().max(60).optional(),
-  foalYear: optionalYear,
-  sire: z.string().trim().max(120).optional(),
-  dam: z.string().trim().max(120).optional(),
-};
-
-export const createOwnHorseSchema = z.object({
-  organizationId: z.uuid(),
-  registeredName: z.string().trim().min(2, "Registered name is required").max(120),
-  ...ownHorseFields,
-});
-
-export const updateOwnHorseSchema = z.object({
-  horseId: z.uuid(),
-  organizationId: z.uuid(),
-  ...ownHorseFields,
-});
-
-export type CreateOwnHorseInput = z.infer<typeof createOwnHorseSchema>;
-export type CreateOwnHorseFormValues = z.input<typeof createOwnHorseSchema>;
-export type UpdateOwnHorseInput = z.infer<typeof updateOwnHorseSchema>;
-export type UpdateOwnHorseFormValues = z.input<typeof updateOwnHorseSchema>;
 
 export async function createOwnHorse(input: CreateOwnHorseInput): Promise<ActionResult> {
   const parsed = createOwnHorseSchema.safeParse(input);

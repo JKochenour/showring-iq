@@ -82,3 +82,33 @@ export type UpdateHorseFormValues = z.input<typeof updateHorseSchema>;
 export type AddRegistrationInput = z.infer<typeof addRegistrationSchema>;
 export type AddOwnershipInput = z.infer<typeof addOwnershipSchema>;
 export type AddOwnershipFormValues = z.input<typeof addOwnershipSchema>;
+
+const ownHorseFields = {
+  barnName: z.string().trim().max(80).optional(),
+  breed: z.string().trim().max(80).optional(),
+  sex: z
+    .enum(HORSE_SEXES.map((s) => s.value) as [string, ...string[]])
+    .or(z.literal(""))
+    .optional(),
+  color: z.string().trim().max(60).optional(),
+  foalYear: optionalYear,
+  sire: z.string().trim().max(120).optional(),
+  dam: z.string().trim().max(120).optional(),
+};
+
+export const createOwnHorseSchema = z.object({
+  organizationId: z.uuid(),
+  registeredName: z.string().trim().min(2, "Registered name is required").max(120),
+  ...ownHorseFields,
+});
+
+export const updateOwnHorseSchema = z.object({
+  horseId: z.uuid(),
+  organizationId: z.uuid(),
+  ...ownHorseFields,
+});
+
+export type CreateOwnHorseInput = z.infer<typeof createOwnHorseSchema>;
+export type CreateOwnHorseFormValues = z.input<typeof createOwnHorseSchema>;
+export type UpdateOwnHorseInput = z.infer<typeof updateOwnHorseSchema>;
+export type UpdateOwnHorseFormValues = z.input<typeof updateOwnHorseSchema>;

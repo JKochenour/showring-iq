@@ -149,7 +149,7 @@ export async function acceptInvite(inviteId: string): Promise<ActionResult> {
   const roleKey = (membership?.role as unknown as { key: string } | null)?.key;
 
   if (roleKey === "exhibitor") {
-    redirect("/exhibitor/dashboard");
+    redirect(`/exhibitor/${data}/dashboard`);
   }
   redirect(`/organizations/${data}`);
 }

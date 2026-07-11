@@ -3,17 +3,16 @@
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { createOwnHorse, updateOwnHorse } from "@/app/(exhibitor)/exhibitor/[orgId]/horses/actions";
 import {
-  createOwnHorse,
-  updateOwnHorse,
   createOwnHorseSchema,
   updateOwnHorseSchema,
+  HORSE_SEXES,
   type CreateOwnHorseFormValues,
   type CreateOwnHorseInput,
   type UpdateOwnHorseFormValues,
   type UpdateOwnHorseInput,
-} from "@/app/(exhibitor)/exhibitor/[orgId]/horses/actions";
-import { HORSE_SEXES } from "@/lib/validation/horse";
+} from "@/lib/validation/horse";
 import { Alert, Button, Card, FieldError, Input, Label, Select } from "@/components/ui";
 import type { Horse } from "@/lib/types";
 
