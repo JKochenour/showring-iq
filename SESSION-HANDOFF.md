@@ -5,7 +5,83 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: MVP + follow-on features + 4 post-MVP features, all committed and now live-verified in browser. Full visual redesign done. 4 more real bugs found and fixed along the way. **Next step: build the public live-results page** — see "Roadmap" section near the bottom of this file. See "2026-07-11 update" section below for the current picture — the table right underneath is the pre-2026-07-11 history.
+## Status: public live-results page is built, migration 00021 applied, and fully browser-verified live (all 3 states: not-started, running with live scores, results-posted). See "2026-07-11 (2nd session): public live results" section right below. Below that, "2026-07-11 update" and "Roadmap" sections are the prior session's history.
+
+## 2026-07-11 (2nd session): public live results — code done, DB + verification pending
+
+Per the Roadmap section's agreed next step, designed and built the
+public live-results page (`/[org-slug]/[show-slug]`, matching CLAUDE.md's
+Routes section exactly). Confirmed scope with the user first via 4
+questions; all went with the recommended option:
+
+- **Access mechanism**: 5 new `SECURITY DEFINER` RPCs in
+  `supabase/migrations/00021_public_live_results.sql`
+  (`public_show`, `public_show_classes`, `public_class_draw`,
+  `public_class_scores`, `public_class_results`), granted to `anon`.
+  Each returns an explicit hand-picked column list rather than opening
+  raw anon RLS policies on `shows`/`classes`/`entries`/`scores`/`results`
+  — a future column added to any of those tables can't silently become
+  public. No existing table got new grants.
+- **Scope**: only `shows.status = 'published'`; only
+  `classes.status = 'results_posted'` classes show a results table;
+  scores only appear once judge-signed (`scores.status in ('submitted',
+  'verified')` and `signed_at is not null` — never a score still being
+  drafted). Rider + horse name only, no owner/trainer, no fees, no
+  contact info, no birthdates — matches CLAUDE.md's Public capability
+  row exactly ("schedule, live class status, posted results,
+  rider/horse search").
+- **Route**: `src/app/(public)/[org]/[show]/page.tsx` +
+  `src/app/(public)/layout.tsx` (unauthenticated, no sidebar). New
+  `src/lib/public-results.ts` holds typed RPC wrappers and a
+  `publicClassStage()` helper that collapses the 12 internal class
+  statuses to 4 public-facing ones (not_started / running /
+  results_posted / cancelled) — same simplification idea the roadmap
+  proposed for the internal UI, applied here first since the public
+  page needed it anyway. Page shows: class chips (schedule), "now in
+  the arena" + "coming up" + live signed scores while a class is
+  running, a results table once posted. Auto-refreshes every 15s like
+  the gate/announcer screens.
+- `npm run build` and `npx eslint src` both clean. Route shows up
+  cleanly in the build's route list as `ƒ /[org]/[show]` with no
+  conflicts against existing static routes (`/login`, `/dashboard`,
+  etc. still win — only unmatched paths fall through to the dynamic
+  org/show route, per normal Next.js routing precedence). Note: an
+  organization can never use a slug that collides with a top-level app
+  route (`login`, `dashboard`, `admin`, `exhibitor`, `help`, ...) — an
+  inherent consequence of CLAUDE.md's own `/[org]/[show-slug]` route
+  shape, not something new introduced here.
+
+**Both blockers cleared and the page is fully verified live**, using
+the EPRHA org's real "EPRHA Summer Slide 2026" show
+(`/eprha/eprha-summer-slide-2026`) — the user stopped the conflicting
+dev server, signed in, and published that show; Claude drove the rest
+(closed a class's entries, generated a draw, moved a run to "in
+arena," entered + signed a score, calculated + posted results for a
+different class) to exercise all 3 public-facing states in one pass:
+
+- **Not started** (class 1, still Draft): empty state renders, no
+  draw/scores.
+- **Running** (class 2): "now in the arena" shows back #1 / Jamie
+  Tester / Chex My Spook; "coming up" correctly empty; live scores
+  list shows the signed 72.5 score. Confirmed the *unsigned* score
+  gate too — before signing, `public_class_scores` correctly returned
+  nothing for that entry.
+- **Results posted** (class 3): results table shows placing 1, back
+  #1, score 70.0, money "—" (payout wasn't calculated, correctly shown
+  as blank not $0.00).
+- **Negative tests**, run directly against the RPCs with the bare anon
+  key (no session) via a throwaway Node script: `public_class_results`
+  on a non-posted class returns `[]`; `public_show` on a bogus show
+  slug returns `[]`; the raw RPC responses for all 5 functions contain
+  exactly the documented columns — no fee, contact, owner, trainer,
+  birthdate, judge identity, or notes field anywhere in any response.
+- Browser 404 confirmed for `/eprha/does-not-exist`. No console errors
+  on the working page.
+
+Nothing left to do on this feature. Migration 00021 is applied and
+live; the route is done and verified end-to-end. **Not yet
+committed** — still sitting as uncommitted changes in the working
+tree as of end of session.
 
 42 commits on `main`, working tree clean:
 
