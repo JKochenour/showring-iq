@@ -5,7 +5,7 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: MVP + follow-on features + 4 post-MVP features, all committed and now live-verified in browser. Full visual redesign done. 4 more real bugs found and fixed along the way. See "2026-07-11 update" section below for the current picture — the table right underneath is the pre-2026-07-11 history.
+## Status: MVP + follow-on features + 4 post-MVP features, all committed and now live-verified in browser. Full visual redesign done. 4 more real bugs found and fixed along the way. **Next step: build the public live-results page** — see "Roadmap" section near the bottom of this file. See "2026-07-11 update" section below for the current picture — the table right underneath is the pre-2026-07-11 history.
 
 42 commits on `main`, working tree clean:
 
@@ -260,6 +260,69 @@ in this same day — no need to re-test that unless something regressed.
   this.
 - Project folder name "New Horse Show" isn't npm-safe; package is
   `showring-iq`.
+
+## Roadmap: competitive assessment + agreed next step (2026-07-11)
+
+After the redesign/bugfix pass above, the user did their own deep read
+of the blueprint, this file, all 20 migrations, and the source, and
+delivered a full competitive assessment against Pegasus, Horse Spot,
+and legacy tools (Horse Show for Windows, HSS, ShowPro). Full detail in
+memory (`roadmap-competitive-assessment.md`) — summary:
+
+**Verdict: the core bet is right, don't dumb it down.** The
+validation/rule-package/audit engine is genuinely ahead of the market
+— multi-affiliation classes, judge digital sign-off with
+reopen-clears-signature, granular permissions + audit log, and correct
+money-as-cents financial engineering are all things no competitor has.
+Spreadsheet import for people/horses was specifically called out as
+"quietly one of the best adoption features" (removes the Excel
+migration friction that keeps secretaries on legacy tools).
+
+**On usability**: restructure the language, don't remove power.
+Concrete, not-yet-started asks: rename developer vocabulary in the UI
+("rule packages" → "Association setup", "affiliations" → "This class
+counts for...", "eligibility rules" → "Entry requirements") without
+touching the underlying data model; collapse the 12 internal class
+statuses down to ~4 displayed states (Open/Closed/Running/Done) driven
+by a single contextual "next step" button — note this traces directly
+to the class-status Zod bug fixed above, which was a symptom of the
+status field being too exposed/load-bearing in the raw UI; add a
+guided show-setup wizard (template → classes → fees → open entries);
+test gate/scoring screens on actual phones in sunlight (not yet
+audited for this).
+
+**Gaps, in priority order**: (1) no online payments — no Stripe, no
+pay-at-entry, no exhibitor settlement statement; Stripe Connect
+(org-per-connected-account) is the natural fit for this app's org-first
+architecture and matches CLAUDE.md's already-deferred "Payments:
+Stripe" line. (2) no public/unauthenticated live results — gate page
+already has the right auto-refreshing data shape, just not reachable
+without login. (3) no scheduling/estimated start times across a full
+day. (4) no offline resilience (PWA/IndexedDB was deferred in CLAUDE.md
+and still is). (5) no exhibitor SMS/email notifications (Resend is
+already in the stack). (6) no stabling/shavings/RV orders. (7)
+`DEFAULT_REQUIRED_ASSOCIATIONS` in `validate-entries.ts` is still a
+hard-coded `["NRHA"]` fallback rather than derived from the show's real
+affiliations — worth fixing before a second association.
+
+**Agreed sequence**: public live results (fast, self-contained, also a
+marketing surface) → Stripe Connect payments + settlement (removes the
+biggest competitive objection) → SMS/email → schedule with time
+estimates → offline-tolerant scoring/gate PWA → second association
+(likely AQHA) → stabling orders.
+
+**Immediate next step, nothing coded yet**: build the public live
+results page (route TBD, e.g. `/live/[showId]`) — current class, draw
+order, at-gate status, live scores, posted results. Explicitly agreed
+to design the RLS policy first (new anonymous read access — scope to
+current class/draw/posted results only, never fees/contact
+info/birthdates) and confirm scope with the user before writing any UI
+code.
+
+**Also still open**: judge-role permission *enforcement* (a judge
+account only seeing their assigned class) hasn't been verified
+end-to-end — needs the user to sign in as a real second, judge-role
+account; Claude can't do that itself.
 
 ## Full technical detail
 
