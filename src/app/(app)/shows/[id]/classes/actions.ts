@@ -32,11 +32,12 @@ export async function createClass(
 
   const supabase = await createClient();
 
-  const { data: show } = await supabase
+  const { data: show, error: showError } = await supabase
     .from("shows")
     .select("organization_id")
     .eq("id", d.showId)
     .maybeSingle();
+  if (showError) return { error: showError.message };
   if (!show) return { error: "Show not found." };
 
   // RLS enforces class.create and an unlocked show
@@ -51,6 +52,7 @@ export async function createClass(
       division: d.division || null,
       pattern_number: d.patternNumber ?? null,
       drag_every_n: d.dragEveryN ?? null,
+      avg_run_minutes: parseFloat(d.avgRunMinutes),
       nrha_class_code: d.nrhaClassCode || null,
       class_code_id: d.classCodeId || null,
       entry_fee_cents: dollarsToCents(d.entryFee ?? ""),
@@ -102,13 +104,14 @@ export async function updateClass(
 
   const supabase = await createClient();
 
-  const { data: before } = await supabase
+  const { data: before, error: beforeError } = await supabase
     .from("classes")
     .select(
       "show_id, organization_id, class_number, name, discipline, division, pattern_number, entry_fee_cents, added_money_cents, status, scheduled_date, notes"
     )
     .eq("id", d.classId)
     .maybeSingle();
+  if (beforeError) return { error: beforeError.message };
   if (!before) return { error: "Class not found." };
 
   const updates = {
@@ -118,6 +121,7 @@ export async function updateClass(
     division: d.division || null,
     pattern_number: d.patternNumber ?? null,
     drag_every_n: d.dragEveryN ?? null,
+    avg_run_minutes: parseFloat(d.avgRunMinutes),
     nrha_class_code: d.nrhaClassCode || null,
     class_code_id: d.classCodeId || null,
     entry_fee_cents: dollarsToCents(d.entryFee ?? ""),

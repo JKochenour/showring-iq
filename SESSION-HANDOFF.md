@@ -5,7 +5,67 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: public live-results (00021), guest-access share-link/QR + per-show billing (00022), AND standard per-entry charges (00023, e.g. EPRHA's stall/office/drug fee, auto-applied per back number) are all built, all three migrations applied, all fully browser-verified live. Nothing outstanding on any of these. Stripe/online payments remain explicitly deferred. See "2026-07-11 (4th session)" for the newest work; older sections below are prior-session history.
+## Status: public live-results (00021), guest-access share-link/QR + per-show billing (00022), standard per-entry charges (00023), AND schedule with estimated start times (00024) are all built, all four migrations applied, all fully browser-verified live. Nothing outstanding on any of these. Stripe/online payments and exhibitor email notifications remain explicitly deferred (Resend isn't wired up yet — no API key/dependency/code at all despite being named in CLAUDE.md's tech stack). See "2026-07-11 (5th session)" for the newest work; older sections below are prior-session history.
+
+## 2026-07-11 (5th session): schedule with estimated start times
+
+Next roadmap item after standard entry charges — the user picked this
+over exhibitor email notifications (which needs a Resend account/API
+key first) and revisiting Stripe.
+
+- `supabase/migrations/00024_schedule.sql` — three new show-level
+  settings (`schedule_start_time` time, `schedule_break_minutes`,
+  `schedule_drag_minutes`) and one new class-level field
+  (`avg_run_minutes numeric(5,1)`, default 3.0).
+- `src/lib/schedule.ts` — the actual estimate: for each scheduled day
+  independently, walk classes in `display_order`, cumulative minutes
+  starting from the show's daily start time. Each class's duration =
+  entered-entry-count × its `avg_run_minutes`, plus
+  `floor(entryCount / drag_every_n) × schedule_drag_minutes` if the
+  class has a drag interval set, plus a break before the next class.
+  Classes with no `scheduled_date` are listed separately as "Not yet
+  scheduled" rather than guessed at. **Deliberately does NOT track
+  actual per-run elapsed time** (no `started_at`/`completed_at` exist
+  on `class_draws` rows) — this is a static formula recomputed fresh
+  from current entries/scratches/settings on every page load, not a
+  live pace-tracker. Matches the roadmap's own framing: "a simple
+  day-sheet... without full arena/scheduling infrastructure."
+- New `/shows/[id]/schedule` tab (matches CLAUDE.md's named route,
+  positioned right after Classes in both the route and the nav tabs
+  to match CLAUDE.md's own ordering), auto-refreshes every 30s.
+  "Schedule settings" section added to `/shows/[id]/settings`, and an
+  "Avg run time (minutes)" field added next to "Drag every N runs" on
+  the class create/edit form.
+- Deliberately simplified: **one daily start time for the whole show**,
+  not per-day — CLAUDE.md notes real per-day/arena scheduling
+  infrastructure (`show_days`, ring assignment) was never built, and
+  building that now would be much bigger than what was asked. Also
+  did not extend the *public* live-results page to show estimated
+  times — this pass is the internal `/shows/[id]/schedule` tab only;
+  extending to the public page is a natural, small follow-up if wanted.
+- Hit the exact same `z.coerce.number()` + React Hook Form type-error
+  gotcha already documented below (schedule-settings-form.tsx) — fixed
+  the same way, `useForm<FormValues, unknown, Input>` with a
+  `z.input<>`-derived form-values type. Also fixed the same
+  destructure-only-`data`-ignore-`error` bug pattern in
+  `createClass`/`updateClass` (`src/app/(app)/shows/[id]/classes/actions.ts`)
+  while touching those functions to add `avg_run_minutes` — third time
+  this exact bug class has been caught in this app now.
+- Full verification, live against the real EPRHA Summer Slide 2026
+  show: confirmed the "No classes yet" empty state was actually the
+  known missing-migration symptom (not a real bug) before 00024 was
+  applied; after applying, put classes 1 and 2 on the same scheduled
+  day with entries/avg-run-time set — class 2 correctly started
+  exactly `class 1's duration (0, since it had 0 entries) + the
+  10-minute break` = 8:10 AM after class 1's 8:00 AM slot; changing
+  the show's daily start time to 9:00 AM shifted every class on every
+  day correctly; class 2 with no scheduled date correctly appeared
+  under "Not yet scheduled" until a day was set. Reverted all test
+  values (scheduled date, avg run time, daily start time) back to
+  defaults afterward — the real Stall/Office/Drug standard-charges
+  config from the 4th session was left in place since that's real
+  setup, not test data. Build and lint both clean throughout (only the
+  2 pre-existing benign RHF `watch()` warnings).
 
 ## 2026-07-11 (4th session): standard per-entry charges (stall/office/drug fee, auto-applied)
 
@@ -298,13 +358,15 @@ RHF `watch()` warnings).
 
 ## Database
 
-**Migrations 00021, 00022, and 00023 are applied** — 00021
+**Migrations 00021 through 00024 are applied** — 00021
 (`00021_public_live_results.sql`, public live-results RPCs), 00022
-(`00022_show_billing.sql`, misc_charges table + billing RPCs), and
-00023 (`00023_standard_entry_charges.sql`, standard per-entry charges
-auto-applied via `assign_back_number`), all confirmed live and
-browser-verified (2026-07-11, 3rd and 4th sessions). All 23 migrations
-are now live. Details below are from earlier sessions and still
+(`00022_show_billing.sql`, misc_charges table + billing RPCs), 00023
+(`00023_standard_entry_charges.sql`, standard per-entry charges
+auto-applied via `assign_back_number`), and 00024
+(`00024_schedule.sql`, schedule settings + avg_run_minutes), all
+confirmed live and browser-verified (2026-07-11, 3rd–5th sessions).
+All 24 migrations are now live. Details below are from earlier
+sessions and still
 accurate for 00001–00020:
 
 **Migration 00020 (`00020_fix_log_audit_overload.sql`) is applied** —

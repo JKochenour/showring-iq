@@ -55,6 +55,7 @@ export function CreateClassForm({
       classNumber: nextClassNumber,
       discipline: "Reining",
       division: "",
+      avgRunMinutes: "3",
       entryFee: "",
       addedMoney: "",
       scheduledDate: "",
@@ -111,6 +112,7 @@ export function EditClassForm({
       division: showClass.division ?? "",
       patternNumber: showClass.pattern_number ?? undefined,
       dragEveryN: showClass.drag_every_n ?? undefined,
+      avgRunMinutes: String(showClass.avg_run_minutes),
       entryFee: centsToInput(showClass.entry_fee_cents),
       addedMoney: centsToInput(showClass.added_money_cents),
       status: showClass.status,
@@ -289,7 +291,7 @@ function ClassFields({ register, errors, control, classCodeOptions }: { register
           <FieldError message={errors.scheduledDate?.message} />
         </div>
       </div>
-      <div className="grid gap-4 sm:grid-cols-[170px_1fr]">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div>
           <Label htmlFor="dragEveryN">Drag every N runs</Label>
           <Input
@@ -301,6 +303,19 @@ function ClassFields({ register, errors, control, classCodeOptions }: { register
             {...register("dragEveryN")}
           />
           <FieldError message={errors.dragEveryN?.message} />
+        </div>
+        <div>
+          <Label htmlFor="avgRunMinutes">Avg run time (minutes)</Label>
+          <Input
+            id="avgRunMinutes"
+            inputMode="decimal"
+            placeholder="3"
+            {...register("avgRunMinutes")}
+          />
+          <FieldError message={errors.avgRunMinutes?.message} />
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+            Used to estimate start times on the Schedule tab.
+          </p>
         </div>
         <div>
           <Label htmlFor="notes">Notes (optional)</Label>

@@ -48,6 +48,8 @@ const money = z
   .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00")
   .or(z.literal(""));
 
+const AVG_RUN_MINUTES_PATTERN = /^\d{1,3}(\.\d)?$/;
+
 const optionalInt = (max: number) =>
   z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? undefined : v),
@@ -65,6 +67,10 @@ const classFields = {
   division: z.string().trim().max(80).optional(),
   patternNumber: optionalInt(999),
   dragEveryN: optionalInt(50),
+  avgRunMinutes: z
+    .string()
+    .trim()
+    .regex(AVG_RUN_MINUTES_PATTERN, "Enter minutes like 3 or 3.5"),
   entryFee: money,
   addedMoney: money,
   scheduledDate: z.iso.date("Enter a valid date").or(z.literal("")).optional(),

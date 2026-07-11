@@ -132,8 +132,17 @@ export const STANDARD_CHARGE_STARTER_SET = [
   { label: "Drug fee", amount: "" },
 ];
 
+export const updateScheduleSettingsSchema = z.object({
+  showId: z.uuid(),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Enter a valid time"),
+  breakMinutes: z.coerce.number().int().min(0).max(120),
+  dragMinutes: z.coerce.number().int().min(0).max(120),
+});
+
 export type CreateShowInput = z.infer<typeof createShowSchema>;
 export type UpdateShowInput = z.infer<typeof updateShowSchema>;
 export type AddStaffInput = z.infer<typeof addStaffSchema>;
 export type StandardChargeRow = z.infer<typeof standardChargeRowSchema>;
 export type UpdateStandardChargesInput = z.infer<typeof updateStandardChargesSchema>;
+export type UpdateScheduleSettingsInput = z.infer<typeof updateScheduleSettingsSchema>;
+export type UpdateScheduleSettingsFormValues = z.input<typeof updateScheduleSettingsSchema>;

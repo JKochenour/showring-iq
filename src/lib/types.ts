@@ -65,6 +65,9 @@ export interface Show {
   nrha_show_number: string | null;
   medication_fee_cents: number;
   standard_entry_charges: { label: string; amount_cents: number }[];
+  schedule_start_time: string;
+  schedule_break_minutes: number;
+  schedule_drag_minutes: number;
   created_at: string;
 }
 
@@ -137,6 +140,7 @@ export interface ShowClass {
   status: ClassStatus;
   scheduled_date: string | null;
   drag_every_n: number | null;
+  avg_run_minutes: number;
   nrha_class_code: string | null;
   class_code_id: string | null;
   retainage_percent: number;

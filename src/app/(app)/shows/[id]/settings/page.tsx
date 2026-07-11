@@ -7,6 +7,7 @@ import { ShowSettingsForm } from "@/components/show/show-settings-form";
 import { ShowStatusActions } from "@/components/show/show-status-actions";
 import { PublicLinkCard } from "@/components/show/public-link-card";
 import { StandardChargesEditor } from "@/components/show/standard-charges-editor";
+import { ScheduleSettingsForm } from "@/components/show/schedule-settings-form";
 import { Alert, Card } from "@/components/ui";
 import type { Show } from "@/lib/types";
 
@@ -105,6 +106,19 @@ export default async function ShowSettingsPage({
               label: c.label,
               amount: centsToInput(c.amount_cents),
             }))}
+            canEdit={editable}
+          />
+        </Card>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-base font-semibold">Schedule settings</h2>
+        <Card>
+          <ScheduleSettingsForm
+            showId={s.id}
+            startTime={(s.schedule_start_time ?? "08:00:00").slice(0, 5)}
+            breakMinutes={s.schedule_break_minutes ?? 10}
+            dragMinutes={s.schedule_drag_minutes ?? 5}
             canEdit={editable}
           />
         </Card>

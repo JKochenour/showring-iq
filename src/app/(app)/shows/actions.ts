@@ -9,10 +9,12 @@ import {
   createShowSchema,
   updateShowSchema,
   updateStandardChargesSchema,
+  updateScheduleSettingsSchema,
   type AddStaffInput,
   type CreateShowInput,
   type UpdateShowInput,
   type UpdateStandardChargesInput,
+  type UpdateScheduleSettingsInput,
 } from "@/lib/validation/show";
 import type { ShowStatus } from "@/lib/types";
 
@@ -166,6 +168,66 @@ export async function updateStandardCharges(
   });
 
   revalidatePath(`/shows/${d.showId}/settings`);
+  return {};
+}
+
+export async function updateScheduleSettings(
+  input: UpdateScheduleSettingsInput
+): Promise<ActionResult> {
+  const parsed = updateScheduleSettingsSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+
+  const { data: before, error: beforeError } = await supabase
+    .from("shows")
+    .select(
+      "organization_id, schedule_start_time, schedule_break_minutes, schedule_drag_minutes"
+    )
+    .eq("id", d.showId)
+    .maybeSingle();
+  if (beforeError) return { error: beforeError.message };
+  if (!before) return { error: "Show not found." };
+
+  const updates = {
+    schedule_start_time: `${d.startTime}:00`,
+    schedule_break_minutes: d.breakMinutes,
+    schedule_drag_minutes: d.dragMinutes,
+  };
+
+  const { data: updated, error } = await supabase
+    .from("shows")
+    .update(updates)
+    .eq("id", d.showId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error:
+        "Update was not applied. You may lack the show.edit permission, or the show is locked/archived.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: before.organization_id,
+    p_action: "show.schedule_settings_updated",
+    p_entity_type: "show",
+    p_entity_id: d.showId,
+    p_old: {
+      schedule_start_time: before.schedule_start_time,
+      schedule_break_minutes: before.schedule_break_minutes,
+      schedule_drag_minutes: before.schedule_drag_minutes,
+    },
+    p_new: updates,
+    p_show: d.showId,
+  });
+
+  revalidatePath(`/shows/${d.showId}/settings`);
+  revalidatePath(`/shows/${d.showId}/schedule`);
   return {};
 }
 
