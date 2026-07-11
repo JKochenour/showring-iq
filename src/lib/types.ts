@@ -300,6 +300,17 @@ export interface Score {
   status: ScoreStatus;
   submitted_at: string | null;
   verified_at: string | null;
+  signature_name: string | null;
+  signed_by_staff_id: string | null;
+  signed_at: string | null;
+}
+
+export interface ClassPatternRow {
+  id: string;
+  class_id: string;
+  pattern_text: string | null;
+  document_id: string | null;
+  updated_at: string;
 }
 
 export interface Result {
