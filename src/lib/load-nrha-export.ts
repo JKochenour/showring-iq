@@ -32,14 +32,56 @@ export async function loadNrhaExportData(
     .eq("id", showId)
     .maybeSingle();
 
-  const { data: classes } = await supabase
+  const { data: classesRaw } = await supabase
     .from("classes")
-    .select("id, class_number, name, nrha_class_code, pattern_number, go_type, go_number, status")
+    .select(
+      `id, class_number, name, nrha_class_code, pattern_number, go_type, go_number, status,
+       affiliations:class_affiliations(association_class_code_id, counts_for_money, code:association_class_codes(code, rule_package:association_rule_packages(association:associations(name))))`
+    )
     .eq("show_id", showId)
     .in("status", INCLUDED_STATUSES)
     .order("display_order");
 
-  const classList = classes ?? [];
+  type AffiliationRow = {
+    association_class_code_id: string;
+    counts_for_money: boolean;
+    code: { code: string; rule_package: { association: { name: string } | null } | null } | null;
+  };
+  type ClassRow = {
+    id: string;
+    class_number: number;
+    name: string;
+    nrha_class_code: string | null;
+    pattern_number: number | null;
+    go_type: string | null;
+    go_number: number | null;
+    status: string;
+    affiliations: AffiliationRow[] | null;
+  };
+
+  // A class's affiliation for the NRHA CSV is whichever
+  // class_affiliations row belongs to an "NRHA" rule package. Classes
+  // that have affiliation rows but none of them NRHA (e.g. an
+  // EPRHA-only class) are excluded from the NRHA export entirely —
+  // they must not leak in with a blank/wrong ClassCode. Classes with
+  // no class_affiliations rows at all (not yet migrated) fall back to
+  // the legacy free-text nrha_class_code field.
+  const classList = ((classesRaw as unknown as ClassRow[]) ?? [])
+    .map((cls) => {
+      const affiliations = cls.affiliations ?? [];
+      const nrhaAffiliation = affiliations.find(
+        (a) => a.code?.rule_package?.association?.name?.toUpperCase() === "NRHA"
+      );
+      if (nrhaAffiliation) {
+        return { ...cls, resolvedNrhaCode: nrhaAffiliation.code?.code ?? null };
+      }
+      if (affiliations.length > 0) {
+        return null; // has affiliations, none of them NRHA — not an NRHA class
+      }
+      return { ...cls, resolvedNrhaCode: cls.nrha_class_code };
+    })
+    .filter((c): c is ClassRow & { resolvedNrhaCode: string | null } => c !== null);
+
   const classIds = classList.map((c) => c.id as string);
 
   if (classIds.length === 0) {
@@ -158,7 +200,7 @@ export async function loadNrhaExportData(
 
   for (const cls of classList) {
     const label = `Class ${cls.class_number} (${cls.name})`;
-    if (!cls.nrha_class_code) classesMissingCode.push(label);
+    if (!cls.resolvedNrhaCode) classesMissingCode.push(label);
     if (!cls.pattern_number) classesMissingPattern.push(label);
 
     const classEntryClasses = ecRows.filter((ec) => ec.classId === cls.id);
@@ -204,7 +246,7 @@ export async function loadNrhaExportData(
         showNum: show?.nrha_show_number ?? "",
         showName: show?.name ?? "",
         className: cls.name,
-        classCode: cls.nrha_class_code ?? "",
+        classCode: cls.resolvedNrhaCode ?? "",
         patternNum: cls.pattern_number ?? 0,
         entryCount,
         shownCount,

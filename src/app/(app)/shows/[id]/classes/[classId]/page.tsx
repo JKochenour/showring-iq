@@ -5,10 +5,11 @@ import { EditClassForm } from "@/components/show/class-form";
 import { DeleteClassButton } from "@/components/show/class-row-actions";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
 import { ClassJudgesManager } from "@/components/show/class-judges-manager";
-import { getClassCodeOptions } from "@/lib/rule-package-options";
+import { ClassAffiliationsManager } from "@/components/show/class-affiliations-manager";
+import { getClassCodeOptions, getClassCodeAffiliationMeta } from "@/lib/rule-package-options";
 import { Alert, Card } from "@/components/ui";
 import { formatCents } from "@/lib/money";
-import type { ClassJudgeRow, ShowClass } from "@/lib/types";
+import type { ClassAffiliationRow, ClassJudgeRow, ShowClass } from "@/lib/types";
 
 export const metadata = { title: "Class — ShowRing IQ" };
 
@@ -35,24 +36,39 @@ export default async function ClassDetailPage({
   const showStatus = showClass.show?.status ?? "draft";
   const showEditable = showStatus === "draft" || showStatus === "published";
 
-  const [canEdit, canDelete, classCodeOptions, { data: judgeStaff }, { data: classJudges }] =
-    await Promise.all([
-      hasOrgPermission(showClass.organization_id, "class.edit"),
-      hasOrgPermission(showClass.organization_id, "class.delete"),
-      getClassCodeOptions(supabase, showClass.organization_id),
-      supabase
-        .from("show_staff")
-        .select("id, display_name")
-        .eq("show_id", id)
-        .eq("staff_role", "judge"),
-      supabase
-        .from("class_judges")
-        .select(
-          "id, class_id, show_staff_id, assigned_at, show_staff:show_staff(id, display_name, user_id)"
-        )
-        .eq("class_id", classId)
-        .order("assigned_at"),
-    ]);
+  const [
+    canEdit,
+    canDelete,
+    classCodeOptions,
+    codeMeta,
+    { data: judgeStaff },
+    { data: classJudges },
+    { data: classAffiliations },
+  ] = await Promise.all([
+    hasOrgPermission(showClass.organization_id, "class.edit"),
+    hasOrgPermission(showClass.organization_id, "class.delete"),
+    getClassCodeOptions(supabase, showClass.organization_id),
+    getClassCodeAffiliationMeta(supabase, showClass.organization_id),
+    supabase
+      .from("show_staff")
+      .select("id, display_name")
+      .eq("show_id", id)
+      .eq("staff_role", "judge"),
+    supabase
+      .from("class_judges")
+      .select(
+        "id, class_id, show_staff_id, assigned_at, show_staff:show_staff(id, display_name, user_id)"
+      )
+      .eq("class_id", classId)
+      .order("assigned_at"),
+    supabase
+      .from("class_affiliations")
+      .select(
+        "id, class_id, association_class_code_id, counts_for_money, counts_for_points, counts_for_year_end, is_primary, code:association_class_codes(code, name, rule_package:association_rule_packages(year, version, association:associations(name)))"
+      )
+      .eq("class_id", classId)
+      .order("is_primary", { ascending: false }),
+  ]);
 
   const judgeOptions =
     judgeStaff?.map((j) => ({ id: j.id as string, label: j.display_name as string })) ??
@@ -128,6 +144,14 @@ export default async function ClassDetailPage({
           </dl>
         </Card>
       )}
+
+      <ClassAffiliationsManager
+        classId={showClass.id}
+        affiliations={(classAffiliations as unknown as ClassAffiliationRow[]) ?? []}
+        classCodeOptions={classCodeOptions}
+        codeMeta={codeMeta}
+        editable={canEdit && showEditable}
+      />
 
       <ClassJudgesManager
         classId={showClass.id}
