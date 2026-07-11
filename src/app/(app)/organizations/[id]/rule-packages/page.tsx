@@ -13,12 +13,12 @@ import type { Association, RulePackage } from "@/lib/types";
 export const metadata = { title: "Rule packages — ShowRing IQ" };
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+  draft: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
   review: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
   tested: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
-  published: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+  published: "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300",
   deprecated: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  archived: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+  archived: "bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400",
 };
 
 export default async function RulePackagesPage({
@@ -89,20 +89,20 @@ export default async function RulePackagesPage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   <th className="py-2 pr-4 font-medium">Association</th>
                   <th className="py-2 pr-4 font-medium">Year</th>
                   <th className="py-2 pr-4 font-medium">Version</th>
                   <th className="py-2 font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {packageRows.map((pkg) => (
                   <tr key={pkg.id}>
                     <td className="py-3 pr-4">
                       <Link
                         href={`/organizations/${id}/rule-packages/${pkg.id}`}
-                        className="font-medium text-emerald-700 hover:underline dark:text-emerald-500"
+                        className="font-medium text-brand-700 hover:underline dark:text-brand-500"
                       >
                         {pkg.association?.name ?? "Unknown"}
                       </Link>

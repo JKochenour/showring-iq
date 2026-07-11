@@ -33,7 +33,7 @@ export default async function MembersPage({
     supabase
       .from("organization_members")
       .select(
-        "id, user_id, status, created_at, role:organization_roles(id, key, name), profile:profiles(email, full_name)"
+        "id, user_id, status, created_at, role:organization_roles(id, key, name)"
       )
       .eq("organization_id", id)
       .order("created_at"),
@@ -55,7 +55,22 @@ export default async function MembersPage({
 
   if (!org) notFound();
 
-  const memberRows = (members as unknown as MemberRow[]) ?? [];
+  const memberRowsBase = (members as unknown as Omit<MemberRow, "profile">[]) ?? [];
+  const memberUserIds = [...new Set(memberRowsBase.map((m) => m.user_id))];
+  const { data: memberProfiles } =
+    memberUserIds.length > 0
+      ? await supabase
+          .from("profiles")
+          .select("id, email, full_name")
+          .in("id", memberUserIds)
+      : { data: [] as { id: string; email: string; full_name: string | null }[] };
+  const profileById = new Map(
+    (memberProfiles ?? []).map((p) => [p.id, { email: p.email, full_name: p.full_name }])
+  );
+  const memberRows: MemberRow[] = memberRowsBase.map((m) => ({
+    ...m,
+    profile: profileById.get(m.user_id) ?? null,
+  }));
   const roleOptions = ((roles as OrganizationRole[]) ?? []).map((r) => ({
     id: r.id,
     name: r.name,
@@ -73,7 +88,7 @@ export default async function MembersPage({
           <h2 className="mb-4 text-base font-semibold">
             Pending invites ({inviteRows.length})
           </h2>
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="divide-y divide-stone-200 dark:divide-stone-800">
             {inviteRows.map((invite) => (
               <li
                 key={invite.id}
@@ -81,7 +96,7 @@ export default async function MembersPage({
               >
                 <div>
                   <p className="text-sm font-medium">{invite.email}</p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     Role: {invite.role?.name ?? "—"} · invited{" "}
                     {new Date(invite.created_at).toLocaleDateString()}
                   </p>
@@ -100,14 +115,14 @@ export default async function MembersPage({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+              <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                 <th className="py-2 pr-4 font-medium">Member</th>
                 <th className="py-2 pr-4 font-medium">Role</th>
                 <th className="py-2 pr-4 font-medium">Joined</th>
                 <th className="py-2 font-medium"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
               {memberRows.map((member) => {
                 const isSelf = member.user_id === user.id;
                 const label =
@@ -118,13 +133,13 @@ export default async function MembersPage({
                       <p className="font-medium">
                         {label}
                         {isSelf && (
-                          <span className="ml-2 rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                          <span className="ml-2 rounded bg-stone-100 px-1.5 py-0.5 text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400">
                             you
                           </span>
                         )}
                       </p>
                       {member.profile?.full_name && (
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="text-xs text-stone-500 dark:text-stone-400">
                           {member.profile.email}
                         </p>
                       )}
@@ -141,7 +156,7 @@ export default async function MembersPage({
                         (member.role?.name ?? "—")
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-zinc-500 dark:text-zinc-400">
+                    <td className="py-3 pr-4 text-stone-500 dark:text-stone-400">
                       {new Date(member.created_at).toLocaleDateString()}
                     </td>
                     <td className="py-3 text-right">

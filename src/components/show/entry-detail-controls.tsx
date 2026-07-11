@@ -37,7 +37,7 @@ export function BackNumberControl({
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-md bg-zinc-900 px-3 py-1.5 font-mono text-lg font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+        <span className="rounded-md bg-stone-900 px-3 py-1.5 font-mono text-lg font-bold text-white dark:bg-stone-100 dark:text-stone-900">
           {currentNumber ? `#${currentNumber}` : "—"}
         </span>
         {canAssign && (

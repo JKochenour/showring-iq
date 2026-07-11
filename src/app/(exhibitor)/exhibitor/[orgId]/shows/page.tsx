@@ -33,7 +33,7 @@ export default async function ExhibitorShowsPage({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="font-medium">{s.name}</p>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  <p className="text-sm text-stone-500 dark:text-stone-400">
                     {s.start_date}
                     {s.end_date && s.end_date !== s.start_date ? ` – ${s.end_date}` : ""}
                     {s.venue_name ? ` · ${s.venue_name}` : ""}
@@ -42,7 +42,7 @@ export default async function ExhibitorShowsPage({
                 </div>
                 <Link
                   href={`/exhibitor/${orgId}/shows/${s.id}/enter`}
-                  className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+                  className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
                 >
                   Enter this show
                 </Link>

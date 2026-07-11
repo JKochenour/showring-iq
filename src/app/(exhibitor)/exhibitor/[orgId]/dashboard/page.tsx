@@ -52,16 +52,16 @@ export default async function ExhibitorDashboardPage({
       <Card>
         <h2 className="mb-3 text-base font-semibold">Your horses</h2>
         {horseRows.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             No horses linked to your profile yet — ask the show office to add you as an owner.
           </p>
         ) : (
-          <ul className="divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+          <ul className="divide-y divide-stone-200 text-sm dark:divide-stone-800">
             {horseRows.map((h) => (
               <li key={h.id} className="py-2">
                 {h.registered_name}
                 {h.barn_name && (
-                  <span className="text-zinc-500 dark:text-zinc-400"> “{h.barn_name}”</span>
+                  <span className="text-stone-500 dark:text-stone-400"> “{h.barn_name}”</span>
                 )}
               </li>
             ))}
@@ -74,19 +74,19 @@ export default async function ExhibitorDashboardPage({
         {showRows.length === 0 ? (
           <EmptyState title="No shows open right now" description="Check back closer to the next show date." />
         ) : (
-          <ul className="divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+          <ul className="divide-y divide-stone-200 text-sm dark:divide-stone-800">
             {showRows.map((s) => (
               <li key={s.id} className="flex items-center justify-between py-3">
                 <div>
                   <p className="font-medium">{s.name}</p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {s.start_date}
                     {s.end_date && s.end_date !== s.start_date ? ` – ${s.end_date}` : ""}
                   </p>
                 </div>
                 <Link
                   href={`/exhibitor/${orgId}/shows/${s.id}/enter`}
-                  className="text-emerald-700 hover:underline dark:text-emerald-500"
+                  className="text-brand-700 hover:underline dark:text-brand-500"
                 >
                   Enter →
                 </Link>
@@ -99,9 +99,9 @@ export default async function ExhibitorDashboardPage({
       <Card>
         <h2 className="mb-3 text-base font-semibold">Recent entries</h2>
         {entryRows.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">No entries yet.</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">No entries yet.</p>
         ) : (
-          <ul className="divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+          <ul className="divide-y divide-stone-200 text-sm dark:divide-stone-800">
             {entryRows.map((e) => {
               const total = e.entry_classes
                 .filter((ec) => ec.status === "entered")
@@ -111,7 +111,7 @@ export default async function ExhibitorDashboardPage({
                   <span>
                     {e.horse_name} {e.status === "scratched" && "(scratched)"}
                   </span>
-                  <span className="text-zinc-500 dark:text-zinc-400">{formatCents(total)}</span>
+                  <span className="text-stone-500 dark:text-stone-400">{formatCents(total)}</span>
                 </li>
               );
             })}
@@ -119,12 +119,12 @@ export default async function ExhibitorDashboardPage({
         )}
         <Link
           href={`/exhibitor/${orgId}/entries`}
-          className="mt-3 inline-block text-sm text-emerald-700 hover:underline dark:text-emerald-500"
+          className="mt-3 inline-block text-sm text-brand-700 hover:underline dark:text-brand-500"
         >
           View all entries →
         </Link>
       </Card>
-      <p className="text-xs text-zinc-400 dark:text-zinc-600">Signed in as {user.email}</p>
+      <p className="text-xs text-stone-400 dark:text-stone-600">Signed in as {user.email}</p>
     </div>
   );
 }

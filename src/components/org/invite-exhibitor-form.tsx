@@ -48,7 +48,7 @@ export function InviteExhibitorForm({ personId }: { personId: string }) {
           {isPending ? "Sending…" : "Send invite"}
         </Button>
       </div>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs text-stone-500 dark:text-stone-400">
         Lets this person sign in and manage their own entries, horses, and documents for this
         organization, without seeing anyone else&apos;s data.
       </p>

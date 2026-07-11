@@ -65,18 +65,18 @@ export default async function ExhibitorEntriesPage({
                     <p className="font-medium">
                       {entry.show?.name} — {entry.horse_name}
                     </p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <p className="text-xs text-stone-500 dark:text-stone-400">
                       {entry.show?.start_date}
                       {entry.status === "scratched" && " · Entry scratched"}
                     </p>
                   </div>
                   <p className="text-sm font-medium">{formatCents(total)}</p>
                 </div>
-                <ul className="divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+                <ul className="divide-y divide-stone-200 text-sm dark:divide-stone-800">
                   {entry.entry_classes.map((ec) => (
                     <li key={ec.id} className="flex items-center justify-between gap-3 py-2">
                       <span>
-                        <span className="font-mono text-xs text-zinc-500">
+                        <span className="font-mono text-xs text-stone-500">
                           {ec.class?.class_number}
                         </span>{" "}
                         {ec.class?.name}
@@ -87,7 +87,7 @@ export default async function ExhibitorEntriesPage({
                         )}
                       </span>
                       <span className="flex items-center gap-3">
-                        <span className="text-zinc-500 dark:text-zinc-400">
+                        <span className="text-stone-500 dark:text-stone-400">
                           {formatCents(ec.fee_cents)}
                         </span>
                         {ec.status === "entered" && showEditable && entry.status === "active" && (
@@ -102,7 +102,7 @@ export default async function ExhibitorEntriesPage({
                   ))}
                 </ul>
                 {!showEditable && entry.status === "active" && (
-                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
                     This show is no longer open for self-service changes — contact the show office
                     for scratches.
                   </p>

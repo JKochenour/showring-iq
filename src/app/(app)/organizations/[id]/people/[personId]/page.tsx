@@ -68,7 +68,7 @@ export default async function PersonDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/organizations/${id}/people`} className="hover:underline">
             People
           </Link>{" "}
@@ -77,7 +77,7 @@ export default async function PersonDetailPage({
         <h2 className="mt-1 text-xl font-semibold tracking-tight">
           {p.first_name} {p.last_name}
           {p.preferred_name && (
-            <span className="ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">
+            <span className="ml-2 text-base font-normal text-stone-500 dark:text-stone-400">
               “{p.preferred_name}”
             </span>
           )}
@@ -88,7 +88,7 @@ export default async function PersonDetailPage({
         <Card>
           <h3 className="mb-1 text-base font-semibold">Account access</h3>
           {p.user_id ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               This person has a linked login and can sign in as an exhibitor.
             </p>
           ) : (
@@ -99,12 +99,12 @@ export default async function PersonDetailPage({
 
       <Card>
         <h3 className="mb-1 text-base font-semibold">Association memberships</h3>
-        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
           Membership numbers are required for association exports (e.g. the
           rider&apos;s NRHA number on the ReinerSuite CSV).
         </p>
         {membershipRows.length > 0 && (
-          <ul className="mb-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="mb-4 divide-y divide-stone-200 dark:divide-stone-800">
             {membershipRows.map((m) => (
               <li
                 key={m.id}
@@ -115,7 +115,7 @@ export default async function PersonDetailPage({
                     {m.association} #{m.membership_number}
                     {m.membership_type && ` · ${m.membership_type}`}
                   </p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {m.status}
                     {m.expiration_date && ` · expires ${m.expiration_date}`}
                     {m.verified_at
@@ -137,7 +137,7 @@ export default async function PersonDetailPage({
           <AddMembershipForm personId={personId} />
         ) : (
           membershipRows.length === 0 && (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               No memberships recorded.
             </p>
           )
@@ -146,7 +146,7 @@ export default async function PersonDetailPage({
 
       <Card>
         <h3 className="mb-1 text-base font-semibold">Documents</h3>
-        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
           Membership cards, non-pro declarations, and other paperwork. Verified
           documents are included in the show&apos;s NRHA submission package.
         </p>
@@ -169,10 +169,9 @@ export default async function PersonDetailPage({
           </section>
           <Card className="max-w-2xl border-red-200 dark:border-red-900">
             <h3 className="mb-1 text-sm font-semibold">Danger zone</h3>
-            <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
-              Deleting removes this person and their memberships. Once entries
-              exist (Sprint 5), people connected to entries can&apos;t be
-              deleted.
+            <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
+              Deleting removes this person and their memberships. People
+              connected to an existing entry can&apos;t be deleted.
             </p>
             <RemoveButton
               action={deletePerson.bind(null, personId)}

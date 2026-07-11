@@ -141,12 +141,12 @@ function PersonFields({ register, errors }: { register: any; errors: any }) {
           {PERSON_ROLES.map((role) => (
             <label
               key={role.value}
-              className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300"
+              className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300"
             >
               <input
                 type="checkbox"
                 value={role.value}
-                className="h-4 w-4 rounded border-zinc-300 accent-emerald-700"
+                className="h-4 w-4 rounded border-stone-300 accent-brand-700"
                 {...register("roles")}
               />
               {role.label}
@@ -179,7 +179,7 @@ function PersonFields({ register, errors }: { register: any; errors: any }) {
           <Label htmlFor="birthdate">Birthdate</Label>
           <Input id="birthdate" type="date" {...register("birthdate")} />
           <FieldError message={errors.birthdate?.message} />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
             Used for youth/age eligibility checks
           </p>
         </div>

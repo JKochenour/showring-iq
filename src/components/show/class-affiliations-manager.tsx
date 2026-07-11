@@ -103,7 +103,7 @@ export function ClassAffiliationsManager({
   return (
     <Card>
       <h3 className="mb-1 text-base font-semibold">Association affiliations</h3>
-      <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
         One class can count for several associations at once, each with its
         own code and its own eligibility rules — e.g. an NRHA code that
         counts for money and points, plus an EPRHA code that only counts
@@ -117,11 +117,11 @@ export function ClassAffiliationsManager({
       )}
 
       {affiliations.length === 0 ? (
-        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
           No affiliations linked yet.
         </p>
       ) : (
-        <ul className="mb-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+        <ul className="mb-4 divide-y divide-stone-200 dark:divide-stone-800">
           {affiliations.map((a) => {
             const pkg = a.code?.rule_package;
             const label = a.code
@@ -133,7 +133,7 @@ export function ClassAffiliationsManager({
                   <p className="text-sm font-medium">
                     {label}
                     {a.is_primary && (
-                      <span className="ml-2 inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      <span className="ml-2 inline-block rounded bg-brand-100 px-1.5 py-0.5 text-xs font-medium text-brand-800 dark:bg-brand-950 dark:text-brand-300">
                         primary
                       </span>
                     )}
@@ -148,7 +148,7 @@ export function ClassAffiliationsManager({
                     </Button>
                   )}
                 </div>
-                <div className="mt-1 flex flex-wrap gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+                <div className="mt-1 flex flex-wrap gap-4 text-xs text-stone-500 dark:text-stone-400">
                   <label className="flex items-center gap-1">
                     <input
                       type="checkbox"
@@ -195,7 +195,7 @@ export function ClassAffiliationsManager({
       )}
 
       {editable && (
-        <div className="space-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+        <div className="space-y-2 border-t border-stone-200 pt-4 dark:border-stone-800">
           <div className="min-w-[220px]">
             <Combobox
               options={availableOptions}

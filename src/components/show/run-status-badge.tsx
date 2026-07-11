@@ -1,7 +1,7 @@
 const STYLES: Record<string, { label: string; className: string }> = {
   pending: {
     label: "Pending",
-    className: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+    className: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
   },
   at_gate: {
     label: "At gate",
@@ -10,11 +10,11 @@ const STYLES: Record<string, { label: string; className: string }> = {
   in_arena: {
     label: "In arena",
     className:
-      "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+      "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300",
   },
   completed: {
     label: "Completed",
-    className: "bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+    className: "bg-stone-200 text-stone-500 dark:bg-stone-800 dark:text-stone-400",
   },
   hold: {
     label: "Hold",

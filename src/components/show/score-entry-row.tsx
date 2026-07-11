@@ -76,14 +76,14 @@ export function ScoreEntryRow({
                   (r) => r.value === score.result_status
                 )?.label}
           </p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {score.judge_name && `Judge: ${score.judge_name} · `}
             {score.penalty_points_tenths > 0 &&
               `${formatScore(score.penalty_points_tenths)} penalty · `}
             {score.notes}
           </p>
           {score.signature_name && score.signed_at && (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               Signed by {score.signature_name} at{" "}
               {new Date(score.signed_at).toLocaleString()}
             </p>

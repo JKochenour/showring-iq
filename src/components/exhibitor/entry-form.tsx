@@ -67,28 +67,28 @@ export function ExhibitorEntryForm({
       </div>
 
       <Label>Classes</Label>
-      <div className="max-h-96 space-y-1 overflow-y-auto rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
+      <div className="max-h-96 space-y-1 overflow-y-auto rounded-md border border-stone-200 p-3 dark:border-stone-800">
         {classes.length === 0 && (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">No classes available yet.</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">No classes available yet.</p>
         )}
         {classes.map((c) => (
           <div
             key={c.id}
-            className={`rounded px-2 py-1.5 text-sm ${c.eligible ? "hover:bg-zinc-50 dark:hover:bg-zinc-800" : "opacity-60"}`}
+            className={`rounded px-2 py-1.5 text-sm ${c.eligible ? "hover:bg-stone-50 dark:hover:bg-stone-800" : "opacity-60"}`}
           >
             <label className="flex items-center justify-between gap-3">
               <span className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-zinc-300 accent-emerald-700 disabled:opacity-50"
+                  className="h-4 w-4 rounded border-stone-300 accent-brand-700 disabled:opacity-50"
                   checked={selected.has(c.id)}
                   disabled={!c.eligible}
                   onChange={() => toggle(c.id, c.eligible)}
                 />
-                <span className="font-mono text-xs text-zinc-500">{c.classNumber}</span>
+                <span className="font-mono text-xs text-stone-500">{c.classNumber}</span>
                 {c.name}
               </span>
-              <span className="text-zinc-500 dark:text-zinc-400">{formatCents(c.feeCents)}</span>
+              <span className="text-stone-500 dark:text-stone-400">{formatCents(c.feeCents)}</span>
             </label>
             {!c.eligible && c.reasons.length > 0 && (
               <p className="ml-6 mt-0.5 text-xs text-red-600 dark:text-red-400">
@@ -99,7 +99,7 @@ export function ExhibitorEntryForm({
         ))}
       </div>
       {total > 0 && (
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+        <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
           Total fees: <b>{formatCents(total)}</b>
         </p>
       )}
@@ -129,7 +129,7 @@ export function ExhibitorEntryForm({
       >
         {isPending ? "Submitting…" : "Submit entry"}
       </Button>
-      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
         Fees shown are due at the show — this doesn&apos;t process payment.
       </p>
     </Card>

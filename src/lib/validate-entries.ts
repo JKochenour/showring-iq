@@ -20,8 +20,8 @@ function ageAt(birthdate: string, atDate: string): number {
   return age;
 }
 
-/** Associations this show validates against. Comes from the show's rule
- * packages in a later sprint; NRHA is the MVP default. */
+/** Associations this show validates against. Still a static default rather
+ * than derived from the show's own rule packages; NRHA is the MVP default. */
 const DEFAULT_REQUIRED_ASSOCIATIONS = ["NRHA"];
 
 export interface ValidatedEntry {

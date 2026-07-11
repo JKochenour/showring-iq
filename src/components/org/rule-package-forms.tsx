@@ -227,7 +227,7 @@ export function AddClassCodeForm({ rulePackageId }: { rulePackageId: string }) {
           <label key={field} className="flex items-center gap-2">
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-zinc-300 accent-emerald-700"
+              className="h-4 w-4 rounded border-stone-300 accent-brand-700"
               {...register(field)}
             />
             {label}
@@ -298,7 +298,7 @@ export function AddEligibilityRuleForm({ rulePackageId }: { rulePackageId: strin
         <div>
           <Label htmlFor="er-applies">Applies to (comma-separated)</Label>
           <Input id="er-applies" placeholder="e.g. non_pro, youth, or a code like 5300" {...register("appliesTo")} />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
             Blank = every entry. Otherwise matches an entered class&apos;s linked
             code (exact code, or category: non_pro/youth/amateur/open).
           </p>
@@ -322,7 +322,7 @@ export function AddEligibilityRuleForm({ rulePackageId }: { rulePackageId: strin
             {...register("field")}
           />
           <FieldError message={errors.field?.message} />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
             One of: rider.age, entry.hasOwner, entry.ownerIsRider,
             horse.ownershipCount, horse.ownedByRider.
           </p>

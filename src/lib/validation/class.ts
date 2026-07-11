@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { MONEY_PATTERN } from "@/lib/money";
 
-/** Class statuses a user can set directly in Sprint 3. Later stages
+/** Class statuses a user can set directly. Later stages
  * (draw_posted, scoring, official, …) are driven by their own workflows. */
 export const CLASS_STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },

@@ -40,7 +40,7 @@ export default async function ExhibitorProfilePage({
         <h2 className="text-xl font-semibold tracking-tight">
           {p.first_name} {p.last_name}
           {p.preferred_name && (
-            <span className="ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">
+            <span className="ml-2 text-base font-normal text-stone-500 dark:text-stone-400">
               “{p.preferred_name}”
             </span>
           )}
@@ -50,14 +50,14 @@ export default async function ExhibitorProfilePage({
             {p.roles.map((role) => (
               <span
                 key={role}
-                className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700 dark:bg-stone-800 dark:text-stone-300"
               >
                 {roleLabel(role)}
               </span>
             ))}
           </div>
         )}
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
           Name and roles are managed by the show office — contact them to make
           changes.
         </p>
@@ -70,22 +70,22 @@ export default async function ExhibitorProfilePage({
 
       <Card>
         <h3 className="mb-1 text-base font-semibold">Association memberships</h3>
-        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
           Contact the show office to add or update membership numbers.
         </p>
         {membershipRows.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             No memberships recorded.
           </p>
         ) : (
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="divide-y divide-stone-200 dark:divide-stone-800">
             {membershipRows.map((m) => (
               <li key={m.id} className="py-3">
                 <p className="text-sm font-medium">
                   {m.association} #{m.membership_number}
                   {m.membership_type && ` · ${m.membership_type}`}
                 </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   {m.status}
                   {m.expiration_date && ` · expires ${m.expiration_date}`}
                 </p>

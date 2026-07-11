@@ -26,7 +26,7 @@ export function SeverityBadge({
 export function IssueSummaryBadges({ issues }: { issues: ValidationIssue[] }) {
   if (issues.length === 0) {
     return (
-      <span className="inline-block rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+      <span className="inline-block rounded bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800 dark:bg-brand-950 dark:text-brand-300">
         ✓ clear
       </span>
     );
@@ -55,7 +55,7 @@ export function IssueList({ issues }: { issues: ValidationIssue[] }) {
         <li key={`${issue.code}-${index}`} className="flex items-start gap-2 text-sm">
           <SeverityBadge severity={issue.severity} />
           {issue.associationName && (
-            <span className="inline-block whitespace-nowrap rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+            <span className="inline-block whitespace-nowrap rounded bg-stone-100 px-1.5 py-0.5 text-xs font-medium text-stone-600 dark:bg-stone-800 dark:text-stone-300">
               {issue.associationName}
             </span>
           )}

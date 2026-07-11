@@ -23,36 +23,44 @@ export default async function ShowStaffPage({
   if (!show) notFound();
   const s = show as Pick<Show, "id" | "organization_id" | "status">;
 
-  const [{ data: staff }, { data: members }, canEdit] = await Promise.all([
+  const [{ data: staffBase }, { data: members }, canEdit] = await Promise.all([
     supabase
       .from("show_staff")
-      .select(
-        "id, show_id, user_id, display_name, staff_role, notes, created_at, profile:profiles(email, full_name)"
-      )
+      .select("id, show_id, user_id, display_name, staff_role, notes, created_at")
       .eq("show_id", id)
       .order("created_at"),
     supabase
       .from("organization_members")
-      .select("user_id, profile:profiles(email, full_name)")
+      .select("user_id")
       .eq("organization_id", s.organization_id)
       .eq("status", "active"),
     hasOrgPermission(s.organization_id, "show.edit"),
   ]);
 
-  const staffRows = (staff as unknown as ShowStaffRow[]) ?? [];
-  const memberOptions =
-    members?.map((m) => {
-      const profile = m.profile as unknown as {
-        email: string;
-        full_name: string | null;
-      } | null;
-      return {
-        userId: m.user_id as string,
-        label: profile?.full_name
-          ? `${profile.full_name} (${profile.email})`
-          : (profile?.email ?? "Unknown"),
-      };
-    }) ?? [];
+  const staffUserIds = [
+    ...new Set((staffBase ?? []).map((m) => m.user_id).filter((v): v is string => !!v)),
+  ];
+  const memberUserIds = [...new Set((members ?? []).map((m) => m.user_id as string))];
+  const allProfileIds = [...new Set([...staffUserIds, ...memberUserIds])];
+  const { data: profiles } =
+    allProfileIds.length > 0
+      ? await supabase.from("profiles").select("id, email, full_name").in("id", allProfileIds)
+      : { data: [] as { id: string; email: string; full_name: string | null }[] };
+  const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
+
+  const staffRows: ShowStaffRow[] = (staffBase ?? []).map((m) => ({
+    ...m,
+    profile: m.user_id ? (profileById.get(m.user_id) ?? null) : null,
+  }));
+  const memberOptions = memberUserIds.map((userId) => {
+    const profile = profileById.get(userId);
+    return {
+      userId,
+      label: profile?.full_name
+        ? `${profile.full_name} (${profile.email})`
+        : (profile?.email ?? "Unknown"),
+    };
+  });
 
   const roleLabel = (value: string) =>
     STAFF_ROLES.find((r) => r.value === value)?.label ?? value;
@@ -81,31 +89,31 @@ export default async function ShowStaffPage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   <th className="py-2 pr-4 font-medium">Name</th>
                   <th className="py-2 pr-4 font-medium">Role</th>
                   <th className="py-2 pr-4 font-medium">Notes</th>
                   <th className="py-2 font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {staffRows.map((member) => (
                   <tr key={member.id}>
                     <td className="py-3 pr-4">
                       <p className="font-medium">{member.display_name}</p>
                       {member.profile && (
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="text-xs text-stone-500 dark:text-stone-400">
                           {member.profile.email}
                         </p>
                       )}
                       {!member.user_id && (
-                        <p className="text-xs text-zinc-400">
+                        <p className="text-xs text-stone-400">
                           Not a platform user
                         </p>
                       )}
                     </td>
                     <td className="py-3 pr-4">{roleLabel(member.staff_role)}</td>
-                    <td className="py-3 pr-4 text-zinc-500 dark:text-zinc-400">
+                    <td className="py-3 pr-4 text-stone-500 dark:text-stone-400">
                       {member.notes ?? "—"}
                     </td>
                     <td className="py-3 text-right">

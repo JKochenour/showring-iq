@@ -13,7 +13,7 @@ export function CreateNrhaStarterButton({ organizationId }: { organizationId: st
   return (
     <Card>
       <h2 className="mb-2 text-base font-semibold">Start from NRHA&apos;s public class list</h2>
-      <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
         Creates a draft rule package with common local-show class names and
         eligibility flags (Open, Non Pro, Green Reiner, Youth, etc.) from
         NRHA&apos;s public category taxonomy. Class codes are seeded as

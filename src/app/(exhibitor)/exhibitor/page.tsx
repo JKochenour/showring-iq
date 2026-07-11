@@ -47,11 +47,11 @@ export default async function ExhibitorPickOrgPage() {
               >
                 <div>
                   <p className="font-medium">{r.organization?.name}</p>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  <p className="text-sm text-stone-500 dark:text-stone-400">
                     {r.first_name} {r.last_name}
                   </p>
                 </div>
-                <span className="text-emerald-700 dark:text-emerald-500">Open →</span>
+                <span className="text-brand-700 dark:text-brand-500">Open →</span>
               </Link>
             </Card>
           ))}

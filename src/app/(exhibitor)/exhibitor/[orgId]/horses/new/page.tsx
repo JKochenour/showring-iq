@@ -23,7 +23,7 @@ export default async function NewExhibitorHorsePage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/exhibitor/${orgId}/horses`} className="hover:underline">
             My horses
           </Link>{" "}

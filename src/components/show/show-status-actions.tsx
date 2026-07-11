@@ -37,7 +37,7 @@ export function ShowStatusActions({
   return (
     <Card className="max-w-2xl">
       <h2 className="mb-1 text-base font-semibold">Status &amp; lifecycle</h2>
-      <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
         Current status: <StatusBadge status={status} />
       </p>
       {error && (
@@ -145,13 +145,13 @@ export function ShowStatusActions({
 export function StatusBadge({ status }: { status: ShowStatus }) {
   const styles: Record<ShowStatus, string> = {
     draft:
-      "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+      "bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300",
     published:
-      "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+      "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300",
     locked:
       "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
     archived:
-      "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+      "bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400",
   };
   return (
     <span

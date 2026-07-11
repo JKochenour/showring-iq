@@ -94,7 +94,7 @@ export default async function EntryDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/shows/${id}/entries`} className="hover:underline">
             Entries
           </Link>{" "}
@@ -110,7 +110,7 @@ export default async function EntryDetailPage({
             </span>
           )}
         </div>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
           {e.owner_name && `Owner: ${e.owner_name}`}
           {e.trainer_name && ` · Trainer: ${e.trainer_name}`}
           {e.notes && ` · ${e.notes}`}
@@ -146,16 +146,16 @@ export default async function EntryDetailPage({
             Classes ({classRows.filter((ec) => ec.status === "entered").length}{" "}
             entered)
           </h3>
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          <p className="text-sm text-stone-600 dark:text-stone-300">
             Class fees: <b>{formatCents(feeTotal)}</b>
           </p>
         </div>
         {classRows.length === 0 ? (
-          <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
             No classes on this entry yet.
           </p>
         ) : (
-          <ul className="mb-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="mb-4 divide-y divide-stone-200 dark:divide-stone-800">
             {classRows.map((ec) => (
               <li
                 key={ec.id}
@@ -165,7 +165,7 @@ export default async function EntryDetailPage({
                   <p
                     className={`text-sm font-medium ${
                       ec.status === "scratched"
-                        ? "text-zinc-400 line-through dark:text-zinc-500"
+                        ? "text-stone-400 line-through dark:text-stone-500"
                         : ""
                     }`}
                   >
@@ -180,7 +180,7 @@ export default async function EntryDetailPage({
                       "Unknown class"
                     )}
                   </p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {formatCents(ec.fee_cents)}
                     {ec.status === "scratched" &&
                       ` · scratched${ec.scratch_reason ? `: ${ec.scratch_reason}` : ""}`}
@@ -227,7 +227,7 @@ export default async function EntryDetailPage({
               />
             )}
           </div>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
             Scratching keeps the entry in reports and association exports
             (NRHA requires scratched entries in the results file). Deletion is
             for data-entry mistakes only.

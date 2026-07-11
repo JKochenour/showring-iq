@@ -125,7 +125,7 @@ export default async function ClassScoringPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/shows/${id}/scoring`} className="hover:underline">
             Scoring
           </Link>{" "}
@@ -138,7 +138,7 @@ export default async function ClassScoringPage({
           <ClassStatusBadge status={showClass.status} />
         </div>
         {showClass.pattern_number && (
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             Pattern {showClass.pattern_number}
           </p>
         )}
@@ -162,15 +162,15 @@ export default async function ClassScoringPage({
           Order of go ({drawRows.length})
         </h3>
         {drawRows.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             No draw yet — scoring by entry order below.
           </p>
         ) : (
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="divide-y divide-stone-200 dark:divide-stone-800">
             {drawRows.map((row) => (
               <li key={row.id} className="py-4">
                 <div className="mb-2 flex items-center gap-4">
-                  <span className="w-8 text-right font-mono text-sm text-zinc-400">
+                  <span className="w-8 text-right font-mono text-sm text-stone-400">
                     {row.position}
                   </span>
                   <span className="font-mono text-lg font-bold">
@@ -178,7 +178,7 @@ export default async function ClassScoringPage({
                   </span>
                   <div>
                     <p className="text-sm font-medium">{row.riderName}</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <p className="text-xs text-stone-500 dark:text-stone-400">
                       {row.horseName}
                     </p>
                   </div>
@@ -211,12 +211,12 @@ export default async function ClassScoringPage({
           <h3 className="mb-4 text-base font-semibold">
             Not in draw ({undrawnEntries.length})
           </h3>
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="divide-y divide-stone-200 dark:divide-stone-800">
             {undrawnEntries.map((ec) => (
               <li key={ec.id} className="py-4">
                 <div className="mb-2">
                   <p className="text-sm font-medium">{ec.entry?.rider_name}</p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {ec.entry?.horse_name} · entry {ec.entry?.entry_number}
                   </p>
                 </div>

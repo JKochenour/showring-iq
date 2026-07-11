@@ -47,7 +47,7 @@ export default async function ExportsPage({
           <Card
             className={
               nrhaData!.ready
-                ? "border-emerald-300 dark:border-emerald-800"
+                ? "border-brand-300 dark:border-brand-800"
                 : "border-amber-300 dark:border-amber-800"
             }
           >
@@ -58,7 +58,7 @@ export default async function ExportsPage({
                   <span
                     className={
                       nrhaData!.ready
-                        ? "text-emerald-700 dark:text-emerald-400"
+                        ? "text-brand-700 dark:text-brand-400"
                         : "text-amber-700 dark:text-amber-400"
                     }
                   >
@@ -67,7 +67,7 @@ export default async function ExportsPage({
                       : `${nrhaData!.readiness.length} issue${nrhaData!.readiness.length === 1 ? "" : "s"}`}
                   </span>
                 </h2>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                <p className="text-sm text-stone-500 dark:text-stone-400">
                   {nrhaData!.includedClassCount} class
                   {nrhaData!.includedClassCount === 1 ? "" : "es"} included ·{" "}
                   {nrhaData!.rows.length} row{nrhaData!.rows.length === 1 ? "" : "s"}
@@ -87,7 +87,7 @@ export default async function ExportsPage({
             {nrhaData!.readiness.length > 0 ? (
               <IssueList issues={nrhaData!.readiness} />
             ) : (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="text-sm text-stone-500 dark:text-stone-400">
                 Every check passed.
               </p>
             )}
@@ -97,7 +97,7 @@ export default async function ExportsPage({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold">PDF results</h2>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                <p className="text-sm text-stone-500 dark:text-stone-400">
                   Placings and scores for every official class, one document
                   for the full show.
                 </p>
@@ -107,7 +107,7 @@ export default async function ExportsPage({
                   Download PDF results
                 </ButtonLink>
               ) : (
-                <span className="text-sm text-zinc-400">
+                <span className="text-sm text-stone-400">
                   No official classes yet
                 </span>
               )}
@@ -118,7 +118,7 @@ export default async function ExportsPage({
             <h2 className="mb-1 text-base font-semibold">
               Entry fees &amp; retainage (informational)
             </h2>
-            <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
               A simple tally from official classes&apos; entry fees — not a
               payout calculation. It does not include added money, and it
               does not drive the CSV&apos;s MoneyWon field. A full payout
@@ -127,7 +127,7 @@ export default async function ExportsPage({
             </p>
             <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
               <div className="flex justify-between gap-4 sm:justify-start">
-                <dt className="text-zinc-500 dark:text-zinc-400">
+                <dt className="text-stone-500 dark:text-stone-400">
                   Entry fees collected
                 </dt>
                 <dd className="font-mono">
@@ -135,7 +135,7 @@ export default async function ExportsPage({
                 </dd>
               </div>
               <div className="flex justify-between gap-4 sm:justify-start">
-                <dt className="text-zinc-500 dark:text-zinc-400">
+                <dt className="text-stone-500 dark:text-stone-400">
                   5% retainage
                 </dt>
                 <dd className="font-mono">
@@ -145,7 +145,7 @@ export default async function ExportsPage({
             </dl>
           </Card>
 
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-stone-400">
             v1 covers the NRHA CSV and PDF results. The full submission
             package (per-class score sheets, tally sheet, medication fee
             summary, and collected paperwork) is a planned follow-up.

@@ -43,7 +43,7 @@ export default async function ClassesPage({
     <div>
       <PageHeader
         title="Classes"
-        description="Class list in schedule order. Association codes and eligibility plug in with rule packages in a later sprint."
+        description="Class list in schedule order, with association codes and eligibility from each class's rule packages."
         action={
           canCreate && showEditable ? (
             <ButtonLink href={`/shows/${id}/classes/new`}>Add class</ButtonLink>
@@ -68,7 +68,7 @@ export default async function ClassesPage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   {reorderable && <th className="w-10 py-2 pr-2"></th>}
                   <th className="py-2 pr-4 font-medium">#</th>
                   <th className="py-2 pr-4 font-medium">Class</th>
@@ -79,7 +79,7 @@ export default async function ClassesPage({
                   <th className="py-2 font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {rows.map((cls, index) => (
                   <tr key={cls.id}>
                     {reorderable && (
@@ -95,11 +95,11 @@ export default async function ClassesPage({
                     <td className="py-3 pr-4">
                       <Link
                         href={`/shows/${id}/classes/${cls.id}`}
-                        className="font-medium text-emerald-700 hover:underline dark:text-emerald-500"
+                        className="font-medium text-brand-700 hover:underline dark:text-brand-500"
                       >
                         {cls.name}
                       </Link>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
                         {[cls.discipline, cls.division]
                           .filter(Boolean)
                           .join(" · ") || "—"}
@@ -114,7 +114,7 @@ export default async function ClassesPage({
                         ? formatCents(cls.added_money_cents)
                         : "—"}
                     </td>
-                    <td className="py-3 pr-4 text-zinc-500 dark:text-zinc-400">
+                    <td className="py-3 pr-4 text-stone-500 dark:text-stone-400">
                       {cls.scheduled_date
                         ? new Date(
                             `${cls.scheduled_date}T00:00:00`

@@ -70,7 +70,7 @@ export default async function ClassDrawPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/shows/${id}/draws`} className="hover:underline">
             Draws
           </Link>{" "}
@@ -79,7 +79,7 @@ export default async function ClassDrawPage({
         <h2 className="mt-1 text-xl font-semibold tracking-tight">
           Class {showClass.class_number} — {showClass.name}
         </h2>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
           {drawRows.length} in draw
           {showClass.pattern_number && ` · Pattern ${showClass.pattern_number}`}
           {showClass.drag_every_n && ` · drag every ${showClass.drag_every_n}`}
@@ -107,7 +107,7 @@ export default async function ClassDrawPage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   {manageable && <th className="w-10 py-2 pr-2"></th>}
                   <th className="py-2 pr-4 font-medium">Draw</th>
                   <th className="py-2 pr-4 font-medium">Back #</th>
@@ -116,7 +116,7 @@ export default async function ClassDrawPage({
                   {manageable && <th className="py-2 font-medium"></th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {drawRows.map((row, index) => (
                   <tr
                     key={row.id}
@@ -139,7 +139,7 @@ export default async function ClassDrawPage({
                     </td>
                     <td className="py-3 pr-4">
                       <p className="font-medium">{row.riderName}</p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
                         {row.horseName}
                       </p>
                     </td>
@@ -169,11 +169,11 @@ export default async function ClassDrawPage({
           <h3 className="mb-1 text-base font-semibold">
             Not in draw ({undrawn.length})
           </h3>
-          <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
             Entries added after the draw. Late entries go to the end of the
             order (recorded in the audit log).
           </p>
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="divide-y divide-stone-200 dark:divide-stone-800">
             {undrawn.map((ec) => (
               <li
                 key={ec.id}
@@ -181,7 +181,7 @@ export default async function ClassDrawPage({
               >
                 <div>
                   <p className="text-sm font-medium">{ec.entry!.rider_name}</p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {ec.entry!.horse_name} · entry {ec.entry!.entry_number}
                   </p>
                 </div>

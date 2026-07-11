@@ -115,7 +115,7 @@ export default function HelpPage() {
           {ROLE_GUIDES.map((guide) => (
             <Card key={guide.role}>
               <h3 className="mb-2 font-semibold">{guide.role}</h3>
-              <ol className="list-inside list-decimal space-y-1 text-sm text-zinc-600 dark:text-zinc-300">
+              <ol className="list-inside list-decimal space-y-1 text-sm text-stone-600 dark:text-stone-300">
                 {guide.steps.map((step, i) => (
                   <li key={i}>{step}</li>
                 ))}
@@ -130,7 +130,7 @@ export default function HelpPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {TUTORIALS.map((video) => (
             <Card key={video.title} className="flex flex-col">
-              <div className="mb-3 flex aspect-video items-center justify-center rounded-md bg-zinc-100 dark:bg-zinc-800">
+              <div className="mb-3 flex aspect-video items-center justify-center rounded-md bg-stone-100 dark:bg-stone-800">
                 {video.youtubeId ? (
                   <iframe
                     className="h-full w-full rounded-md"
@@ -139,14 +139,14 @@ export default function HelpPage() {
                     allowFullScreen
                   />
                 ) : (
-                  <span className="text-xs text-zinc-400">Coming soon</span>
+                  <span className="text-xs text-stone-400">Coming soon</span>
                 )}
               </div>
               <h3 className="text-sm font-semibold">{video.title}</h3>
-              <p className="mt-1 flex-1 text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="mt-1 flex-1 text-xs text-stone-500 dark:text-stone-400">
                 {video.description}
               </p>
-              <p className="mt-2 text-xs text-zinc-400">{video.minutes} min</p>
+              <p className="mt-2 text-xs text-stone-400">{video.minutes} min</p>
             </Card>
           ))}
         </div>
@@ -155,11 +155,11 @@ export default function HelpPage() {
       <section>
         <h2 className="mb-3 text-lg font-semibold">Frequently asked questions</h2>
         <Card>
-          <dl className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <dl className="divide-y divide-stone-200 dark:divide-stone-800">
             {FAQ.map((item) => (
               <div key={item.q} className="py-4 first:pt-0 last:pb-0">
                 <dt className="text-sm font-semibold">{item.q}</dt>
-                <dd className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                <dd className="mt-1 text-sm text-stone-600 dark:text-stone-300">
                   {item.a}
                 </dd>
               </div>

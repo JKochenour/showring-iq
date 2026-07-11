@@ -55,13 +55,13 @@ export default async function OrganizationsPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           {orgs.map(({ org, role, membershipId }) => (
             <Link key={membershipId} href={`/organizations/${org.id}`}>
-              <Card className="h-full transition-colors hover:border-emerald-600">
+              <Card className="h-full transition-colors hover:border-brand-600">
                 <h3 className="font-semibold">{org.name}</h3>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                   /{org.slug}
                   {org.city && ` · ${org.city}${org.state ? `, ${org.state}` : ""}`}
                 </p>
-                <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
                   Your role: {role}
                 </p>
               </Card>

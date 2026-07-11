@@ -36,9 +36,9 @@ export default async function ExhibitorLayout({
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-4 py-6 sm:px-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-4 dark:border-zinc-800">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 pb-4 dark:border-stone-800">
         <div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             <Link href="/exhibitor" className="hover:underline">
               Exhibitor
             </Link>{" "}
@@ -54,7 +54,7 @@ export default async function ExhibitorLayout({
               <Link
                 key={tab.href}
                 href={tab.href}
-                className="rounded-md px-3 py-2 font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                className="rounded-md px-3 py-2 font-medium text-stone-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
               >
                 {tab.label}
               </Link>

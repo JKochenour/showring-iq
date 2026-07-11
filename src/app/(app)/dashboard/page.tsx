@@ -39,7 +39,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title={firstName ? `Welcome, ${firstName}` : "Welcome"}
-        description="Sprint 1 foundation: organizations, members, roles, and permissions. Shows arrive in Sprint 2."
+        description="Your organizations, shows, staff, and everything that runs them."
       />
 
       <PendingInvites invites={(invites as PendingInvite[]) ?? []} />
@@ -67,9 +67,9 @@ export default async function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {orgs.map(({ org, role, membershipId }) => (
               <Link key={membershipId} href={`/organizations/${org.id}`}>
-                <Card className="h-full transition-colors hover:border-emerald-600">
+                <Card className="h-full transition-colors hover:border-brand-600">
                   <h3 className="font-semibold">{org.name}</h3>
-                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                  <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                     /{org.slug} · Your role: {role}
                   </p>
                 </Card>

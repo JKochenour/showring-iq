@@ -145,30 +145,30 @@ export function CreateEntryForm({
 
         <div>
           <Label>Classes</Label>
-          <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
+          <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border border-stone-200 p-3 dark:border-stone-800">
             {classes.length === 0 && (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="text-sm text-stone-500 dark:text-stone-400">
                 No classes available — add classes to the show first.
               </p>
             )}
             {classes.map((cls) => (
               <label
                 key={cls.id}
-                className="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                className="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-sm hover:bg-stone-50 dark:hover:bg-stone-800"
               >
                 <span className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     value={cls.id}
-                    className="h-4 w-4 rounded border-zinc-300 accent-emerald-700"
+                    className="h-4 w-4 rounded border-stone-300 accent-brand-700"
                     {...register("classIds")}
                   />
-                  <span className="font-mono text-xs text-zinc-500">
+                  <span className="font-mono text-xs text-stone-500">
                     {cls.classNumber}
                   </span>
                   {cls.name}
                 </span>
-                <span className="text-zinc-500 dark:text-zinc-400">
+                <span className="text-stone-500 dark:text-stone-400">
                   {formatCents(cls.feeCents)}
                 </span>
               </label>
@@ -176,7 +176,7 @@ export function CreateEntryForm({
           </div>
           <FieldError message={errors.classIds?.message as string | undefined} />
           {selectedTotal > 0 && (
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+            <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
               Class fees: <b>{formatCents(selectedTotal)}</b>
             </p>
           )}
@@ -189,7 +189,7 @@ export function CreateEntryForm({
               <input
                 type="radio"
                 value="auto"
-                className="accent-emerald-700"
+                className="accent-brand-700"
                 {...register("backNumberMode")}
               />
               Auto-assign next
@@ -198,7 +198,7 @@ export function CreateEntryForm({
               <input
                 type="radio"
                 value="manual"
-                className="accent-emerald-700"
+                className="accent-brand-700"
                 {...register("backNumberMode")}
               />
               Specific number
@@ -207,7 +207,7 @@ export function CreateEntryForm({
               <input
                 type="radio"
                 value="none"
-                className="accent-emerald-700"
+                className="accent-brand-700"
                 {...register("backNumberMode")}
               />
               Assign later

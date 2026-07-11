@@ -1,0 +1,22 @@
+-- ============================================================
+-- ShowRing IQ — fix ambiguous log_audit() overload
+--
+-- 00017_audit_log_show_id.sql added an 8th parameter (p_show) to
+-- log_audit() via `create or replace function`. Postgres treats a
+-- changed parameter list as a distinct function identity, so that
+-- statement created a SECOND overload instead of replacing the
+-- original 7-parameter one from 00001_foundation.sql — both have
+-- coexisted in the database ever since.
+--
+-- Every call site that still passes exactly 7 arguments (i.e. every
+-- caller not yet updated to pass p_show) is now ambiguous between the
+-- two overloads and fails with "function log_audit(...) is not
+-- unique". This broke, at minimum, rule package lifecycle transitions
+-- (send to review / publish) the first time this was exercised live.
+--
+-- Fix: drop the stale 7-parameter overload. The 8-parameter version
+-- from 00017 has p_show default null, so every existing 7-arg call
+-- site keeps working unchanged once the ambiguity is gone.
+-- ============================================================
+
+drop function if exists public.log_audit(uuid, text, text, text, jsonb, jsonb, text);

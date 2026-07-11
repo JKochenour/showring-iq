@@ -100,7 +100,7 @@ export default async function ClassDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/shows/${id}/classes`} className="hover:underline">
             Classes
           </Link>{" "}
@@ -127,19 +127,19 @@ export default async function ClassDetailPage({
           )}
           <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500 dark:text-zinc-400">Discipline</dt>
+              <dt className="text-stone-500 dark:text-stone-400">Discipline</dt>
               <dd>{showClass.discipline ?? "—"}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500 dark:text-zinc-400">Division</dt>
+              <dt className="text-stone-500 dark:text-stone-400">Division</dt>
               <dd>{showClass.division ?? "—"}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500 dark:text-zinc-400">Pattern</dt>
+              <dt className="text-stone-500 dark:text-stone-400">Pattern</dt>
               <dd>{showClass.pattern_number ?? "—"}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500 dark:text-zinc-400">Rule package code</dt>
+              <dt className="text-stone-500 dark:text-stone-400">Rule package code</dt>
               <dd>
                 {showClass.linked_code
                   ? `${showClass.linked_code.code} — ${showClass.linked_code.name}`
@@ -147,20 +147,20 @@ export default async function ClassDetailPage({
               </dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500 dark:text-zinc-400">Entry fee</dt>
+              <dt className="text-stone-500 dark:text-stone-400">Entry fee</dt>
               <dd>{formatCents(showClass.entry_fee_cents)}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500 dark:text-zinc-400">Added money</dt>
+              <dt className="text-stone-500 dark:text-stone-400">Added money</dt>
               <dd>{formatCents(showClass.added_money_cents)}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500 dark:text-zinc-400">Scheduled day</dt>
+              <dt className="text-stone-500 dark:text-stone-400">Scheduled day</dt>
               <dd>{showClass.scheduled_date ?? "—"}</dd>
             </div>
             {showClass.notes && (
               <div className="flex justify-between gap-4 sm:col-span-2">
-                <dt className="text-zinc-500 dark:text-zinc-400">Notes</dt>
+                <dt className="text-stone-500 dark:text-stone-400">Notes</dt>
                 <dd>{showClass.notes}</dd>
               </div>
             )}
@@ -193,9 +193,9 @@ export default async function ClassDetailPage({
       {canDelete && showEditable && (
         <Card className="max-w-2xl border-red-200 dark:border-red-900">
           <h3 className="mb-1 text-sm font-semibold">Danger zone</h3>
-          <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
             Deleting a class removes it from the schedule. Once entries exist
-            (Sprint 5), cancel the class instead.
+            for it, cancel the class instead.
           </p>
           <DeleteClassButton
             classId={showClass.id}

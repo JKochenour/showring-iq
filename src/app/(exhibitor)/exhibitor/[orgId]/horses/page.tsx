@@ -48,14 +48,14 @@ export default async function ExhibitorHorsesPage({
           {horseRows.map((h) => (
             <li key={h.id}>
               <Link href={`/exhibitor/${orgId}/horses/${h.id}`}>
-                <Card className="h-full transition hover:border-emerald-300 dark:hover:border-emerald-800">
+                <Card className="h-full transition hover:border-brand-300 dark:hover:border-brand-800">
                   <p className="font-medium">{h.registered_name}</p>
                   {h.barn_name && (
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    <p className="text-sm text-stone-500 dark:text-stone-400">
                       “{h.barn_name}”
                     </p>
                   )}
-                  <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                  <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
                     {[h.breed, h.sex, h.color, h.foal_year ? `foaled ${h.foal_year}` : null]
                       .filter(Boolean)
                       .join(" · ") || "No details yet"}

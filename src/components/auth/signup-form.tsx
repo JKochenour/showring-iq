@@ -31,10 +31,10 @@ export function SignupForm() {
     return (
       <Card>
         <Alert tone="success">{message}</Alert>
-        <p className="mt-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-4 text-center text-sm text-stone-500 dark:text-stone-400">
           <Link
             href="/login"
-            className="font-medium text-emerald-700 hover:underline"
+            className="font-medium text-brand-700 hover:underline"
           >
             Go to sign in
           </Link>
@@ -45,7 +45,9 @@ export function SignupForm() {
 
   return (
     <Card>
-      <h1 className="mb-6 text-xl font-semibold">Create your account</h1>
+      <h1 className="font-display mb-6 text-2xl font-semibold text-stone-900 dark:text-stone-50">
+        Create your account
+      </h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {serverError && <Alert>{serverError}</Alert>}
         <div>
@@ -77,11 +79,11 @@ export function SignupForm() {
           {isPending ? "Creating account…" : "Create account"}
         </Button>
       </form>
-      <p className="mt-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-4 text-center text-sm text-stone-500 dark:text-stone-400">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="font-medium text-emerald-700 hover:underline"
+          className="font-medium text-brand-700 hover:underline"
         >
           Sign in
         </Link>

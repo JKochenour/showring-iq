@@ -3,7 +3,7 @@ import type { ScoreStatus } from "@/lib/types";
 const STYLES: Record<ScoreStatus | "none", { label: string; className: string }> = {
   none: {
     label: "Not scored",
-    className: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+    className: "bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400",
   },
   pending: {
     label: "Draft",
@@ -18,7 +18,7 @@ const STYLES: Record<ScoreStatus | "none", { label: string; className: string }>
   verified: {
     label: "Verified",
     className:
-      "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+      "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300",
   },
 };
 

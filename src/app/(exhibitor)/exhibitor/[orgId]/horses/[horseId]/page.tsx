@@ -27,7 +27,7 @@ export default async function ExhibitorHorseDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/exhibitor/${orgId}/horses`} className="hover:underline">
             My horses
           </Link>{" "}
@@ -36,7 +36,7 @@ export default async function ExhibitorHorseDetailPage({
         <h2 className="mt-1 text-xl font-semibold tracking-tight">
           {h.registered_name}
           {h.barn_name && (
-            <span className="ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">
+            <span className="ml-2 text-base font-normal text-stone-500 dark:text-stone-400">
               “{h.barn_name}”
             </span>
           )}

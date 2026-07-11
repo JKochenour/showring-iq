@@ -72,7 +72,7 @@ export function PayoutScheduleEditor({
       </div>
       <div>
         <Label>Payout schedule (% of pool by placing)</Label>
-        <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="mb-2 text-xs text-stone-500 dark:text-stone-400">
           Pool = entry fees (shown entries) + added money, minus retainage.
           Tied placings split their combined percentage evenly. This is a
           calculator, not an approved formula — confirm the percentages
@@ -93,7 +93,7 @@ export function PayoutScheduleEditor({
                   setRows(next);
                 }}
               />
-              <span className="text-sm text-zinc-500">place →</span>
+              <span className="text-sm text-stone-500">place →</span>
               <Input
                 type="number"
                 min={0}
@@ -108,7 +108,7 @@ export function PayoutScheduleEditor({
                   setRows(next);
                 }}
               />
-              <span className="text-sm text-zinc-500">%</span>
+              <span className="text-sm text-stone-500">%</span>
               {canEdit && (
                 <Button
                   variant="secondary"
@@ -144,7 +144,7 @@ export function PayoutScheduleEditor({
           </div>
         )}
         <p
-          className={`mt-2 text-xs ${total > 100 ? "text-red-600 dark:text-red-400" : "text-zinc-500 dark:text-zinc-400"}`}
+          className={`mt-2 text-xs ${total > 100 ? "text-red-600 dark:text-red-400" : "text-stone-500 dark:text-stone-400"}`}
         >
           Total: {total}% {total > 100 && "— exceeds 100%, check your numbers"}
         </p>

@@ -147,7 +147,7 @@ function PatternDisplay({
 }) {
   if (!pattern) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="text-sm text-stone-500 dark:text-stone-400">
         No pattern set for this class yet.
       </p>
     );
@@ -161,7 +161,7 @@ function PatternDisplay({
         <p className="whitespace-pre-wrap">{pattern.pattern_text}</p>
       )}
       {pattern.document_id && (
-        <p className="text-zinc-500 dark:text-zinc-400">
+        <p className="text-stone-500 dark:text-stone-400">
           Attached document:{" "}
           {docLabel ?? "—"} <ViewDocumentLink documentId={pattern.document_id} />
         </p>
@@ -177,7 +177,7 @@ function ViewDocumentLink({ documentId }: { documentId: string }) {
     <>
       <button
         type="button"
-        className="text-emerald-700 hover:underline disabled:opacity-50 dark:text-emerald-500"
+        className="text-brand-700 hover:underline disabled:opacity-50 dark:text-brand-500"
         disabled={isPending}
         onClick={() => {
           setError(undefined);

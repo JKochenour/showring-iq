@@ -55,30 +55,30 @@ export default async function OrganizationOverviewPage({
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <Card>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Your role</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">Your role</p>
         <p className="mt-1 text-lg font-semibold">{myRole}</p>
       </Card>
       <Link href={`/organizations/${id}/members`}>
-        <Card className="h-full transition-colors hover:border-emerald-600">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Members</p>
+        <Card className="h-full transition-colors hover:border-brand-600">
+          <p className="text-sm text-stone-500 dark:text-stone-400">Members</p>
           <p className="mt-1 text-lg font-semibold">{memberCount ?? 0}</p>
         </Card>
       </Link>
       <Link href={`/organizations/${id}/shows`}>
-        <Card className="h-full transition-colors hover:border-emerald-600">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Shows</p>
+        <Card className="h-full transition-colors hover:border-brand-600">
+          <p className="text-sm text-stone-500 dark:text-stone-400">Shows</p>
           <p className="mt-1 text-lg font-semibold">{showCount ?? 0}</p>
         </Card>
       </Link>
       <Link href={`/organizations/${id}/people`}>
-        <Card className="h-full transition-colors hover:border-emerald-600">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">People</p>
+        <Card className="h-full transition-colors hover:border-brand-600">
+          <p className="text-sm text-stone-500 dark:text-stone-400">People</p>
           <p className="mt-1 text-lg font-semibold">{peopleCount ?? 0}</p>
         </Card>
       </Link>
       <Link href={`/organizations/${id}/horses`}>
-        <Card className="h-full transition-colors hover:border-emerald-600">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Horses</p>
+        <Card className="h-full transition-colors hover:border-brand-600">
+          <p className="text-sm text-stone-500 dark:text-stone-400">Horses</p>
           <p className="mt-1 text-lg font-semibold">{horseCount ?? 0}</p>
         </Card>
       </Link>
@@ -86,19 +86,19 @@ export default async function OrganizationOverviewPage({
         <h2 className="mb-2 text-base font-semibold">Details</h2>
         <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
           <div className="flex justify-between gap-4 sm:justify-start">
-            <dt className="text-zinc-500 dark:text-zinc-400">Slug</dt>
+            <dt className="text-stone-500 dark:text-stone-400">Slug</dt>
             <dd>/{org.slug}</dd>
           </div>
           <div className="flex justify-between gap-4 sm:justify-start">
-            <dt className="text-zinc-500 dark:text-zinc-400">Contact</dt>
+            <dt className="text-stone-500 dark:text-stone-400">Contact</dt>
             <dd>{org.contact_email ?? "—"}</dd>
           </div>
           <div className="flex justify-between gap-4 sm:justify-start">
-            <dt className="text-zinc-500 dark:text-zinc-400">Website</dt>
+            <dt className="text-stone-500 dark:text-stone-400">Website</dt>
             <dd>{org.website ?? "—"}</dd>
           </div>
           <div className="flex justify-between gap-4 sm:justify-start">
-            <dt className="text-zinc-500 dark:text-zinc-400">Location</dt>
+            <dt className="text-stone-500 dark:text-stone-400">Location</dt>
             <dd>
               {org.city ? `${org.city}${org.state ? `, ${org.state}` : ""}` : "—"}
             </dd>

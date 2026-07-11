@@ -7,15 +7,15 @@ function cx(...classes: (string | false | undefined)[]) {
 
 const buttonStyles = {
   primary:
-    "bg-emerald-700 text-white hover:bg-emerald-800 disabled:bg-emerald-700/50",
+    "bg-brand-700 text-white shadow-sm hover:bg-brand-800 hover:shadow disabled:bg-brand-700/50",
   secondary:
-    "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800",
+    "border border-stone-300 bg-white text-stone-800 hover:border-stone-400 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:hover:bg-stone-800",
   danger:
-    "border border-red-300 bg-white text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-zinc-900 dark:text-red-400 dark:hover:bg-red-950",
+    "border border-red-300 bg-white text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-stone-900 dark:text-red-400 dark:hover:bg-red-950",
 } as const;
 
 const buttonBase =
-  "inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-70";
+  "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950";
 
 export function Button({
   variant = "primary",
@@ -40,47 +40,26 @@ export function ButtonLink({
   );
 }
 
+const fieldStyles =
+  "w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 transition-colors focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/25 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100";
+
 export function Input({ className, ...props }: ComponentProps<"input">) {
-  return (
-    <input
-      className={cx(
-        "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <input className={cx(fieldStyles, className)} {...props} />;
 }
 
 export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
-  return (
-    <textarea
-      className={cx(
-        "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <textarea className={cx(fieldStyles, className)} {...props} />;
 }
 
 export function Select({ className, ...props }: ComponentProps<"select">) {
-  return (
-    <select
-      className={cx(
-        "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <select className={cx(fieldStyles, className)} {...props} />;
 }
 
 export function Label({ className, ...props }: ComponentProps<"label">) {
   return (
     <label
       className={cx(
-        "mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300",
+        "mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300",
         className
       )}
       {...props}
@@ -104,13 +83,40 @@ export function Alert({
     error:
       "border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300",
     success:
-      "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+      "border-brand-200 bg-brand-50 text-brand-800 dark:border-brand-900 dark:bg-brand-950 dark:text-brand-300",
     info: "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",
   };
   return (
-    <div className={cx("rounded-md border px-4 py-3 text-sm", tones[tone])}>
+    <div className={cx("rounded-lg border px-4 py-3 text-sm", tones[tone])}>
       {children}
     </div>
+  );
+}
+
+export function Badge({
+  tone = "neutral",
+  children,
+}: {
+  tone?: "neutral" | "brand" | "accent" | "success" | "warning" | "danger";
+  children: ReactNode;
+}) {
+  const tones = {
+    neutral: "bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300",
+    brand: "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300",
+    accent: "bg-accent-100 text-accent-800 dark:bg-accent-950 dark:text-accent-300",
+    success: "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300",
+    warning: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+    danger: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+  };
+  return (
+    <span
+      className={cx(
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        tones[tone]
+      )}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -124,7 +130,7 @@ export function Card({
   return (
     <div
       className={cx(
-        "rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900",
+        "rounded-xl border border-stone-200 bg-white p-6 shadow-sm transition-shadow dark:border-stone-800 dark:bg-stone-900",
         className
       )}
     >
@@ -145,9 +151,11 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+          {title}
+        </h1>
         {description && (
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1.5 text-sm text-stone-500 dark:text-stone-400">
             {description}
           </p>
         )}
@@ -167,10 +175,12 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700">
-      <h3 className="text-sm font-semibold">{title}</h3>
+    <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50/50 p-10 text-center dark:border-stone-700 dark:bg-stone-900/50">
+      <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">
+        {title}
+      </h3>
       {description && (
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
           {description}
         </p>
       )}

@@ -138,7 +138,7 @@ export function ShowSettingsForm({ show }: { show: Show }) {
             {...register("nrhaShowNumber")}
           />
           <FieldError message={errors.nrhaShowNumber?.message} />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
             Required for the NRHA ReinerSuite CSV export.
           </p>
         </div>
@@ -151,7 +151,7 @@ export function ShowSettingsForm({ show }: { show: Show }) {
             {...register("medicationFee")}
           />
           <FieldError message={errors.medicationFee?.message} />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
             Charged once per active entry for the whole show. Shown in the
             Exports tally sheet.
           </p>
@@ -161,7 +161,7 @@ export function ShowSettingsForm({ show }: { show: Show }) {
           <textarea
             id="description"
             rows={4}
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+            className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
             {...register("description")}
           />
           <FieldError message={errors.description?.message} />

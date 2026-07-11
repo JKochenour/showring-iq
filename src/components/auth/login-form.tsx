@@ -33,7 +33,9 @@ export function LoginForm({
 
   return (
     <Card>
-      <h1 className="mb-6 text-xl font-semibold">Sign in</h1>
+      <h1 className="font-display mb-6 text-2xl font-semibold text-stone-900 dark:text-stone-50">
+        Sign in
+      </h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {serverError && <Alert>{serverError}</Alert>}
         <div>
@@ -60,11 +62,11 @@ export function LoginForm({
           {isPending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <p className="mt-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-4 text-center text-sm text-stone-500 dark:text-stone-400">
         No account?{" "}
         <Link
           href="/signup"
-          className="font-medium text-emerald-700 hover:underline"
+          className="font-medium text-brand-700 hover:underline"
         >
           Create one
         </Link>

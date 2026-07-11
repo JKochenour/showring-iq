@@ -71,7 +71,7 @@ export function ProfileForm({ person }: { person: Person }) {
             <Label htmlFor="birthdate">Birthdate</Label>
             <Input id="birthdate" type="date" {...register("birthdate")} />
             <FieldError message={errors.birthdate?.message} />
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
               Used for youth/age eligibility checks
             </p>
           </div>

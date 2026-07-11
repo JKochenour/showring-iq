@@ -92,8 +92,8 @@ export default async function GatePage({
                 href={`/shows/${id}/gate?class=${cls.id}`}
                 className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
                   selected?.id === cls.id
-                    ? "border-emerald-700 bg-emerald-700 text-white"
-                    : "border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    ? "border-brand-700 bg-brand-700 text-white"
+                    : "border-stone-300 text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800"
                 }`}
               >
                 {cls.class_number} — {cls.name}
@@ -103,7 +103,7 @@ export default async function GatePage({
 
           {selected && (
             <>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="text-sm text-stone-500 dark:text-stone-400">
                 {selected.pattern_number &&
                   `Pattern ${selected.pattern_number} · `}
                 {completed} of {rows.length} complete
@@ -117,11 +117,11 @@ export default async function GatePage({
                     key={slot.label}
                     className={
                       slot.label === "Now"
-                        ? "border-emerald-600 dark:border-emerald-500"
+                        ? "border-brand-600 dark:border-brand-500"
                         : ""
                     }
                   >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
                       {slot.label}
                     </p>
                     {slot.row ? (
@@ -134,12 +134,12 @@ export default async function GatePage({
                         <p className="mt-1 truncate text-sm font-medium">
                           {slot.row.riderName}
                         </p>
-                        <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
+                        <p className="truncate text-sm text-stone-500 dark:text-stone-400">
                           {slot.row.horseName}
                         </p>
                       </>
                     ) : (
-                      <p className="mt-1 text-sm text-zinc-400">—</p>
+                      <p className="mt-1 text-sm text-stone-400">—</p>
                     )}
                   </Card>
                 ))}
@@ -147,7 +147,7 @@ export default async function GatePage({
 
               <Card>
                 <h3 className="mb-4 text-base font-semibold">Order of go</h3>
-                <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                <ul className="divide-y divide-stone-200 dark:divide-stone-800">
                   {rows.map((row) => (
                     <li key={row.id}>
                       <div
@@ -160,7 +160,7 @@ export default async function GatePage({
                         }`}
                       >
                         <div className="flex items-center gap-4">
-                          <span className="w-8 text-right font-mono text-sm text-zinc-400">
+                          <span className="w-8 text-right font-mono text-sm text-stone-400">
                             {row.position}
                           </span>
                           <span className="w-16 font-mono text-lg font-bold">
@@ -175,7 +175,7 @@ export default async function GatePage({
                                 </span>
                               )}
                             </p>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                            <p className="text-xs text-stone-500 dark:text-stone-400">
                               {row.horseName}
                             </p>
                           </div>
@@ -198,7 +198,7 @@ export default async function GatePage({
                       </div>
                       {selected.drag_every_n &&
                         row.position % selected.drag_every_n === 0 && (
-                          <p className="border-t border-dashed border-zinc-300 py-1 text-center text-xs uppercase tracking-widest text-zinc-400 dark:border-zinc-700">
+                          <p className="border-t border-dashed border-stone-300 py-1 text-center text-xs uppercase tracking-widest text-stone-400 dark:border-stone-700">
                             — drag —
                           </p>
                         )}

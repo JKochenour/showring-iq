@@ -130,20 +130,20 @@ export function SpreadsheetImport({
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   <th className="py-2 pr-4 font-medium">Row</th>
                   <th className="py-2 pr-4 font-medium">Name</th>
                   <th className="py-2 pr-4 font-medium">Status</th>
                   <th className="py-2 font-medium">Detail</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {problems.map((r) => (
                   <tr key={r.row}>
-                    <td className="py-2 pr-4 text-zinc-500 dark:text-zinc-400">{r.row}</td>
+                    <td className="py-2 pr-4 text-stone-500 dark:text-stone-400">{r.row}</td>
                     <td className="py-2 pr-4">{r.name}</td>
                     <td className="py-2 pr-4 capitalize">{r.status}</td>
-                    <td className="py-2 text-zinc-500 dark:text-zinc-400">{r.message ?? "—"}</td>
+                    <td className="py-2 text-stone-500 dark:text-stone-400">{r.message ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -173,10 +173,10 @@ export function SpreadsheetImport({
     <div className="space-y-6">
       <Card>
         <h3 className="text-sm font-semibold">1. Upload a spreadsheet</h3>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
           Upload a .csv, .xlsx, or .xls file exported from Excel or Google Sheets. For an .xlsx/.xls
           file, only the first sheet is read. Not sure of the format?{" "}
-          <a href={templateHref} download={`${entityLabelPlural.toLowerCase()}-import-template.csv`} className="text-emerald-700 hover:underline dark:text-emerald-500">
+          <a href={templateHref} download={`${entityLabelPlural.toLowerCase()}-import-template.csv`} className="text-brand-700 hover:underline dark:text-brand-500">
             Download a CSV template
           </a>
           .
@@ -184,14 +184,14 @@ export function SpreadsheetImport({
         <input
           type="file"
           accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-          className="mt-4 block w-full text-sm text-zinc-700 file:mr-4 file:rounded-md file:border-0 file:bg-emerald-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-800 dark:text-zinc-300"
+          className="mt-4 block w-full text-sm text-stone-700 file:mr-4 file:rounded-md file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-800 dark:text-stone-300"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) void handleFile(file);
           }}
         />
         {fileName && (
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
             {fileName} — {rows.length} row{rows.length === 1 ? "" : "s"}
             {rows.length >= MAX_ROWS ? ` (capped at ${MAX_ROWS})` : ""}
           </p>
@@ -207,13 +207,13 @@ export function SpreadsheetImport({
         <>
           <Card>
             <h3 className="text-sm font-semibold">2. Match your columns</h3>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
               We guessed a mapping from your column headers. Fix anything that&apos;s wrong.
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {fields.map((field) => (
                 <div key={field.key} className="flex items-center gap-3">
-                  <label className="w-40 shrink-0 text-sm text-zinc-700 dark:text-zinc-300">
+                  <label className="w-40 shrink-0 text-sm text-stone-700 dark:text-stone-300">
                     {field.label}
                     {field.required && <span className="text-red-600"> *</span>}
                   </label>
@@ -247,13 +247,13 @@ export function SpreadsheetImport({
 
           <Card>
             <h3 className="text-sm font-semibold">3. Preview</h3>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
               First {Math.min(PREVIEW_ROWS, rows.length)} of {rows.length} rows, as they&apos;ll be imported.
             </p>
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                  <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                     {fields.map((f) => (
                       <th key={f.key} className="py-2 pr-4 font-medium">
                         {f.label}
@@ -261,14 +261,14 @@ export function SpreadsheetImport({
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                   {rows.slice(0, PREVIEW_ROWS).map((row, i) => (
                     <tr key={i}>
                       {fields.map((f) => {
                         const colIndex = mapping[f.key];
                         const value = colIndex != null ? (row[colIndex] ?? "") : "";
                         return (
-                          <td key={f.key} className="py-2 pr-4 text-zinc-500 dark:text-zinc-400">
+                          <td key={f.key} className="py-2 pr-4 text-stone-500 dark:text-stone-400">
                             {value || "—"}
                           </td>
                         );
@@ -298,7 +298,7 @@ export function SpreadsheetImport({
       )}
 
       {headers.length === 0 && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={backHref} className="hover:underline">
             ← Back
           </Link>

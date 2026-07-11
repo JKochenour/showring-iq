@@ -80,8 +80,8 @@ export default async function AnnouncerPage({
                 href={`/shows/${id}/announcer?class=${cls.id}`}
                 className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
                   selected?.id === cls.id
-                    ? "border-emerald-700 bg-emerald-700 text-white"
-                    : "border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    ? "border-brand-700 bg-brand-700 text-white"
+                    : "border-stone-300 text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800"
                 }`}
               >
                 {cls.class_number} — {cls.name}
@@ -91,8 +91,8 @@ export default async function AnnouncerPage({
 
           {selected && (
             <>
-              <Card className="border-emerald-600 dark:border-emerald-500">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+              <Card className="border-brand-600 dark:border-brand-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
                   Now in the arena — Class {selected.class_number},{" "}
                   {selected.name}
                   {selected.pattern_number &&
@@ -106,17 +106,17 @@ export default async function AnnouncerPage({
                     <p className="mt-2 text-2xl font-semibold">
                       {current.riderName}
                     </p>
-                    <p className="text-lg text-zinc-600 dark:text-zinc-300">
+                    <p className="text-lg text-stone-600 dark:text-stone-300">
                       riding {current.horseName}
                     </p>
-                    <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                    <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                       {current.ownerName && `Owned by ${current.ownerName}`}
                       {current.trainerName &&
                         ` · Trained by ${current.trainerName}`}
                     </p>
                   </div>
                 ) : (
-                  <p className="mt-2 text-lg text-zinc-400">
+                  <p className="mt-2 text-lg text-stone-400">
                     No horse in the arena right now
                   </p>
                 )}
@@ -125,14 +125,14 @@ export default async function AnnouncerPage({
               <Card>
                 <h3 className="mb-3 text-base font-semibold">Coming up</h3>
                 {next.length === 0 ? (
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  <p className="text-sm text-stone-500 dark:text-stone-400">
                     No runs remaining in this class.
                   </p>
                 ) : (
-                  <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                  <ul className="divide-y divide-stone-200 dark:divide-stone-800">
                     {next.map((row, index) => (
                       <li key={row.id} className="flex items-center gap-4 py-3">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">
                           {index === 0 ? "On deck" : `${index + 1} away`}
                         </span>
                         <span className="font-mono text-xl font-bold">
@@ -140,7 +140,7 @@ export default async function AnnouncerPage({
                         </span>
                         <div>
                           <p className="text-sm font-medium">{row.riderName}</p>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          <p className="text-xs text-stone-500 dark:text-stone-400">
                             {row.horseName}
                           </p>
                         </div>

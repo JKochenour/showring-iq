@@ -26,9 +26,9 @@ const ACTIONS: {
 
 const TONE_STYLES: Record<string, string> = {
   primary:
-    "bg-emerald-700 text-white hover:bg-emerald-800 border-emerald-700",
+    "bg-brand-700 text-white hover:bg-brand-800 border-brand-700",
   neutral:
-    "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
+    "border-stone-300 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800",
   warn: "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
   danger:
     "border-red-300 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:text-red-300",

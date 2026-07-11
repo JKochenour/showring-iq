@@ -116,10 +116,10 @@ export function Combobox({
           autoComplete="off"
           disabled={disabled}
           placeholder={placeholder}
-          className={`w-full rounded-md border bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 dark:bg-zinc-900 dark:text-zinc-100 ${
+          className={`w-full rounded-md border bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-1 dark:bg-stone-900 dark:text-stone-100 ${
             invalid
               ? "border-red-400 focus:border-red-500 focus:ring-red-500"
-              : "border-zinc-300 focus:border-emerald-600 focus:ring-emerald-600 dark:border-zinc-700"
+              : "border-stone-300 focus:border-brand-600 focus:ring-brand-600 dark:border-stone-700"
           } ${clearable && selected ? "pr-8" : ""}`}
           value={query}
           onFocus={() => setIsOpen(true)}
@@ -156,7 +156,7 @@ export function Combobox({
               e.preventDefault();
               clearSelection();
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
             aria-label="Clear selection"
           >
             ×
@@ -167,10 +167,10 @@ export function Combobox({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-10 mt-1 max-h-64 w-full overflow-auto rounded-md border border-zinc-200 bg-white py-1 text-sm shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+          className="absolute z-10 mt-1 max-h-64 w-full overflow-auto rounded-md border border-stone-200 bg-white py-1 text-sm shadow-lg dark:border-stone-700 dark:bg-stone-900"
         >
           {visible.length === 0 && (
-            <li className="px-3 py-2 text-zinc-500 dark:text-zinc-400">{emptyText}</li>
+            <li className="px-3 py-2 text-stone-500 dark:text-stone-400">{emptyText}</li>
           )}
           {visible.map((option, i) => (
             <li
@@ -184,9 +184,9 @@ export function Combobox({
               }}
               className={`cursor-pointer px-3 py-1.5 ${
                 i === highlight
-                  ? "bg-emerald-700 text-white"
+                  ? "bg-brand-700 text-white"
                   : option.id === value
-                    ? "bg-emerald-50 dark:bg-emerald-950/40"
+                    ? "bg-brand-50 dark:bg-brand-950/40"
                     : ""
               }`}
             >
@@ -194,7 +194,7 @@ export function Combobox({
             </li>
           ))}
           {filtered.length > MAX_VISIBLE_OPTIONS && (
-            <li className="border-t border-zinc-200 px-3 py-1.5 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+            <li className="border-t border-stone-200 px-3 py-1.5 text-xs text-stone-500 dark:border-stone-800 dark:text-stone-400">
               {filtered.length - MAX_VISIBLE_OPTIONS} more — keep typing to narrow
             </li>
           )}

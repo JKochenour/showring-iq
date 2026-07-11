@@ -52,22 +52,22 @@ export default async function OrgSettingsPage({
 
       <section>
         <h2 className="mb-3 text-base font-semibold">Roles</h2>
-        <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
           Roles are presets of granular permissions. Business logic always
-          checks permissions, never role names. Custom role editing arrives in
-          a later sprint.
+          checks permissions, never role names. Custom role editing isn&apos;t
+          available yet.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           {((roles as OrganizationRole[]) ?? []).map((role) => (
             <Card key={role.id}>
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-semibold">{role.name}</h3>
-                <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                <span className="rounded bg-stone-100 px-1.5 py-0.5 text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400">
                   {permCounts.get(role.id) ?? 0} permissions
                 </span>
               </div>
               {role.description && (
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                   {role.description}
                 </p>
               )}

@@ -18,11 +18,11 @@ const LABELS: Record<ClassStatus, string> = {
 export function ClassStatusBadge({ status }: { status: ClassStatus }) {
   const tone =
     status === "open"
-      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+      ? "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300"
       : status === "cancelled"
         ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
         : status === "draft"
-          ? "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+          ? "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300"
           : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300";
   return (
     <span

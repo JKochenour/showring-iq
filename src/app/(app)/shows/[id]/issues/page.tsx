@@ -69,7 +69,7 @@ export default async function IssuesPage({
       <div className="grid gap-4 sm:grid-cols-4">
         {SEVERITIES.map((s) => (
           <Card key={s.key}>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">{s.label}</p>
+            <p className="text-sm text-stone-500 dark:text-stone-400">{s.label}</p>
             <p className={`mt-1 text-2xl font-semibold ${counts[s.key] > 0 ? s.tone : ""}`}>
               {counts[s.key]}
             </p>
@@ -89,13 +89,13 @@ export default async function IssuesPage({
               <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
                 <Link
                   href={`/shows/${id}/entries/${entry.id}`}
-                  className="font-medium text-emerald-700 hover:underline dark:text-emerald-500"
+                  className="font-medium text-brand-700 hover:underline dark:text-brand-500"
                 >
                   Entry {entry.entry_number}
                   {backNumber && ` · #${backNumber}`} — {entry.rider_name} on{" "}
                   {entry.horse_name}
                 </Link>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                <span className="text-xs text-stone-500 dark:text-stone-400">
                   {issues.length} issue{issues.length === 1 ? "" : "s"}
                 </span>
               </div>
@@ -105,7 +105,7 @@ export default async function IssuesPage({
         </div>
       )}
 
-      <p className="text-xs text-zinc-400">{VALIDATION_DISCLAIMER}</p>
+      <p className="text-xs text-stone-400">{VALIDATION_DISCLAIMER}</p>
     </div>
   );
 }

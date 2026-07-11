@@ -56,7 +56,7 @@ export function CreateOrgForm() {
         <div>
           <Label htmlFor="slug">URL slug</Label>
           <Input id="slug" placeholder="e.g. eprha" {...register("slug")} />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
             Public pages will live at showringiq.com/<b>slug</b>/…
           </p>
           <FieldError message={errors.slug?.message} />

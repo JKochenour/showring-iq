@@ -76,7 +76,7 @@ export function PeopleTable({
     <div>
       {canDelete && (
         <div className="mb-3 flex flex-wrap items-center gap-3">
-          <span className="text-sm text-zinc-500 dark:text-zinc-400">
+          <span className="text-sm text-stone-500 dark:text-stone-400">
             {selected.size > 0 ? `${selected.size} selected` : "Select rows to bulk-delete"}
           </span>
           <Button
@@ -110,12 +110,12 @@ export function PeopleTable({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+              <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                 {canDelete && (
                   <th className="w-8 py-2 pr-2">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 rounded border-zinc-300 accent-emerald-700"
+                      className="h-4 w-4 rounded border-stone-300 accent-brand-700"
                       checked={allSelected}
                       onChange={toggleAll}
                       aria-label="Select all people"
@@ -128,14 +128,14 @@ export function PeopleTable({
                 <th className="py-2 font-medium">Contact</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
               {rows.map((person) => (
-                <tr key={person.id} className={selected.has(person.id) ? "bg-emerald-50/50 dark:bg-emerald-950/20" : undefined}>
+                <tr key={person.id} className={selected.has(person.id) ? "bg-brand-50/50 dark:bg-brand-950/20" : undefined}>
                   {canDelete && (
                     <td className="py-3 pr-2">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border-zinc-300 accent-emerald-700"
+                        className="h-4 w-4 rounded border-stone-300 accent-brand-700"
                         checked={selected.has(person.id)}
                         onChange={() => toggle(person.id)}
                         aria-label={`Select ${person.displayName}`}
@@ -145,12 +145,12 @@ export function PeopleTable({
                   <td className="py-3 pr-4">
                     <Link
                       href={`/organizations/${organizationId}/people/${person.id}`}
-                      className="font-medium text-emerald-700 hover:underline dark:text-emerald-500"
+                      className="font-medium text-brand-700 hover:underline dark:text-brand-500"
                     >
                       {person.displayName}
                     </Link>
                     {person.location && (
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{person.location}</p>
+                      <p className="text-xs text-stone-500 dark:text-stone-400">{person.location}</p>
                     )}
                   </td>
                   <td className="py-3 pr-4">
@@ -158,15 +158,15 @@ export function PeopleTable({
                       {person.roleLabels.map((label) => (
                         <span
                           key={label}
-                          className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+                          className="rounded bg-stone-100 px-1.5 py-0.5 text-xs text-stone-600 dark:bg-stone-800 dark:text-stone-300"
                         >
                           {label}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td className="py-3 pr-4 text-zinc-500 dark:text-zinc-400">{person.memberships}</td>
-                  <td className="py-3 text-zinc-500 dark:text-zinc-400">{person.contact}</td>
+                  <td className="py-3 pr-4 text-stone-500 dark:text-stone-400">{person.memberships}</td>
+                  <td className="py-3 text-stone-500 dark:text-stone-400">{person.contact}</td>
                 </tr>
               ))}
             </tbody>

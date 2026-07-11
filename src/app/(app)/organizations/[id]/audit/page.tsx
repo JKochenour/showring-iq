@@ -55,7 +55,7 @@ export default async function AuditLogPage({
       <h2 className="mb-4 text-base font-semibold">
         Audit log (latest {rows.length})
       </h2>
-      <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+      <ul className="divide-y divide-stone-200 dark:divide-stone-800">
         {rows.map((log) => (
           <li key={log.id} className="py-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -63,23 +63,23 @@ export default async function AuditLogPage({
                 <span className="font-medium">
                   {log.actor?.full_name || log.actor?.email || "System"}
                 </span>{" "}
-                <span className="text-zinc-500 dark:text-zinc-400">
+                <span className="text-stone-500 dark:text-stone-400">
                   ({log.actor_role ?? "—"})
                 </span>{" "}
                 — <span className="font-mono text-xs">{log.action_type}</span>
               </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 {new Date(log.created_at).toLocaleString()}
               </p>
             </div>
             {(log.old_value || log.new_value) && (
-              <p className="mt-1 break-all font-mono text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="mt-1 break-all font-mono text-xs text-stone-500 dark:text-stone-400">
                 {log.old_value && `from ${JSON.stringify(log.old_value)} `}
                 {log.new_value && `to ${JSON.stringify(log.new_value)}`}
               </p>
             )}
             {log.reason && (
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
                 Reason: {log.reason}
               </p>
             )}

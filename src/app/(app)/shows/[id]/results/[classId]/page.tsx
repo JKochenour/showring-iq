@@ -105,7 +105,7 @@ export default async function ClassResultsPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/shows/${id}/results`} className="hover:underline">
             Results
           </Link>{" "}
@@ -140,7 +140,7 @@ export default async function ClassResultsPage({
           canEdit={canEditClass}
         />
         {hasResults && (
-          <div className="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+          <div className="mt-4 border-t border-stone-200 pt-4 dark:border-stone-800">
             <PayoutActions
               classId={classId}
               showId={id}
@@ -158,7 +158,7 @@ export default async function ClassResultsPage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   <th className="py-2 pr-4 font-medium">Placing</th>
                   <th className="py-2 pr-4 font-medium">Back #</th>
                   <th className="py-2 pr-4 font-medium">Rider / Horse</th>
@@ -167,7 +167,7 @@ export default async function ClassResultsPage({
                   {canPublish && <th className="py-2 font-medium"></th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {rows.map((row) => (
                   <tr key={row.entryClassId}>
                     <td className="py-3 pr-4">
@@ -180,13 +180,13 @@ export default async function ClassResultsPage({
                             </span>
                           )}
                           {row.result.manual_override && (
-                            <span className="ml-1 text-xs font-normal text-zinc-400">
+                            <span className="ml-1 text-xs font-normal text-stone-400">
                               (override)
                             </span>
                           )}
                         </span>
                       ) : (
-                        <span className="text-zinc-400">—</span>
+                        <span className="text-stone-400">—</span>
                       )}
                     </td>
                     <td className="py-3 pr-4 font-mono">
@@ -194,7 +194,7 @@ export default async function ClassResultsPage({
                     </td>
                     <td className="py-3 pr-4">
                       <p className="font-medium">{row.riderName}</p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
                         {row.horseName}
                       </p>
                     </td>

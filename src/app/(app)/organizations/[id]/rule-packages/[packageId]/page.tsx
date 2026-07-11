@@ -60,7 +60,7 @@ export default async function RulePackageDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/organizations/${id}/rule-packages`} className="hover:underline">
             Rule packages
           </Link>{" "}
@@ -70,7 +70,7 @@ export default async function RulePackageDetailPage({
           {rulePkg.association?.name} {rulePkg.year} · v{rulePkg.version}
         </h2>
         {rulePkg.source_notes && (
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             {rulePkg.source_notes}
           </p>
         )}
@@ -108,19 +108,19 @@ export default async function RulePackageDetailPage({
           <div className="mb-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   <th className="py-2 pr-4 font-medium">Code</th>
                   <th className="py-2 pr-4 font-medium">Name</th>
                   <th className="py-2 pr-4 font-medium">Flags</th>
                   {canCreate && <th className="py-2 font-medium" />}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {codes.map((c) => (
                   <tr key={c.id}>
                     <td className="py-2 pr-4 font-mono">{c.code}</td>
                     <td className="py-2 pr-4">{c.name}</td>
-                    <td className="py-2 pr-4 text-xs text-zinc-500 dark:text-zinc-400">
+                    <td className="py-2 pr-4 text-xs text-stone-500 dark:text-stone-400">
                       {[
                         c.is_youth && "Youth",
                         c.is_amateur && "Amateur",
@@ -156,12 +156,12 @@ export default async function RulePackageDetailPage({
         {rules.length === 0 ? (
           <EmptyState title="No eligibility rules yet" />
         ) : (
-          <ul className="mb-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="mb-4 divide-y divide-stone-200 dark:divide-stone-800">
             {rules.map((r) => (
               <li key={r.id} className="flex items-start justify-between gap-3 py-3">
                 <div>
                   <p className="text-sm font-medium">{r.rule_key}</p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {r.conditions.map((c) => `${c.field} ${c.operator} ${c.value}`).join(", ")}
                     {" · "}
                     {r.severity}
@@ -185,7 +185,7 @@ export default async function RulePackageDetailPage({
       {canCreate && rulePkg.status === "draft" && (
         <Card className="border-red-200 dark:border-red-900">
           <h3 className="mb-1 text-sm font-semibold">Danger zone</h3>
-          <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
             Deleting removes this package and all its class codes and eligibility
             rules. Only draft packages can be deleted — send a package to review
             (or further) to protect it, or archive it instead.

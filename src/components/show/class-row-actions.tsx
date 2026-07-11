@@ -28,7 +28,7 @@ export function ReorderButtons({
   };
 
   const btn =
-    "rounded border border-zinc-300 px-1.5 py-0.5 text-xs text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800";
+    "rounded border border-stone-300 px-1.5 py-0.5 text-xs text-stone-600 hover:bg-stone-100 disabled:opacity-40 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800";
 
   return (
     <div className="flex flex-col gap-1" title={error}>

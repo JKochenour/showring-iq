@@ -117,7 +117,7 @@ export function EditOwnHorseForm({
         <div>
           <Label htmlFor="registeredName">Registered name</Label>
           <Input id="registeredName" value={horse.registered_name} disabled />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
             Contact the show office to correct the registered name.
           </p>
         </div>

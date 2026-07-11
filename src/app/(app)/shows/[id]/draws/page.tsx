@@ -66,7 +66,7 @@ export default async function DrawsPage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   <th className="py-2 pr-4 font-medium">#</th>
                   <th className="py-2 pr-4 font-medium">Class</th>
                   <th className="py-2 pr-4 font-medium">Entered</th>
@@ -74,7 +74,7 @@ export default async function DrawsPage({
                   <th className="py-2 font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {rows.map((cls) => {
                   const entered = enteredByClass.get(cls.id) ?? 0;
                   const drawn = drawnByClass.get(cls.id) ?? 0;
@@ -84,7 +84,7 @@ export default async function DrawsPage({
                       <td className="py-3 pr-4">
                         <Link
                           href={`/shows/${id}/draws/${cls.id}`}
-                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-500"
+                          className="font-medium text-brand-700 hover:underline dark:text-brand-500"
                         >
                           {cls.name}
                         </Link>
@@ -94,7 +94,7 @@ export default async function DrawsPage({
                         {drawn > 0 ? (
                           drawn
                         ) : (
-                          <span className="text-zinc-400">no draw</span>
+                          <span className="text-stone-400">no draw</span>
                         )}
                         {drawn > 0 && drawn < entered && (
                           <span className="ml-1 text-xs text-amber-700 dark:text-amber-400">

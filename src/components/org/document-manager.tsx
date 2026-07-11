@@ -20,7 +20,7 @@ function formatBytes(n: number | null): string {
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  verified: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+  verified: "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300",
   rejected: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
 };
 
@@ -33,7 +33,7 @@ function expirationTone(dateStr: string | null): { label: string; className: str
   const days = Math.floor((new Date(dateStr).getTime() - Date.now()) / 86_400_000);
   if (days < 0) return { label: `Expired ${dateStr}`, className: "text-red-600 dark:text-red-400" };
   if (days <= 60) return { label: `Expires ${dateStr}`, className: "text-amber-600 dark:text-amber-400" };
-  return { label: `Expires ${dateStr}`, className: "text-zinc-500 dark:text-zinc-400" };
+  return { label: `Expires ${dateStr}`, className: "text-stone-500 dark:text-stone-400" };
 }
 
 function ViewButton({ documentId }: { documentId: string }) {
@@ -43,7 +43,7 @@ function ViewButton({ documentId }: { documentId: string }) {
     <>
       <button
         type="button"
-        className="text-emerald-700 hover:underline disabled:opacity-50 dark:text-emerald-500"
+        className="text-brand-700 hover:underline disabled:opacity-50 dark:text-brand-500"
         disabled={isPending}
         onClick={() => {
           setError(undefined);
@@ -151,7 +151,7 @@ export function DocumentManager({
   return (
     <div>
       {documents.length > 0 && (
-        <ul className="mb-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+        <ul className="mb-4 divide-y divide-stone-200 dark:divide-stone-800">
           {documents.map((doc) => {
             const exp = expirationTone(doc.expiration_date);
             return (
@@ -165,7 +165,7 @@ export function DocumentManager({
                       {doc.status}
                     </span>
                   </p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {doc.file_name} {doc.file_size_bytes ? `· ${formatBytes(doc.file_size_bytes)}` : ""}
                   </p>
                   {exp && <p className={`text-xs ${exp.className}`}>{exp.label}</p>}
@@ -175,7 +175,7 @@ export function DocumentManager({
                     </p>
                   )}
                   {doc.notes && (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{doc.notes}</p>
+                    <p className="text-xs text-stone-500 dark:text-stone-400">{doc.notes}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-xs">
@@ -183,7 +183,7 @@ export function DocumentManager({
                   {canVerify && doc.status !== "verified" && (
                     <button
                       type="button"
-                      className="text-emerald-700 hover:underline disabled:opacity-50 dark:text-emerald-500"
+                      className="text-brand-700 hover:underline disabled:opacity-50 dark:text-brand-500"
                       disabled={isRowPending}
                       onClick={() => {
                         setRowError(undefined);
@@ -226,7 +226,7 @@ export function DocumentManager({
         </div>
       )}
       {documents.length === 0 && (
-        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">No documents uploaded yet.</p>
+        <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">No documents uploaded yet.</p>
       )}
 
       {canUpload && (
@@ -264,7 +264,7 @@ export function DocumentManager({
               type="file"
               required
               accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,application/pdf,image/*"
-              className="block w-full text-sm text-zinc-700 file:mr-4 file:rounded-md file:border-0 file:bg-emerald-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-800 dark:text-zinc-300"
+              className="block w-full text-sm text-stone-700 file:mr-4 file:rounded-md file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-800 dark:text-stone-300"
             />
           </div>
           <Button type="submit" variant="secondary" disabled={isUploading}>

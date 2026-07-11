@@ -225,7 +225,7 @@ function ClassFields({ register, errors, control, classCodeOptions }: { register
           placeholder="— None linked —"
           clearable
         />
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
           Link this class to a code from a rule package so eligibility rules
           from that package apply automatically. Codes come from
           Organization → Rule Packages.
@@ -239,7 +239,7 @@ function ClassFields({ register, errors, control, classCodeOptions }: { register
           {...register("nrhaClassCode")}
         />
         <FieldError message={errors.nrhaClassCode?.message} />
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
           Used for the NRHA ReinerSuite CSV export if no rule package code is
           linked above.
         </p>

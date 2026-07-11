@@ -193,9 +193,9 @@ export function AddOwnershipForm({
           {isPending ? "Adding…" : "Add owner"}
         </Button>
       </div>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs text-stone-500 dark:text-stone-400">
         People must have the Owner role to appear here. Ownership relationships
-        feed Non Pro / amateur eligibility checks in later sprints.
+        feed Non Pro / amateur eligibility checks.
       </p>
     </form>
   );

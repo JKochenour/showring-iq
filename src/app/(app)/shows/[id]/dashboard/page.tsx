@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/authz";
+import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { Card } from "@/components/ui";
 import { loadValidatedEntries } from "@/lib/validate-entries";
 import { loadMissingPaperworkSummary } from "@/lib/load-missing-paperwork";
+import { loadNrhaExportData } from "@/lib/load-nrha-export";
 import { STAFF_ROLES } from "@/lib/validation/show";
 import type { Show, ShowStaffRow } from "@/lib/types";
 
@@ -71,6 +72,9 @@ export default async function ShowDashboardPage({
   const roleLabel = (value: string) =>
     STAFF_ROLES.find((r) => r.value === value)?.label ?? value;
 
+  const canExport = await hasOrgPermission(s.organization_id, "result.export");
+  const nrhaData = canExport ? await loadNrhaExportData(supabase, id) : null;
+
   const days =
     Math.round(
       (new Date(s.end_date).getTime() - new Date(s.start_date).getTime()) /
@@ -80,24 +84,24 @@ export default async function ShowDashboardPage({
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <Card>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Dates</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">Dates</p>
         <p className="mt-1 font-semibold">{formatDate(s.start_date)}</p>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           through {formatDate(s.end_date)} · {days} day{days === 1 ? "" : "s"}
         </p>
       </Card>
       <Card>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Venue</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">Venue</p>
         <p className="mt-1 font-semibold">{s.venue_name ?? "Not set"}</p>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           {s.city ? `${s.city}${s.state ? `, ${s.state}` : ""}` : "—"}
         </p>
       </Card>
       <Link href={`/shows/${id}/staff`}>
-        <Card className="h-full transition-colors hover:border-emerald-600">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Staff</p>
+        <Card className="h-full transition-colors hover:border-brand-600">
+          <p className="text-sm text-stone-500 dark:text-stone-400">Staff</p>
           <p className="mt-1 text-lg font-semibold">{staffRows.length}</p>
-          <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="truncate text-sm text-stone-500 dark:text-stone-400">
             {staffRows.length > 0
               ? staffRows
                   .slice(0, 3)
@@ -108,27 +112,27 @@ export default async function ShowDashboardPage({
         </Card>
       </Link>
       <Link href={`/shows/${id}/classes`}>
-        <Card className="h-full transition-colors hover:border-emerald-600">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Classes</p>
+        <Card className="h-full transition-colors hover:border-brand-600">
+          <p className="text-sm text-stone-500 dark:text-stone-400">Classes</p>
           <p className="mt-1 text-lg font-semibold">{classCount ?? 0}</p>
         </Card>
       </Link>
       <Link href={`/shows/${id}/entries`}>
-        <Card className="h-full transition-colors hover:border-emerald-600">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Entries</p>
+        <Card className="h-full transition-colors hover:border-brand-600">
+          <p className="text-sm text-stone-500 dark:text-stone-400">Entries</p>
           <p className="mt-1 text-lg font-semibold">{entryCount}</p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {checkedInCount} checked in
           </p>
         </Card>
       </Link>
       <Link href={`/shows/${id}/issues`}>
         <Card
-          className={`h-full transition-colors hover:border-emerald-600 ${
+          className={`h-full transition-colors hover:border-brand-600 ${
             issueCount > 0 ? "border-amber-300 dark:border-amber-800" : ""
           }`}
         >
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             Validation issues
           </p>
           <p
@@ -138,7 +142,7 @@ export default async function ShowDashboardPage({
           >
             {issueCount}
           </p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             warnings &amp; blockers
           </p>
         </Card>
@@ -148,11 +152,11 @@ export default async function ShowDashboardPage({
           paperworkIssueCount > 0 ? "border-amber-300 dark:border-amber-800" : ""
         }
       >
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           Missing paperwork
         </p>
         {paperworkIssueCount === 0 ? (
-          <p className="mt-1 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+          <p className="mt-1 text-sm font-semibold text-brand-700 dark:text-brand-400">
             All paperwork verified
           </p>
         ) : (
@@ -186,15 +190,34 @@ export default async function ShowDashboardPage({
           </ul>
         )}
       </Card>
-      <Card className="border-dashed">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Export readiness
-        </p>
-        <p className="mt-1 text-lg font-semibold text-zinc-400">Sprint 10</p>
-      </Card>
+      <Link href={`/shows/${id}/exports`}>
+        <Card
+          className={`h-full transition-colors hover:border-brand-600 ${
+            nrhaData && !nrhaData.ready ? "border-amber-300 dark:border-amber-800" : ""
+          }`}
+        >
+          <p className="text-sm text-stone-500 dark:text-stone-400">
+            NRHA export readiness
+          </p>
+          {!canExport ? (
+            <p className="mt-1 text-sm text-stone-400">
+              Requires the result.export permission
+            </p>
+          ) : nrhaData!.ready ? (
+            <p className="mt-1 text-lg font-semibold text-brand-700 dark:text-brand-400">
+              Ready
+            </p>
+          ) : (
+            <p className="mt-1 text-lg font-semibold text-amber-700 dark:text-amber-400">
+              {nrhaData!.readiness.length} issue
+              {nrhaData!.readiness.length === 1 ? "" : "s"}
+            </p>
+          )}
+        </Card>
+      </Link>
       {s.description && (
         <Card className="sm:col-span-2 lg:col-span-3">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Notes</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">Notes</p>
           <p className="mt-1 whitespace-pre-wrap text-sm">{s.description}</p>
         </Card>
       )}

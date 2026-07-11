@@ -1,26 +1,87 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbfaf7;
+  --foreground: #201c16;
+
+  /* Brand — deep hunter/pine green. Primary actions, links, focus states. */
+  --color-brand-50: #f2f7f3;
+  --color-brand-100: #e0ede2;
+  --color-brand-200: #c2dbc8;
+  --color-brand-300: #98c1a4;
+  --color-brand-400: #6da180;
+  --color-brand-500: #4c8264;
+  --color-brand-600: #37684d;
+  --color-brand-700: #2b5140;
+  --color-brand-800: #244133;
+  --color-brand-900: #1f362b;
+  --color-brand-950: #0f1e17;
+
+  /* Accent — brass/gold. Used sparingly: ribbons, badges, marketing highlights. */
+  --color-accent-50: #fbf6ea;
+  --color-accent-100: #f5e9c8;
+  --color-accent-200: #eccf8e;
+  --color-accent-300: #e2b45f;
+  --color-accent-400: #d29f3f;
+  --color-accent-500: #b6812a;
+  --color-accent-600: #96681f;
+  --color-accent-700: #78521a;
+  --color-accent-800: #5f4217;
+  --color-accent-900: #4f3714;
+  --color-accent-950: #2c1e0b;
+
+  --color-paper: #fbfaf7;
+  --color-paper-dark: #16140f;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-paper: var(--color-paper);
+
+  --color-brand-50: var(--color-brand-50);
+  --color-brand-100: var(--color-brand-100);
+  --color-brand-200: var(--color-brand-200);
+  --color-brand-300: var(--color-brand-300);
+  --color-brand-400: var(--color-brand-400);
+  --color-brand-500: var(--color-brand-500);
+  --color-brand-600: var(--color-brand-600);
+  --color-brand-700: var(--color-brand-700);
+  --color-brand-800: var(--color-brand-800);
+  --color-brand-900: var(--color-brand-900);
+  --color-brand-950: var(--color-brand-950);
+
+  --color-accent-50: var(--color-accent-50);
+  --color-accent-100: var(--color-accent-100);
+  --color-accent-200: var(--color-accent-200);
+  --color-accent-300: var(--color-accent-300);
+  --color-accent-400: var(--color-accent-400);
+  --color-accent-500: var(--color-accent-500);
+  --color-accent-600: var(--color-accent-600);
+  --color-accent-700: var(--color-accent-700);
+  --color-accent-800: var(--color-accent-800);
+  --color-accent-900: var(--color-accent-900);
+  --color-accent-950: var(--color-accent-950);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #16140f;
+    --foreground: #ede9e0;
+    --color-paper: var(--color-paper-dark);
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-feature-settings: "ss01" 1;
 }

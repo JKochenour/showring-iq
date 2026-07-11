@@ -48,7 +48,7 @@ export default async function CheckInPage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   <th className="py-2 pr-4 font-medium">Back #</th>
                   <th className="py-2 pr-4 font-medium">Entry</th>
                   <th className="py-2 pr-4 font-medium">Rider / Horse</th>
@@ -57,7 +57,7 @@ export default async function CheckInPage({
                   <th className="py-2 font-medium">Check-in</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {active.map(({ entry, backNumber, enteredClassCount, issues }) => (
                   <tr key={entry.id}>
                     <td className="py-3 pr-4 font-mono font-semibold">
@@ -66,7 +66,7 @@ export default async function CheckInPage({
                     <td className="py-3 pr-4 font-mono">{entry.entry_number}</td>
                     <td className="py-3 pr-4">
                       <p className="font-medium">{entry.rider_name}</p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
                         {entry.horse_name}
                       </p>
                     </td>
@@ -77,7 +77,7 @@ export default async function CheckInPage({
                     <td className="py-3">
                       {entry.checked_in_at ? (
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                          <span className="text-xs font-medium text-brand-700 dark:text-brand-400">
                             ✓{" "}
                             {new Date(entry.checked_in_at).toLocaleTimeString(
                               [],
@@ -105,7 +105,7 @@ export default async function CheckInPage({
                             .map((i) => i.message)}
                         />
                       ) : (
-                        <span className="text-xs text-zinc-400">
+                        <span className="text-xs text-stone-400">
                           {hasBlockingIssues(issues) ? "blocked" : "—"}
                         </span>
                       )}

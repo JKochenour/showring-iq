@@ -90,7 +90,7 @@ export default async function HorseDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/organizations/${id}/horses`} className="hover:underline">
             Horses
           </Link>{" "}
@@ -99,7 +99,7 @@ export default async function HorseDetailPage({
         <h2 className="mt-1 text-xl font-semibold tracking-tight">
           {h.registered_name}
           {h.barn_name && (
-            <span className="ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">
+            <span className="ml-2 text-base font-normal text-stone-500 dark:text-stone-400">
               “{h.barn_name}”
             </span>
           )}
@@ -110,12 +110,12 @@ export default async function HorseDetailPage({
         <h3 className="mb-1 text-base font-semibold">
           Registrations &amp; competition licenses
         </h3>
-        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
           The NRHA competition license number is required on the ReinerSuite
           CSV for every entry.
         </p>
         {regRows.length > 0 && (
-          <ul className="mb-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="mb-4 divide-y divide-stone-200 dark:divide-stone-800">
             {regRows.map((r) => (
               <li
                 key={r.id}
@@ -128,7 +128,7 @@ export default async function HorseDetailPage({
                     {r.competition_license_number &&
                       ` · license #${r.competition_license_number}`}
                   </p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {r.status}
                     {r.expiration_date && ` · expires ${r.expiration_date}`}
                     {r.verified_at
@@ -150,7 +150,7 @@ export default async function HorseDetailPage({
           <AddRegistrationForm horseId={horseId} />
         ) : (
           regRows.length === 0 && (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               No registrations recorded.
             </p>
           )
@@ -160,7 +160,7 @@ export default async function HorseDetailPage({
       <Card>
         <h3 className="mb-1 text-base font-semibold">Ownership</h3>
         {ownershipRows.length > 0 && (
-          <ul className="mb-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="mb-4 divide-y divide-stone-200 dark:divide-stone-800">
             {ownershipRows.map((o) => (
               <li
                 key={o.id}
@@ -171,7 +171,7 @@ export default async function HorseDetailPage({
                     {o.owner ? (
                       <Link
                         href={`/organizations/${id}/people/${o.owner.id}`}
-                        className="text-emerald-700 hover:underline dark:text-emerald-500"
+                        className="text-brand-700 hover:underline dark:text-brand-500"
                       >
                         {o.owner.first_name} {o.owner.last_name}
                       </Link>
@@ -181,7 +181,7 @@ export default async function HorseDetailPage({
                     · {o.percentage}%
                   </p>
                   {o.start_date && (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <p className="text-xs text-stone-500 dark:text-stone-400">
                       since {o.start_date}
                     </p>
                   )}
@@ -200,7 +200,7 @@ export default async function HorseDetailPage({
           <AddOwnershipForm horseId={horseId} people={ownerOptions} />
         ) : (
           ownershipRows.length === 0 && (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               No owners recorded.
             </p>
           )
@@ -209,7 +209,7 @@ export default async function HorseDetailPage({
 
       <Card>
         <h3 className="mb-1 text-base font-semibold">Documents</h3>
-        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
           Coggins, health certificates, registration papers, and other
           paperwork. Verified documents are included in the show&apos;s NRHA
           submission package.
@@ -233,10 +233,10 @@ export default async function HorseDetailPage({
           </section>
           <Card className="max-w-2xl border-red-200 dark:border-red-900">
             <h3 className="mb-1 text-sm font-semibold">Danger zone</h3>
-            <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
               Deleting removes this horse, its registrations, and ownership
-              records. Once entries exist (Sprint 5), horses connected to
-              entries can&apos;t be deleted.
+              records. Horses connected to an existing entry can&apos;t be
+              deleted.
             </p>
             <RemoveButton
               action={deleteHorse.bind(null, horseId)}

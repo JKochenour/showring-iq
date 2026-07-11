@@ -35,19 +35,19 @@ export default async function OrganizationLayout({
   return (
     <div>
       <div className="mb-6">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href="/organizations" className="hover:underline">
             Organizations
           </Link>{" "}
           / {org.name}
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">{org.name}</h1>
-        <nav className="mt-4 flex gap-1 border-b border-zinc-200 dark:border-zinc-800">
+        <nav className="mt-4 flex gap-1 border-b border-stone-200 dark:border-stone-800">
           {tabs.map((tab) => (
             <Link
               key={tab.href}
               href={tab.href}
-              className="rounded-t-md px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+              className="rounded-t-md px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
             >
               {tab.label}
             </Link>

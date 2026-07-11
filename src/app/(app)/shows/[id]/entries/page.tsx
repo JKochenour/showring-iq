@@ -63,7 +63,7 @@ export default async function EntriesPage({
     <div>
       <PageHeader
         title="Entries"
-        description="Office entries: rider + horse + classes. Eligibility validation arrives in Sprint 6."
+        description="Office entries: rider + horse + classes, validated against eligibility as you go."
         action={
           canCreate && showEditable ? (
             <ButtonLink href={`/shows/${id}/entries/new`}>New entry</ButtonLink>
@@ -88,7 +88,7 @@ export default async function EntriesPage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   <th className="py-2 pr-4 font-medium">Entry</th>
                   <th className="py-2 pr-4 font-medium">Back #</th>
                   <th className="py-2 pr-4 font-medium">Rider / Horse</th>
@@ -97,7 +97,7 @@ export default async function EntriesPage({
                   <th className="py-2 font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {rows.map((entry) => {
                   const stat = classStats.get(entry.id);
                   const backNumber = backByEntry.get(entry.id);
@@ -106,7 +106,7 @@ export default async function EntriesPage({
                       <td className="py-3 pr-4 font-mono">
                         <Link
                           href={`/shows/${id}/entries/${entry.id}`}
-                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-500"
+                          className="font-medium text-brand-700 hover:underline dark:text-brand-500"
                         >
                           {entry.entry_number}
                         </Link>
@@ -116,7 +116,7 @@ export default async function EntriesPage({
                       </td>
                       <td className="py-3 pr-4">
                         <p className="font-medium">{entry.rider_name}</p>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="text-xs text-stone-500 dark:text-stone-400">
                           {entry.horse_name}
                           {entry.owner_name && ` · owner ${entry.owner_name}`}
                         </p>
@@ -124,7 +124,7 @@ export default async function EntriesPage({
                       <td className="py-3 pr-4">
                         {stat?.entered ?? 0}
                         {stat && stat.scratched > 0 && (
-                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                          <span className="text-xs text-stone-500 dark:text-stone-400">
                             {" "}
                             (+{stat.scratched} scratched)
                           </span>
@@ -137,7 +137,7 @@ export default async function EntriesPage({
                         <span
                           className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
                             entry.status === "active"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                              ? "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300"
                               : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
                           }`}
                         >

@@ -12,9 +12,9 @@ export function PendingInvites({ invites }: { invites: PendingInvite[] }) {
   if (invites.length === 0) return null;
 
   return (
-    <Card className="border-emerald-200 dark:border-emerald-900">
+    <Card className="border-brand-200 dark:border-brand-900">
       <h2 className="mb-1 text-base font-semibold">You&apos;ve been invited</h2>
-      <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
         Accept an invite to join the organization with the assigned role.
       </p>
       {error && (
@@ -26,11 +26,11 @@ export function PendingInvites({ invites }: { invites: PendingInvite[] }) {
         {invites.map((invite) => (
           <li
             key={invite.invite_id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-zinc-200 px-4 py-3 dark:border-zinc-800"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-stone-200 px-4 py-3 dark:border-stone-800"
           >
             <div>
               <p className="text-sm font-medium">{invite.organization_name}</p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 Role: {invite.role_name}
                 {invite.invited_by_email && ` · invited by ${invite.invited_by_email}`}
               </p>

@@ -49,7 +49,7 @@ export function ClassJudgesManager({
   return (
     <Card>
       <h3 className="mb-1 text-base font-semibold">Assigned judges</h3>
-      <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
         Only judges assigned here can enter scores for this class (office
         staff with score correction access can still enter/correct for
         anyone).
@@ -60,11 +60,11 @@ export function ClassJudgesManager({
       )}
 
       {assignments.length === 0 ? (
-        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
           No judges assigned yet.
         </p>
       ) : (
-        <ul className="mb-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+        <ul className="mb-4 divide-y divide-stone-200 dark:divide-stone-800">
           {assignments.map((a) => (
             <li key={a.id} className="flex items-center justify-between py-2">
               <div>
@@ -72,7 +72,7 @@ export function ClassJudgesManager({
                   {a.show_staff?.display_name ?? "Unknown"}
                 </p>
                 {!a.show_staff?.user_id && (
-                  <p className="text-xs text-zinc-400">Not a platform user</p>
+                  <p className="text-xs text-stone-400">Not a platform user</p>
                 )}
               </div>
               {editable && (
