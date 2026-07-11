@@ -5,8 +5,8 @@ import {
   type ValidationIssue,
 } from "@/lib/validation-engine";
 import {
-  evaluateEligibilityRules,
-  type ClassCodeFlags,
+  evaluateEligibilityRulesForAffiliations,
+  type AffiliationEligibilityInput,
   type EligibilityRuleLike,
 } from "@/lib/rule-package-engine";
 import type { Entry } from "@/lib/types";
@@ -90,14 +90,16 @@ export async function loadValidatedEntries(
     supabase
       .from("classes")
       .select(
-        "id, class_code_id, code:association_class_codes(code, is_youth, is_amateur, is_open, is_non_pro)"
+        `id, class_code_id,
+         legacy_code:association_class_codes(code, is_youth, is_amateur, is_open, is_non_pro, rule_package_id, rule_package:association_rule_packages(association:associations(name))),
+         affiliations:class_affiliations(association_class_code_id, code:association_class_codes(code, is_youth, is_amateur, is_open, is_non_pro, rule_package_id, rule_package:association_rule_packages(association:associations(name))))`
       )
       .eq("show_id", showId),
     show?.organization_id
       ? supabase
           .from("association_eligibility_rules")
           .select(
-            "id, rule_key, applies_to, conditions, severity, message, rule_package:association_rule_packages!inner(status)"
+            "id, rule_key, applies_to, conditions, severity, message, rule_package_id, rule_package:association_rule_packages!inner(status)"
           )
           .eq("organization_id", show.organization_id)
           .eq("rule_package.status", "published")
@@ -142,32 +144,60 @@ export async function loadValidatedEntries(
   const birthdateByPerson = new Map<string, string | null>();
   for (const p of riders ?? []) birthdateByPerson.set(p.id, p.birthdate);
 
+  type CodeRow = {
+    code: string;
+    is_youth: boolean;
+    is_amateur: boolean;
+    is_open: boolean;
+    is_non_pro: boolean;
+    rule_package_id: string;
+    rule_package: { association: { name: string } | null } | null;
+  };
   type ClassRow = {
     id: string;
     class_code_id: string | null;
-    code: { code: string; is_youth: boolean; is_amateur: boolean; is_open: boolean; is_non_pro: boolean } | null;
+    legacy_code: CodeRow | null;
+    affiliations: { association_class_code_id: string; code: CodeRow | null }[] | null;
   };
-  const codeFlagsByClass = new Map<string, ClassCodeFlags>();
+
+  function toAffiliation(code: CodeRow): AffiliationEligibilityInput {
+    return {
+      rulePackageId: code.rule_package_id,
+      associationName: code.rule_package?.association?.name,
+      codeFlags: {
+        code: code.code,
+        isYouth: code.is_youth,
+        isAmateur: code.is_amateur,
+        isOpen: code.is_open,
+        isNonPro: code.is_non_pro,
+        rulePackageId: code.rule_package_id,
+        associationName: code.rule_package?.association?.name,
+      },
+    };
+  }
+
+  const affiliationsByClass = new Map<string, AffiliationEligibilityInput[]>();
   for (const c of (classes as unknown as ClassRow[]) ?? []) {
-    if (c.class_code_id && c.code) {
-      codeFlagsByClass.set(c.id, {
-        code: c.code.code,
-        isYouth: c.code.is_youth,
-        isAmateur: c.code.is_amateur,
-        isOpen: c.code.is_open,
-        isNonPro: c.code.is_non_pro,
-      });
+    // class_affiliations is the source of truth once a class has rows
+    // there; classes not yet migrated (or created before this
+    // migration ran) fall back to the legacy single class_code_id link.
+    const rows = c.affiliations ?? [];
+    if (rows.length > 0) {
+      const list = rows.filter((r) => r.code).map((r) => toAffiliation(r.code as CodeRow));
+      if (list.length > 0) affiliationsByClass.set(c.id, list);
+    } else if (c.class_code_id && c.legacy_code) {
+      affiliationsByClass.set(c.id, [toAffiliation(c.legacy_code)]);
     }
   }
 
-  const enteredCodesByEntry = new Map<string, ClassCodeFlags[]>();
+  const enteredAffiliationsByEntry = new Map<string, AffiliationEligibilityInput[]>();
   for (const ec of entryClasses ?? []) {
     if (ec.status !== "entered") continue;
-    const flags = codeFlagsByClass.get(ec.class_id);
-    if (!flags) continue;
-    const list = enteredCodesByEntry.get(ec.entry_id) ?? [];
-    list.push(flags);
-    enteredCodesByEntry.set(ec.entry_id, list);
+    const affs = affiliationsByClass.get(ec.class_id);
+    if (!affs) continue;
+    const list = enteredAffiliationsByEntry.get(ec.entry_id) ?? [];
+    list.push(...affs);
+    enteredAffiliationsByEntry.set(ec.entry_id, list);
   }
 
   type EligibilityRuleRow = {
@@ -177,6 +207,7 @@ export async function loadValidatedEntries(
     conditions: { field: string; operator: string; value: string }[];
     severity: ValidationIssue["severity"];
     message: string;
+    rule_package_id: string;
   };
   const rules: EligibilityRuleLike[] = ((eligibilityRules as unknown as EligibilityRuleRow[]) ?? []).map(
     (r) => ({
@@ -186,6 +217,7 @@ export async function loadValidatedEntries(
       conditions: r.conditions ?? [],
       severity: r.severity,
       message: r.message,
+      rulePackageId: r.rule_package_id,
     })
   );
 
@@ -208,7 +240,7 @@ export async function loadValidatedEntries(
     if (entry.status !== "scratched" && rules.length > 0) {
       const birthdate = birthdateByPerson.get(entry.rider_person_id) ?? null;
       const owners = ownerIdsByHorse.get(entry.horse_id) ?? new Set<string>();
-      const ruleIssues = evaluateEligibilityRules(
+      const ruleIssues = evaluateEligibilityRulesForAffiliations(
         rules,
         {
           rider: { age: birthdate ? ageAt(birthdate, showStartDate) : null },
@@ -221,7 +253,7 @@ export async function loadValidatedEntries(
             ownedByRider: owners.has(entry.rider_person_id),
           },
         },
-        enteredCodesByEntry.get(entry.id) ?? []
+        enteredAffiliationsByEntry.get(entry.id) ?? []
       );
       issues.push(...ruleIssues);
       sortBySeverity(issues);

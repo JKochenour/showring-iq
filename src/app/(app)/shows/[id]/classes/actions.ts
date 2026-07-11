@@ -7,8 +7,12 @@ import { dollarsToCents } from "@/lib/money";
 import {
   createClassSchema,
   updateClassSchema,
+  addClassAffiliationSchema,
+  updateClassAffiliationSchema,
   type CreateClassInput,
   type UpdateClassInput,
+  type AddClassAffiliationInput,
+  type UpdateClassAffiliationInput,
 } from "@/lib/validation/class";
 import {
   setClassPatternSchema,
@@ -416,6 +420,228 @@ export async function unassignClassJudge(
 
   revalidatePath(`/shows/${assignment.show_id}/classes/${assignment.class_id}`);
   revalidatePath(`/shows/${assignment.show_id}/scoring`);
+  return {};
+}
+
+/** Adds a class_affiliations row (one association/rule-package code
+ * for a class). When marked primary, clears any other primary row
+ * for the class and syncs classes.class_code_id so legacy single-code
+ * reads keep working. */
+export async function addClassAffiliation(
+  input: AddClassAffiliationInput
+): Promise<ActionResult> {
+  const parsed = addClassAffiliationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("show_id, organization_id, class_number, name")
+    .eq("id", d.classId)
+    .maybeSingle();
+  if (!cls) return { error: "Class not found." };
+
+  if (d.isPrimary) {
+    await supabase
+      .from("class_affiliations")
+      .update({ is_primary: false })
+      .eq("class_id", d.classId);
+  }
+
+  const { data: inserted, error } = await supabase
+    .from("class_affiliations")
+    .insert({
+      class_id: d.classId,
+      association_class_code_id: d.associationClassCodeId,
+      counts_for_money: d.countsForMoney,
+      counts_for_points: d.countsForPoints,
+      counts_for_year_end: d.countsForYearEnd,
+      is_primary: d.isPrimary,
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    if (error.message.includes("class_affiliations_class_id_association_class_code_id_key")) {
+      return { error: "This class code is already linked to this class." };
+    }
+    if (error.message.includes("does not belong to this organization")) {
+      return { error: "That class code doesn't belong to this organization." };
+    }
+    return { error: error.message };
+  }
+  if (!inserted) {
+    return {
+      error:
+        "Affiliation was not added. You may lack the class.edit permission, or the show is locked/archived.",
+    };
+  }
+
+  if (d.isPrimary) {
+    await supabase
+      .from("classes")
+      .update({ class_code_id: d.associationClassCodeId })
+      .eq("id", d.classId);
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: cls.organization_id,
+    p_action: "class.affiliation_added",
+    p_entity_type: "class",
+    p_entity_id: d.classId,
+    p_old: null,
+    p_new: {
+      class_number: cls.class_number,
+      association_class_code_id: d.associationClassCodeId,
+      counts_for_money: d.countsForMoney,
+      counts_for_points: d.countsForPoints,
+      counts_for_year_end: d.countsForYearEnd,
+      is_primary: d.isPrimary,
+    },
+  });
+
+  revalidatePath(`/shows/${cls.show_id}/classes/${d.classId}`);
+  return {};
+}
+
+export async function updateClassAffiliation(
+  input: UpdateClassAffiliationInput
+): Promise<ActionResult> {
+  const parsed = updateClassAffiliationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+
+  const { data: before } = await supabase
+    .from("class_affiliations")
+    .select(
+      "class_id, show_id, organization_id, association_class_code_id, counts_for_money, counts_for_points, counts_for_year_end, is_primary, class:classes(class_number)"
+    )
+    .eq("id", d.classAffiliationId)
+    .maybeSingle();
+  if (!before) return { error: "Affiliation not found." };
+
+  if (d.isPrimary && !before.is_primary) {
+    await supabase
+      .from("class_affiliations")
+      .update({ is_primary: false })
+      .eq("class_id", before.class_id);
+  }
+
+  const { data: updated, error } = await supabase
+    .from("class_affiliations")
+    .update({
+      counts_for_money: d.countsForMoney,
+      counts_for_points: d.countsForPoints,
+      counts_for_year_end: d.countsForYearEnd,
+      is_primary: d.isPrimary,
+    })
+    .eq("id", d.classAffiliationId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error:
+        "Update was not applied. It requires the class.edit permission on an unlocked show.",
+    };
+  }
+
+  if (d.isPrimary) {
+    await supabase
+      .from("classes")
+      .update({ class_code_id: before.association_class_code_id })
+      .eq("id", before.class_id);
+  } else if (before.is_primary) {
+    // Was primary, no longer is — clear the legacy pointer if it
+    // still points at this affiliation's code (don't clobber a value
+    // someone else changed concurrently).
+    await supabase
+      .from("classes")
+      .update({ class_code_id: null })
+      .eq("id", before.class_id)
+      .eq("class_code_id", before.association_class_code_id);
+  }
+
+  const className = (before.class as unknown as { class_number: number } | null)?.class_number;
+  await supabase.rpc("log_audit", {
+    p_org: before.organization_id,
+    p_action: "class.affiliation_updated",
+    p_entity_type: "class",
+    p_entity_id: before.class_id,
+    p_old: {
+      class_number: className,
+      counts_for_money: before.counts_for_money,
+      counts_for_points: before.counts_for_points,
+      counts_for_year_end: before.counts_for_year_end,
+      is_primary: before.is_primary,
+    },
+    p_new: {
+      counts_for_money: d.countsForMoney,
+      counts_for_points: d.countsForPoints,
+      counts_for_year_end: d.countsForYearEnd,
+      is_primary: d.isPrimary,
+    },
+  });
+
+  revalidatePath(`/shows/${before.show_id}/classes/${before.class_id}`);
+  return {};
+}
+
+export async function removeClassAffiliation(
+  classAffiliationId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: aff } = await supabase
+    .from("class_affiliations")
+    .select(
+      "class_id, show_id, organization_id, association_class_code_id, is_primary, class:classes(class_number)"
+    )
+    .eq("id", classAffiliationId)
+    .maybeSingle();
+  if (!aff) return { error: "Affiliation not found." };
+
+  const { data: deleted, error } = await supabase
+    .from("class_affiliations")
+    .delete()
+    .eq("id", classAffiliationId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!deleted || deleted.length === 0) {
+    return {
+      error:
+        "Remove was not applied. It requires the class.edit permission on an unlocked show.",
+    };
+  }
+
+  if (aff.is_primary) {
+    await supabase
+      .from("classes")
+      .update({ class_code_id: null })
+      .eq("id", aff.class_id)
+      .eq("class_code_id", aff.association_class_code_id);
+  }
+
+  const className = (aff.class as unknown as { class_number: number } | null)?.class_number;
+  await supabase.rpc("log_audit", {
+    p_org: aff.organization_id,
+    p_action: "class.affiliation_removed",
+    p_entity_type: "class",
+    p_entity_id: aff.class_id,
+    p_old: { class_number: className, association_class_code_id: aff.association_class_code_id },
+    p_new: null,
+  });
+
+  revalidatePath(`/shows/${aff.show_id}/classes/${aff.class_id}`);
   return {};
 }
 

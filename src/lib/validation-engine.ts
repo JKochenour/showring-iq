@@ -16,6 +16,11 @@ export interface ValidationIssue {
   code: string;
   severity: Severity;
   message: string;
+  /** Which association/rule-package this issue came from, when the
+   * issue was produced per-affiliation (a class can carry more than
+   * one — see rule-package-engine.ts). Undefined for issues that
+   * aren't affiliation-scoped (e.g. missing back number). */
+  associationName?: string;
 }
 
 export interface MembershipLike {

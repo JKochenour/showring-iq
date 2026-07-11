@@ -69,3 +69,23 @@ export type UpdateClassInput = z.infer<typeof updateClassSchema>;
 // Raw form-value types (before zod coercion of numeric fields)
 export type CreateClassFormValues = z.input<typeof createClassSchema>;
 export type UpdateClassFormValues = z.input<typeof updateClassSchema>;
+
+export const addClassAffiliationSchema = z.object({
+  classId: z.uuid(),
+  associationClassCodeId: z.uuid("Choose a class code"),
+  countsForMoney: z.boolean(),
+  countsForPoints: z.boolean(),
+  countsForYearEnd: z.boolean(),
+  isPrimary: z.boolean(),
+});
+
+export const updateClassAffiliationSchema = z.object({
+  classAffiliationId: z.uuid(),
+  countsForMoney: z.boolean(),
+  countsForPoints: z.boolean(),
+  countsForYearEnd: z.boolean(),
+  isPrimary: z.boolean(),
+});
+
+export type AddClassAffiliationInput = z.infer<typeof addClassAffiliationSchema>;
+export type UpdateClassAffiliationInput = z.infer<typeof updateClassAffiliationSchema>;

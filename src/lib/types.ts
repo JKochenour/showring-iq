@@ -86,6 +86,25 @@ export interface ClassJudgeRow {
   show_staff: Pick<ShowStaffRow, "id" | "display_name" | "user_id"> | null;
 }
 
+export interface ClassAffiliationRow {
+  id: string;
+  class_id: string;
+  association_class_code_id: string;
+  counts_for_money: boolean;
+  counts_for_points: boolean;
+  counts_for_year_end: boolean;
+  is_primary: boolean;
+  code: {
+    code: string;
+    name: string;
+    rule_package: {
+      year: number;
+      version: string;
+      association: { name: string } | null;
+    } | null;
+  } | null;
+}
+
 export type ClassStatus =
   | "draft"
   | "open"

@@ -6,10 +6,16 @@ import { DeleteClassButton } from "@/components/show/class-row-actions";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
 import { ClassJudgesManager } from "@/components/show/class-judges-manager";
 import { ClassPatternEditor } from "@/components/show/class-pattern-editor";
-import { getClassCodeOptions } from "@/lib/rule-package-options";
+import { ClassAffiliationsManager } from "@/components/show/class-affiliations-manager";
+import { getClassCodeOptions, getClassCodeAffiliationMeta } from "@/lib/rule-package-options";
 import { Alert, Card } from "@/components/ui";
 import { formatCents } from "@/lib/money";
-import type { ClassJudgeRow, ClassPatternRow, ShowClass } from "@/lib/types";
+import type {
+  ClassAffiliationRow,
+  ClassJudgeRow,
+  ClassPatternRow,
+  ShowClass,
+} from "@/lib/types";
 
 export const metadata = { title: "Class — ShowRing IQ" };
 
@@ -40,14 +46,17 @@ export default async function ClassDetailPage({
     canEdit,
     canDelete,
     classCodeOptions,
+    codeMeta,
     { data: judgeStaff },
     { data: classJudges },
+    { data: classAffiliations },
     { data: patternRow },
     { data: showDocuments },
   ] = await Promise.all([
     hasOrgPermission(showClass.organization_id, "class.edit"),
     hasOrgPermission(showClass.organization_id, "class.delete"),
     getClassCodeOptions(supabase, showClass.organization_id),
+    getClassCodeAffiliationMeta(supabase, showClass.organization_id),
     supabase
       .from("show_staff")
       .select("id, display_name")
@@ -60,6 +69,13 @@ export default async function ClassDetailPage({
       )
       .eq("class_id", classId)
       .order("assigned_at"),
+    supabase
+      .from("class_affiliations")
+      .select(
+        "id, class_id, association_class_code_id, counts_for_money, counts_for_points, counts_for_year_end, is_primary, code:association_class_codes(code, name, rule_package:association_rule_packages(year, version, association:associations(name)))"
+      )
+      .eq("class_id", classId)
+      .order("is_primary", { ascending: false }),
     supabase
       .from("class_patterns")
       .select("id, class_id, pattern_text, document_id, updated_at")
@@ -151,6 +167,14 @@ export default async function ClassDetailPage({
           </dl>
         </Card>
       )}
+
+      <ClassAffiliationsManager
+        classId={showClass.id}
+        affiliations={(classAffiliations as unknown as ClassAffiliationRow[]) ?? []}
+        classCodeOptions={classCodeOptions}
+        codeMeta={codeMeta}
+        editable={canEdit && showEditable}
+      />
 
       <ClassJudgesManager
         classId={showClass.id}

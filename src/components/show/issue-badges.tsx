@@ -54,6 +54,11 @@ export function IssueList({ issues }: { issues: ValidationIssue[] }) {
       {issues.map((issue, index) => (
         <li key={`${issue.code}-${index}`} className="flex items-start gap-2 text-sm">
           <SeverityBadge severity={issue.severity} />
+          {issue.associationName && (
+            <span className="inline-block whitespace-nowrap rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              {issue.associationName}
+            </span>
+          )}
           <span>{issue.message}</span>
         </li>
       ))}
