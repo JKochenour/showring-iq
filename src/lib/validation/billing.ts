@@ -26,3 +26,26 @@ export const addMiscChargeSchema = z.object({
 });
 
 export type AddMiscChargeInput = z.infer<typeof addMiscChargeSchema>;
+
+/** "card" means a card taken on the org's own terminal (EPRHA runs
+ * Clover) — the platform records it, it never processes cards. */
+export const PAYMENT_METHODS = [
+  { value: "cash", label: "Cash" },
+  { value: "check", label: "Check" },
+  { value: "card", label: "Card (terminal)" },
+  { value: "other", label: "Other" },
+] as const;
+
+export const recordPaymentSchema = z.object({
+  showId: z.uuid(),
+  personId: z.uuid(),
+  method: z.enum(["cash", "check", "card", "other"]),
+  amount: z
+    .string()
+    .trim()
+    .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00"),
+  reference: z.string().trim().max(60).optional(),
+  notes: z.string().trim().max(200).optional(),
+});
+
+export type RecordPaymentInput = z.infer<typeof recordPaymentSchema>;

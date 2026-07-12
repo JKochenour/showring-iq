@@ -47,7 +47,9 @@ export function BillingRoster({
                 <th className="py-2 pr-4">Back #</th>
                 <th className="py-2 pr-4">Entry fees</th>
                 <th className="py-2 pr-4">Misc charges</th>
-                <th className="py-2">Total due</th>
+                <th className="py-2 pr-4">Total</th>
+                <th className="py-2 pr-4">Paid</th>
+                <th className="py-2">Balance</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
@@ -66,7 +68,19 @@ export function BillingRoster({
                   </td>
                   <td className="py-2 pr-4">{formatCents(r.entryFeeCents)}</td>
                   <td className="py-2 pr-4">{formatCents(r.miscChargeCents)}</td>
-                  <td className="py-2 font-semibold">{formatCents(r.totalCents)}</td>
+                  <td className="py-2 pr-4">{formatCents(r.totalCents)}</td>
+                  <td className="py-2 pr-4">{formatCents(r.paidCents)}</td>
+                  <td
+                    className={`py-2 font-semibold ${
+                      r.balanceCents < 0
+                        ? "text-amber-600 dark:text-amber-400"
+                        : r.balanceCents === 0
+                          ? "text-green-700 dark:text-green-400"
+                          : ""
+                    }`}
+                  >
+                    {formatCents(r.balanceCents)}
+                  </td>
                 </tr>
               ))}
             </tbody>

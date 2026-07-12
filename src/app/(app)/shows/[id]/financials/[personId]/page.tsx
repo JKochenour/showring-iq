@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadPersonBill } from "@/lib/billing";
 import { MiscChargeManager } from "@/components/show/misc-charge-manager";
+import { PaymentManager } from "@/components/show/payment-manager";
 import { Alert, Badge, Card, PageHeader } from "@/components/ui";
 import { formatCents } from "@/lib/money";
 import type { Show } from "@/lib/types";
@@ -111,9 +112,42 @@ export default async function PersonBillPage({
         </p>
       </Card>
 
-      <div className="flex justify-end">
-        <p className="text-lg font-semibold">
-          Total due: {formatCents(bill.totalCents)}
+      <Card>
+        <h3 className="mb-1 text-base font-semibold">Payments</h3>
+        <p className="mb-3 text-xs text-stone-500 dark:text-stone-400">
+          Payments taken by the show office — cash, checks, and cards run on
+          your own terminal. Recorded here, never processed by the platform.
+        </p>
+        <PaymentManager
+          showId={id}
+          personId={personId}
+          payments={bill.payments}
+          canEdit={canEdit}
+        />
+        <p className="mt-3 text-right text-sm font-semibold">
+          Paid: {formatCents(bill.paidCents)}
+        </p>
+      </Card>
+
+      <div className="flex flex-col items-end gap-1">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
+          Total charges: {formatCents(bill.totalCents)} · Paid:{" "}
+          {formatCents(bill.paidCents)}
+        </p>
+        <p
+          className={`text-lg font-semibold ${
+            bill.balanceCents < 0
+              ? "text-amber-600 dark:text-amber-400"
+              : bill.balanceCents === 0
+                ? "text-green-700 dark:text-green-400"
+                : ""
+          }`}
+        >
+          {bill.balanceCents < 0
+            ? `Overpaid by ${formatCents(-bill.balanceCents)}`
+            : bill.balanceCents === 0
+              ? "Paid in full"
+              : `Balance due: ${formatCents(bill.balanceCents)}`}
         </p>
       </div>
     </div>
