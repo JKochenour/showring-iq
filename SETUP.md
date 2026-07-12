@@ -76,6 +76,19 @@ Set both together: the default sandbox sender (`onboarding@resend.dev`) can
 only deliver to the Resend account owner's own inbox. `RESEND_FROM` must use
 a domain you've verified in the Resend dashboard.
 
+Optional — SMS notifications (results-posted texts to riders with a phone
+number on file) via [Twilio](https://www.twilio.com). Without these the app
+runs normally and logs skipped sends to the server console:
+
+```
+TWILIO_ACCOUNT_SID=ACxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxx
+TWILIO_FROM=+15551234567
+```
+
+`TWILIO_FROM` is an SMS-capable Twilio number in +1XXXXXXXXXX form, or a
+Messaging Service SID (`MG...`).
+
 ## 4. (Optional, recommended for local dev) Disable email confirmation
 
 Supabase requires email confirmation by default. For faster local testing:

@@ -14,6 +14,8 @@ import {
 } from "@/lib/validation/payout";
 import { sendEmail } from "@/lib/email";
 import { resultsPostedEmail } from "@/lib/email-templates";
+import { normalizePhone, sendSms } from "@/lib/sms";
+import { formatCents } from "@/lib/money";
 import { getSiteOrigin } from "@/lib/site-url";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -79,12 +81,17 @@ async function notifyResultsPosted(
 
   const { data: people } = await supabase
     .from("people")
-    .select("id, email")
+    .select("id, email, phone")
     .in("id", personIds);
   const emailByPerson = new Map(
     (people ?? [])
       .filter((p) => !!p.email)
       .map((p) => [p.id as string, p.email as string])
+  );
+  const phoneByPerson = new Map(
+    (people ?? [])
+      .map((p) => [p.id as string, normalizePhone(p.phone as string | null)] as const)
+      .filter((pair): pair is readonly [string, string] => !!pair[1])
   );
   const entryById = new Map((entries ?? []).map((e) => [e.id as string, e]));
   const entryIdByEntryClass = new Map(
@@ -94,25 +101,47 @@ async function notifyResultsPosted(
   for (const r of results) {
     const entry = entryById.get(entryIdByEntryClass.get(r.entry_class_id as string) ?? "");
     if (!entry?.rider_person_id) continue;
-    const to = emailByPerson.get(entry.rider_person_id as string);
-    if (!to) continue;
-    const email = resultsPostedEmail({
-      showName: show.name as string,
-      className: cls.name as string,
-      classNumber: cls.class_number as number,
-      riderName: entry.rider_name as string,
-      horseName: entry.horse_name as string,
-      placing: (r.placing as number | null) ?? null,
-      moneyWonCents: (r.money_won_cents as number) ?? 0,
-      publicUrl,
-    });
-    await sendEmail({
-      to,
-      subject: email.subject,
-      html: email.html,
-      idempotencyKey: `results-posted/${r.entry_class_id}`,
-    });
+    const personId = entry.rider_person_id as string;
+    const placing = (r.placing as number | null) ?? null;
+    const moneyWonCents = (r.money_won_cents as number) ?? 0;
+
+    const to = emailByPerson.get(personId);
+    if (to) {
+      const email = resultsPostedEmail({
+        showName: show.name as string,
+        className: cls.name as string,
+        classNumber: cls.class_number as number,
+        riderName: entry.rider_name as string,
+        horseName: entry.horse_name as string,
+        placing,
+        moneyWonCents,
+        publicUrl,
+      });
+      await sendEmail({
+        to,
+        subject: email.subject,
+        html: email.html,
+        idempotencyKey: `results-posted/${r.entry_class_id}`,
+      });
+    }
+
+    const phone = phoneByPerson.get(personId);
+    if (phone) {
+      const placingPart = placing
+        ? `${entry.horse_name}: ${placing}${ordinal(placing)}${moneyWonCents > 0 ? `, ${formatCents(moneyWonCents)} won` : ""}`
+        : `${entry.horse_name}: results posted`;
+      await sendSms(
+        phone,
+        `${show.name} — Class ${cls.class_number} ${cls.name}. ${placingPart}.${publicUrl ? ` ${publicUrl}` : ""}`
+      );
+    }
   }
+}
+
+function ordinal(n: number): string {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return "th";
+  return { 1: "st", 2: "nd", 3: "rd" }[n % 10] ?? "th";
 }
 
 function revalidateResults(showId: string, classId: string) {
