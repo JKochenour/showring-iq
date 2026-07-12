@@ -3,7 +3,12 @@
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createEntry } from "@/app/(app)/shows/[id]/entries/actions";
+import {
+  createEntry,
+  getEntryForCopy,
+  listEntriesForCopy,
+  listSourceShowsForCopy,
+} from "@/app/(app)/shows/[id]/entries/actions";
 import { formatCents } from "@/lib/money";
 import {
   createEntrySchema,
@@ -35,6 +40,7 @@ export interface ClassOption {
 
 export function CreateEntryForm({
   showId,
+  organizationId,
   riders,
   owners,
   trainers,
@@ -43,6 +49,7 @@ export function CreateEntryForm({
   lateEntryFeeCents,
 }: {
   showId: string;
+  organizationId: string;
   riders: PersonOption[];
   owners: PersonOption[];
   trainers: PersonOption[];
@@ -57,6 +64,7 @@ export function CreateEntryForm({
     handleSubmit,
     watch,
     control,
+    setValue,
     formState: { errors },
   } = useForm<CreateEntryFormValues, unknown, CreateEntryInput>({
     resolver: zodResolver(createEntrySchema),
@@ -91,8 +99,107 @@ export function CreateEntryForm({
     });
   };
 
+  const [copySourceShows, setCopySourceShows] = useState<
+    { id: string; label: string }[] | null
+  >(null);
+  const [copyShowId, setCopyShowId] = useState("");
+  const [copyEntries, setCopyEntries] = useState<{ id: string; label: string }[]>([]);
+  const [copyEntryId, setCopyEntryId] = useState("");
+  const [copyNote, setCopyNote] = useState<string>();
+  const [isCopying, startCopyTransition] = useTransition();
+
+  const openCopyPicker = () => {
+    startCopyTransition(async () => {
+      const shows = await listSourceShowsForCopy(showId, organizationId);
+      setCopySourceShows(shows.map((s) => ({ id: s.id, label: s.name })));
+    });
+  };
+
+  const pickCopySourceShow = (sourceShowId: string) => {
+    setCopyShowId(sourceShowId);
+    setCopyEntryId("");
+    setCopyEntries([]);
+    if (!sourceShowId) return;
+    startCopyTransition(async () => {
+      setCopyEntries(await listEntriesForCopy(sourceShowId));
+    });
+  };
+
+  const loadCopy = () => {
+    if (!copyEntryId) return;
+    startCopyTransition(async () => {
+      const result = await getEntryForCopy(copyEntryId, showId);
+      if ("error" in result) {
+        setCopyNote(result.error);
+        return;
+      }
+      setValue("riderPersonId", result.riderPersonId);
+      setValue("ownerPersonId", result.ownerPersonId);
+      setValue("trainerPersonId", result.trainerPersonId);
+      setValue("horseId", result.horseId);
+      setValue("notes", result.notes);
+      setValue("classIds", result.matchedClassIds);
+      setCopyNote(
+        result.matchedClassIds.length > 0
+          ? `Loaded. ${result.matchedClassIds.length} class${result.matchedClassIds.length === 1 ? "" : "es"} matched by name in this show — review before submitting.`
+          : "Loaded rider/horse/owner/trainer. No classes matched by name in this show — pick classes below."
+      );
+    });
+  };
+
   return (
     <Card className="max-w-2xl">
+      <div className="mb-5 rounded-md border border-stone-200 p-3 dark:border-stone-800">
+        {!copySourceShows ? (
+          <Button type="button" variant="secondary" disabled={isCopying} onClick={openCopyPicker}>
+            {isCopying ? "Loading…" : "Copy from another show"}
+          </Button>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
+              Copy rider/horse/owner/trainer from an entry in another show
+            </p>
+            {copyNote && (
+              <p className="text-xs text-brand-700 dark:text-brand-400">{copyNote}</p>
+            )}
+            <div className="flex flex-wrap items-end gap-2">
+              <select
+                className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm dark:border-stone-700 dark:bg-stone-900"
+                value={copyShowId}
+                onChange={(e) => pickCopySourceShow(e.target.value)}
+              >
+                <option value="">Choose a show…</option>
+                {copySourceShows.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm dark:border-stone-700 dark:bg-stone-900"
+                value={copyEntryId}
+                disabled={copyEntries.length === 0}
+                onChange={(e) => setCopyEntryId(e.target.value)}
+              >
+                <option value="">Choose an entry…</option>
+                {copyEntries.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!copyEntryId || isCopying}
+                onClick={loadCopy}
+              >
+                {isCopying ? "Loading…" : "Load"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
         {serverError && <Alert>{serverError}</Alert>}
         <input type="hidden" {...register("showId")} />

@@ -170,6 +170,94 @@ export async function createEntry(
   redirect(`/shows/${d.showId}/entries/${entry.id}`);
 }
 
+/** Other shows in the same org an entry could be copied FROM, newest
+ * first, excluding the target show itself — for a same-weekend
+ * "Show 1 / Show 2" back-to-back entry copy. */
+export async function listSourceShowsForCopy(
+  targetShowId: string,
+  organizationId: string
+): Promise<{ id: string; name: string }[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("shows")
+    .select("id, name")
+    .eq("organization_id", organizationId)
+    .neq("id", targetShowId)
+    .order("start_date", { ascending: false })
+    .limit(20);
+  return (data ?? []).map((s) => ({ id: s.id as string, name: s.name as string }));
+}
+
+export async function listEntriesForCopy(
+  sourceShowId: string
+): Promise<{ id: string; label: string }[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("entries")
+    .select("id, entry_number, rider_name, horse_name")
+    .eq("show_id", sourceShowId)
+    .eq("status", "active")
+    .order("entry_number");
+  return (data ?? []).map((e) => ({
+    id: e.id as string,
+    label: `#${e.entry_number} — ${e.rider_name} on ${e.horse_name}`,
+  }));
+}
+
+export interface CopyableEntry {
+  riderPersonId: string;
+  ownerPersonId: string;
+  trainerPersonId: string;
+  horseId: string;
+  notes: string;
+  /** Class ids in the TARGET show whose name matches a class the
+   * source entry was in — a convenience pre-selection, not a
+   * guarantee; fees always come from the target show's own classes. */
+  matchedClassIds: string[];
+}
+
+export async function getEntryForCopy(
+  sourceEntryId: string,
+  targetShowId: string
+): Promise<CopyableEntry | { error: string }> {
+  const supabase = await createClient();
+
+  const [{ data: entry }, { data: sourceClasses }, { data: targetClasses }] =
+    await Promise.all([
+      supabase
+        .from("entries")
+        .select("rider_person_id, owner_person_id, trainer_person_id, horse_id, notes")
+        .eq("id", sourceEntryId)
+        .maybeSingle(),
+      supabase
+        .from("entry_classes")
+        .select("class:classes(name)")
+        .eq("entry_id", sourceEntryId)
+        .eq("status", "entered"),
+      supabase.from("classes").select("id, name").eq("show_id", targetShowId),
+    ]);
+
+  if (!entry) return { error: "Source entry not found." };
+
+  const sourceNames = new Set(
+    (sourceClasses ?? [])
+      .map((ec) => (ec.class as unknown as { name: string } | null)?.name?.toLowerCase())
+      .filter((n): n is string => !!n)
+  );
+  const matchedClassIds = (targetClasses ?? [])
+    .filter((c) => sourceNames.has((c.name as string).toLowerCase()))
+    .map((c) => c.id as string);
+
+  return {
+    riderPersonId: entry.rider_person_id as string,
+    ownerPersonId: (entry.owner_person_id as string | null) ?? "",
+    trainerPersonId: (entry.trainer_person_id as string | null) ?? "",
+    horseId: entry.horse_id as string,
+    notes: (entry.notes as string | null) ?? "",
+    matchedClassIds,
+  };
+}
+
 export async function addEntryClass(
   input: AddEntryClassInput
 ): Promise<ActionResult> {

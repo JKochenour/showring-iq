@@ -87,6 +87,7 @@ export default async function NewEntryPage({
       ) : (
         <CreateEntryForm
           showId={id}
+          organizationId={show.organization_id}
           riders={byRole("rider")}
           owners={byRole("owner")}
           trainers={byRole("trainer")}
