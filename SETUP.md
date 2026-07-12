@@ -63,6 +63,19 @@ NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR-ANON-PUBLIC-KEY
 ```
 
+Optional — transactional email (entry confirmations, results-posted
+notifications) via [Resend](https://resend.com). Without these the app runs
+normally and logs skipped sends to the server console:
+
+```
+RESEND_API_KEY=re_xxxxxxxxx
+RESEND_FROM=ShowRing IQ <shows@yourdomain.com>
+```
+
+Set both together: the default sandbox sender (`onboarding@resend.dev`) can
+only deliver to the Resend account owner's own inbox. `RESEND_FROM` must use
+a domain you've verified in the Resend dashboard.
+
 ## 4. (Optional, recommended for local dev) Disable email confirmation
 
 Supabase requires email confirmation by default. For faster local testing:

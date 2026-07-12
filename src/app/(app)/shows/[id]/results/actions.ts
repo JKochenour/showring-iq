@@ -12,8 +12,108 @@ import {
   type UpdatePayoutSettingsInput,
   type SetRiderLevelInput,
 } from "@/lib/validation/payout";
+import { sendEmail } from "@/lib/email";
+import { resultsPostedEmail } from "@/lib/email-templates";
+import { getSiteOrigin } from "@/lib/site-url";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type ActionResult = { error?: string };
+
+/** Emails each entrant with a person email on file when a class's results
+ * are posted. Best-effort fan-out: failures log inside sendEmail and never
+ * fail the publish. Idempotency keys make re-publishing after an unpublish
+ * safe within Resend's 24h dedupe window. */
+async function notifyResultsPosted(
+  supabase: SupabaseClient,
+  classId: string
+): Promise<void> {
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("name, class_number, show_id, organization_id")
+    .eq("id", classId)
+    .maybeSingle();
+  if (!cls) return;
+
+  const [{ data: show }, { data: results }] = await Promise.all([
+    supabase
+      .from("shows")
+      .select("name, slug, organization_id")
+      .eq("id", cls.show_id)
+      .maybeSingle(),
+    supabase
+      .from("results")
+      .select("entry_class_id, placing, money_won_cents")
+      .eq("class_id", classId),
+  ]);
+  if (!show || !results || results.length === 0) return;
+
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("slug")
+    .eq("id", show.organization_id)
+    .maybeSingle();
+  const publicUrl = org?.slug
+    ? `${await getSiteOrigin()}/${org.slug}/${show.slug}`
+    : null;
+
+  const entryClassIds = results.map((r) => r.entry_class_id as string);
+  const { data: entryClasses } = await supabase
+    .from("entry_classes")
+    .select("id, entry_id")
+    .in("id", entryClassIds);
+  const entryIds = [...new Set((entryClasses ?? []).map((ec) => ec.entry_id as string))];
+  if (entryIds.length === 0) return;
+
+  const { data: entries } = await supabase
+    .from("entries")
+    .select("id, rider_name, horse_name, rider_person_id")
+    .in("id", entryIds);
+  const personIds = [
+    ...new Set(
+      (entries ?? [])
+        .map((e) => e.rider_person_id as string | null)
+        .filter((v): v is string => !!v)
+    ),
+  ];
+  if (personIds.length === 0) return;
+
+  const { data: people } = await supabase
+    .from("people")
+    .select("id, email")
+    .in("id", personIds);
+  const emailByPerson = new Map(
+    (people ?? [])
+      .filter((p) => !!p.email)
+      .map((p) => [p.id as string, p.email as string])
+  );
+  const entryById = new Map((entries ?? []).map((e) => [e.id as string, e]));
+  const entryIdByEntryClass = new Map(
+    (entryClasses ?? []).map((ec) => [ec.id as string, ec.entry_id as string])
+  );
+
+  for (const r of results) {
+    const entry = entryById.get(entryIdByEntryClass.get(r.entry_class_id as string) ?? "");
+    if (!entry?.rider_person_id) continue;
+    const to = emailByPerson.get(entry.rider_person_id as string);
+    if (!to) continue;
+    const email = resultsPostedEmail({
+      showName: show.name as string,
+      className: cls.name as string,
+      classNumber: cls.class_number as number,
+      riderName: entry.rider_name as string,
+      horseName: entry.horse_name as string,
+      placing: (r.placing as number | null) ?? null,
+      moneyWonCents: (r.money_won_cents as number) ?? 0,
+      publicUrl,
+    });
+    await sendEmail({
+      to,
+      subject: email.subject,
+      html: email.html,
+      idempotencyKey: `results-posted/${r.entry_class_id}`,
+    });
+  }
+}
 
 function revalidateResults(showId: string, classId: string) {
   revalidatePath(`/shows/${showId}/results`);
@@ -61,6 +161,8 @@ export async function publishResults(
   const supabase = await createClient();
   const { error } = await supabase.rpc("publish_results", { p_class: classId });
   if (error) return { error: error.message };
+
+  await notifyResultsPosted(supabase, classId);
 
   revalidateResults(showId, classId);
   return {};

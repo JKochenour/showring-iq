@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/authz";
+import { sendEmail } from "@/lib/email";
+import { entryConfirmationEmail } from "@/lib/email-templates";
 
 export type ActionResult = { error?: string };
 
@@ -36,7 +38,7 @@ export async function createExhibitorEntry(input: {
 
   const { data: classes } = await supabase
     .from("classes")
-    .select("id, entry_fee_cents")
+    .select("id, name, class_number, entry_fee_cents")
     .eq("show_id", input.showId)
     .in("id", input.classIds);
   if (!classes || classes.length === 0) return { error: "Selected classes not found." };
@@ -82,6 +84,32 @@ export async function createExhibitorEntry(input: {
     p_new: { show_id: input.showId, horse_name: horse.registered_name, source: "exhibitor" },
     p_show: input.showId,
   });
+
+  // Confirmation email to the signed-in exhibitor. Never blocks the
+  // entry — sendEmail logs and swallows failures, and skips cleanly
+  // when RESEND_API_KEY isn't configured.
+  if (user.email) {
+    const { data: show } = await supabase
+      .from("shows")
+      .select("name")
+      .eq("id", input.showId)
+      .maybeSingle();
+    const email = entryConfirmationEmail({
+      showName: show?.name ?? "the show",
+      riderName: `${person.first_name} ${person.last_name}`,
+      horseName: horse.registered_name,
+      classes: classes.map((c) => ({
+        name: `Class ${c.class_number} — ${c.name}`,
+        feeCents: c.entry_fee_cents ?? 0,
+      })),
+    });
+    await sendEmail({
+      to: user.email,
+      subject: email.subject,
+      html: email.html,
+      idempotencyKey: `entry-confirmation/${entry.id}`,
+    });
+  }
 
   revalidatePath(`/exhibitor/${input.organizationId}/entries`);
   redirect(`/exhibitor/${input.organizationId}/entries?submitted=${entry.id}`);
