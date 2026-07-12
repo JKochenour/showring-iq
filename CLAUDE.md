@@ -12,7 +12,7 @@ The system doesn't just print results — it protects the show from mistakes all
 
 - **Frontend:** Next.js (App Router), TypeScript, Tailwind, React Hook Form, Zod
 - **Backend:** Next.js server actions / API routes, Supabase (Postgres, Auth, Storage, Realtime), Row Level Security
-- **Payments:** Stripe · **Email:** Resend · **SMS:** Twilio (deferred)
+- **Payments:** processor-agnostic ledger — the app records payments (cash/check/card), it never processes cards; orgs run their own terminal (EPRHA uses Clover). Online checkout, if ever built, plugs into the same ledger via the org's processor (Clover Ecommerce API for EPRHA — not Stripe) · **Email:** Resend · **SMS:** Twilio (deferred)
 - **AI:** OCR/document parsing first, LLM API for interpretation (deferred — never required for core function)
 - **Offline:** PWA + IndexedDB + background sync queue (deferred until core is proven)
 - **Exports:** CSV, PDF, ZIP generators
