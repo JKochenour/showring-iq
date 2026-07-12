@@ -214,6 +214,10 @@ export function ScoreEntryRow({
                 title: "Correct this score",
                 tone: "danger",
                 confirmLabel: "Save correction",
+                message:
+                  "NRHA Show Rules P(10): corrections to a judge's score sheet " +
+                  "cannot be made once the judge leaves the grounds. Corrections " +
+                  "due to inputting errors may be made at any time.",
                 fields: [
                   {
                     name: "correctionType",

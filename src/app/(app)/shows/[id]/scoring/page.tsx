@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
 import { Card, EmptyState, PageHeader } from "@/components/ui";
+import { scoreSheetsOverdue } from "@/lib/results-timing";
 import type { ShowClass } from "@/lib/types";
 
 export const metadata = { title: "Scoring — ShowRing IQ" };
@@ -50,7 +51,7 @@ export default async function ScoringPage({
         .select("class_id, status")
         .eq("show_id", id)
         .eq("status", "entered"),
-      supabase.from("scores").select("class_id, status").eq("show_id", id),
+      supabase.from("scores").select("class_id, status, updated_at").eq("show_id", id),
     ]);
 
   const allRows = (classes as ShowClass[]) ?? [];
@@ -64,12 +65,28 @@ export default async function ScoringPage({
   }
   const verifiedByClass = new Map<string, number>();
   const scoredByClass = new Map<string, number>();
+  const lastScoreAtByClass = new Map<string, number>();
   for (const s of scores ?? []) {
     scoredByClass.set(s.class_id, (scoredByClass.get(s.class_id) ?? 0) + 1);
     if (s.status === "verified") {
       verifiedByClass.set(s.class_id, (verifiedByClass.get(s.class_id) ?? 0) + 1);
     }
+    const t = Date.parse(s.updated_at as string);
+    if (!Number.isNaN(t)) {
+      lastScoreAtByClass.set(
+        s.class_id,
+        Math.max(lastScoreAtByClass.get(s.class_id) ?? 0, t)
+      );
+    }
   }
+
+  const sheetsOverdue = (cls: ShowClass): boolean =>
+    scoreSheetsOverdue(
+      cls,
+      enteredByClass.get(cls.id) ?? 0,
+      scoredByClass.get(cls.id) ?? 0,
+      lastScoreAtByClass.get(cls.id)
+    );
 
   return (
     <div>
@@ -77,6 +94,12 @@ export default async function ScoringPage({
         title="Scoring"
         description="Classes with a draw. Judges and secretaries enter scores here; the secretary verifies before the class becomes official."
       />
+      <p className="-mt-4 mb-6 text-xs text-stone-500 dark:text-stone-400">
+        NRHA timing (P(9)/(10)): score sheets should be available for review
+        within one hour of class completion; posted scores become official 30
+        minutes after the last horse of the day and must be available to
+        exhibitors before the judge leaves the grounds.
+      </p>
 
       {rows.length === 0 ? (
         <EmptyState
@@ -108,6 +131,13 @@ export default async function ScoringPage({
                       >
                         {cls.name}
                       </Link>
+                      {sheetsOverdue(cls) && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Fully scored over an hour ago — score sheets should be
+                          available for review within one hour of class
+                          completion (P(9)).
+                        </p>
+                      )}
                     </td>
                     <td className="py-3 pr-4">{enteredByClass.get(cls.id) ?? 0}</td>
                     <td className="py-3 pr-4">{scoredByClass.get(cls.id) ?? 0}</td>

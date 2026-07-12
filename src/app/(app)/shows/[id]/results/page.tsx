@@ -37,6 +37,12 @@ export default async function ResultsPage({
         title="Results"
         description="Placings calculated from verified scores. Tie handling v1: ties stand (standard competition ranking). A class must be marked official on the Scoring tab before results can be calculated."
       />
+      <p className="-mt-4 mb-6 text-xs text-stone-500 dark:text-stone-400">
+        NRHA timing (P(10)): posted scores become official 30 minutes after
+        the last horse of the day. Judge-sheet corrections cannot be made once
+        the judge leaves the grounds; inputting-error corrections may be made
+        at any time.
+      </p>
 
       {rows.length === 0 ? (
         <EmptyState
