@@ -108,9 +108,16 @@ export async function loadShowBillingRoster(
   supabase: SupabaseClient,
   showId: string
 ): Promise<BillingRosterRow[]> {
-  const { entries, entryClasses, backNumbers, miscCharges, payments } =
-    await loadShowBillingData(supabase, showId);
+  return buildRoster(await loadShowBillingData(supabase, showId));
+}
 
+function buildRoster({
+  entries,
+  entryClasses,
+  backNumbers,
+  miscCharges,
+  payments,
+}: Awaited<ReturnType<typeof loadShowBillingData>>): BillingRosterRow[] {
   const backByEntry = new Map<string, number[]>();
   for (const bn of backNumbers) {
     const list = backByEntry.get(bn.entry_id) ?? [];
@@ -277,5 +284,84 @@ export async function loadPersonBill(
     totalCents: entryFeeCents + miscChargeCents,
     paidCents,
     balanceCents: entryFeeCents + miscChargeCents - paidCents,
+  };
+}
+
+export interface ReconciliationReport {
+  /** Sum of entry fees for entered (non-scratched) rides. */
+  entryFeeCents: number;
+  enteredRideCount: number;
+  /** Misc charges grouped by category, largest first. */
+  chargesByCategory: { category: string; count: number; amountCents: number }[];
+  miscChargeCents: number;
+  totalChargedCents: number;
+  /** Payments grouped by method, largest first. */
+  paymentsByMethod: { method: PaymentMethod; count: number; amountCents: number }[];
+  totalCollectedCents: number;
+  /** Every billed person whose balance isn't zero. */
+  openBalances: BillingRosterRow[];
+  outstandingCents: number;
+  overpaidCents: number;
+}
+
+/** End-of-show money reconciliation: what was charged, what came in by
+ * method, and who still owes (or is owed). Everything is derived live
+ * from the same data the roster uses — there is no separate ledger to
+ * drift out of sync. */
+export async function loadReconciliation(
+  supabase: SupabaseClient,
+  showId: string
+): Promise<ReconciliationReport> {
+  const raw = await loadShowBillingData(supabase, showId);
+  const roster = buildRoster(raw);
+
+  const entryFeeCents = roster.reduce((sum, r) => sum + r.entryFeeCents, 0);
+  const enteredRideCount = raw.entryClasses.filter(
+    (ec) => ec.status === "entered"
+  ).length;
+
+  const byCategory = new Map<string, { count: number; amountCents: number }>();
+  for (const c of raw.miscCharges) {
+    const bucket = byCategory.get(c.category) ?? { count: 0, amountCents: 0 };
+    bucket.count += 1;
+    bucket.amountCents += c.amount_cents;
+    byCategory.set(c.category, bucket);
+  }
+  const chargesByCategory = [...byCategory.entries()]
+    .map(([category, v]) => ({ category, ...v }))
+    .sort((a, b) => b.amountCents - a.amountCents);
+  const miscChargeCents = chargesByCategory.reduce((s, c) => s + c.amountCents, 0);
+
+  const byMethod = new Map<PaymentMethod, { count: number; amountCents: number }>();
+  for (const p of raw.payments) {
+    const bucket = byMethod.get(p.method) ?? { count: 0, amountCents: 0 };
+    bucket.count += 1;
+    bucket.amountCents += p.amount_cents;
+    byMethod.set(p.method, bucket);
+  }
+  const paymentsByMethod = [...byMethod.entries()]
+    .map(([method, v]) => ({ method, ...v }))
+    .sort((a, b) => b.amountCents - a.amountCents);
+  const totalCollectedCents = paymentsByMethod.reduce((s, m) => s + m.amountCents, 0);
+
+  const openBalances = roster.filter((r) => r.balanceCents !== 0);
+  const outstandingCents = openBalances
+    .filter((r) => r.balanceCents > 0)
+    .reduce((s, r) => s + r.balanceCents, 0);
+  const overpaidCents = openBalances
+    .filter((r) => r.balanceCents < 0)
+    .reduce((s, r) => s - r.balanceCents, 0);
+
+  return {
+    entryFeeCents,
+    enteredRideCount,
+    chargesByCategory,
+    miscChargeCents,
+    totalChargedCents: entryFeeCents + miscChargeCents,
+    paymentsByMethod,
+    totalCollectedCents,
+    openBalances,
+    outstandingCents,
+    overpaidCents,
   };
 }

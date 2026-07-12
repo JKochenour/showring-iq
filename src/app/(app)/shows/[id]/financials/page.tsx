@@ -4,7 +4,7 @@ import { loadShowBillingRoster } from "@/lib/billing";
 import { BillingRoster } from "@/components/show/billing-roster";
 import { PayoutDeadlineCard } from "@/components/show/payout-deadline-card";
 import { payoutDeadlineInfo } from "@/lib/results-timing";
-import { Alert, PageHeader } from "@/components/ui";
+import { Alert, ButtonLink, PageHeader } from "@/components/ui";
 import type { Show } from "@/lib/types";
 
 export const metadata = { title: "Financials — ShowRing IQ" };
@@ -51,10 +51,15 @@ export default async function FinancialsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Financials"
-        description="Every entered rider/owner and what they owe — entry fees plus any misc charges added to their bill."
-      />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <PageHeader
+          title="Financials"
+          description="Every entered rider/owner and what they owe — entry fees plus any misc charges added to their bill."
+        />
+        <ButtonLink href={`/shows/${id}/financials/reconciliation`} variant="secondary">
+          Reconciliation report
+        </ButtonLink>
+      </div>
       <PayoutDeadlineCard
         showId={id}
         {...payoutDeadlineInfo(s.end_date)}
