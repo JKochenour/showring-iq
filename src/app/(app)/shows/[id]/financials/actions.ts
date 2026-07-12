@@ -32,6 +32,21 @@ export async function addMiscCharge(
   return {};
 }
 
+export async function markPayoutsDistributed(
+  showId: string,
+  distributed: boolean
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("mark_payouts_distributed", {
+    p_show: showId,
+    p_distributed: distributed,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/shows/${showId}/financials`);
+  return {};
+}
+
 export async function removeMiscCharge(
   chargeId: string,
   reason: string,

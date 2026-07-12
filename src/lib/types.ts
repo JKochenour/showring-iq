@@ -69,6 +69,7 @@ export interface Show {
   schedule_break_minutes: number;
   schedule_drag_minutes: number;
   event_classification: "D" | "C" | "B" | "BB" | "A" | "AA" | null;
+  payouts_distributed_at: string | null;
   created_at: string;
 }
 

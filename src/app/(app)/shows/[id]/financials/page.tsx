@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadShowBillingRoster } from "@/lib/billing";
 import { BillingRoster } from "@/components/show/billing-roster";
+import { PayoutDeadlineCard } from "@/components/show/payout-deadline-card";
+import { payoutDeadlineInfo } from "@/lib/results-timing";
 import { Alert, PageHeader } from "@/components/ui";
 import type { Show } from "@/lib/types";
 
@@ -17,11 +19,14 @@ export default async function FinancialsPage({
 
   const { data: show } = await supabase
     .from("shows")
-    .select("id, organization_id")
+    .select("id, organization_id, end_date, payouts_distributed_at")
     .eq("id", id)
     .maybeSingle();
   if (!show) notFound();
-  const s = show as Pick<Show, "id" | "organization_id">;
+  const s = show as Pick<
+    Show,
+    "id" | "organization_id" | "end_date" | "payouts_distributed_at"
+  >;
 
   const canView = await hasOrgPermission(s.organization_id, "invoice.view");
   if (!canView) {
@@ -30,13 +35,32 @@ export default async function FinancialsPage({
     );
   }
 
-  const rows = await loadShowBillingRoster(supabase, id);
+  const [rows, canApprovePayouts, { data: moneyRows }] = await Promise.all([
+    loadShowBillingRoster(supabase, id),
+    hasOrgPermission(s.organization_id, "payout.approve"),
+    supabase
+      .from("results")
+      .select("money_won_cents")
+      .eq("show_id", id)
+      .gt("money_won_cents", 0),
+  ]);
+  const totalMoneyWonCents = (moneyRows ?? []).reduce(
+    (sum, r) => sum + ((r.money_won_cents as number) ?? 0),
+    0
+  );
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Financials"
         description="Every entered rider/owner and what they owe — entry fees plus any misc charges added to their bill."
+      />
+      <PayoutDeadlineCard
+        showId={id}
+        {...payoutDeadlineInfo(s.end_date)}
+        distributedAt={s.payouts_distributed_at}
+        totalMoneyWonCents={totalMoneyWonCents}
+        canMark={canApprovePayouts}
       />
       <BillingRoster showId={id} rows={rows} />
     </div>
