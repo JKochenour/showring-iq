@@ -62,6 +62,11 @@ export function BillingRoster({
                     >
                       {r.name}
                     </Link>
+                    {r.billedRiderNames.length > 0 && (
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
+                        Barn bill: {r.billedRiderNames.join(", ")}
+                      </p>
+                    )}
                   </td>
                   <td className="py-2 pr-4 font-mono">
                     {r.backNumbers.map((n) => `#${n}`).join(", ") || "—"}

@@ -6,8 +6,10 @@ import { dollarsToCents } from "@/lib/money";
 import {
   addMiscChargeSchema,
   recordPaymentSchema,
+  recordRefundSchema,
   type AddMiscChargeInput,
   type RecordPaymentInput,
+  type RecordRefundInput,
 } from "@/lib/validation/billing";
 
 export type ActionResult = { error?: string };
@@ -75,6 +77,31 @@ export async function removePayment(
   const { error } = await supabase.rpc("remove_payment", {
     p_payment: paymentId,
     p_reason: reason,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/shows/${showId}/financials/${personId}`);
+  revalidatePath(`/shows/${showId}/financials`);
+  return {};
+}
+
+export async function recordRefund(
+  input: RecordRefundInput,
+  showId: string,
+  personId: string
+): Promise<ActionResult> {
+  const parsed = recordRefundSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("record_refund", {
+    p_payment: d.paymentId,
+    p_amount_cents: dollarsToCents(d.amount),
+    p_reason: d.reason,
+    p_method: d.method ?? null,
   });
   if (error) return { error: error.message };
 

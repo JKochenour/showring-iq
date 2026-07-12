@@ -139,8 +139,18 @@ export default async function ReconciliationPage({
                 ))}
               </tbody>
               <tfoot>
+                {report.refundedCents > 0 && (
+                  <tr>
+                    <td className="py-2 pr-4 text-amber-600 dark:text-amber-400">
+                      − Refunds
+                    </td>
+                    <td className="py-2 text-right font-mono text-amber-600 dark:text-amber-400">
+                      {formatCents(report.refundedCents)}
+                    </td>
+                  </tr>
+                )}
                 <tr className="border-t border-stone-200 dark:border-stone-800">
-                  <td className="py-2 pr-4 font-semibold">Total collected</td>
+                  <td className="py-2 pr-4 font-semibold">Net collected</td>
                   <td className="py-2 text-right font-mono font-semibold">
                     {formatCents(report.totalCollectedCents)}
                   </td>

@@ -52,9 +52,11 @@ export default async function PersonBillPage({
           <PageHeader
             title={bill.name}
             description={
-              bill.backNumbers.length > 0
-                ? `Back ${bill.backNumbers.length > 1 ? "numbers" : "number"} ${bill.backNumbers.map((n) => `#${n}`).join(", ")}`
-                : undefined
+              bill.billedRiderNames.length > 0
+                ? `Barn bill for ${bill.billedRiderNames.join(", ")}`
+                : bill.backNumbers.length > 0
+                  ? `Back ${bill.backNumbers.length > 1 ? "numbers" : "number"} ${bill.backNumbers.map((n) => `#${n}`).join(", ")}`
+                  : undefined
             }
           />
           <ButtonLink
@@ -74,6 +76,7 @@ export default async function PersonBillPage({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-stone-200 text-left text-xs font-semibold uppercase tracking-wide text-stone-400 dark:border-stone-800">
+                {bill.billedRiderNames.length > 0 && <th className="py-2 pr-4">Rider</th>}
                 <th className="py-2 pr-4">Class</th>
                 <th className="py-2 pr-4">Status</th>
                 <th className="py-2">Fee</th>
@@ -82,6 +85,11 @@ export default async function PersonBillPage({
             <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
               {bill.lineItems.map((li) => (
                 <tr key={li.entryClassId}>
+                  {bill.billedRiderNames.length > 0 && (
+                    <td className="py-2 pr-4 text-stone-500 dark:text-stone-400">
+                      {li.riderName}
+                    </td>
+                  )}
                   <td className="py-2 pr-4">
                     {li.classNumber} — {li.className}
                   </td>
@@ -134,6 +142,11 @@ export default async function PersonBillPage({
         />
         <p className="mt-3 text-right text-sm font-semibold">
           Paid: {formatCents(bill.paidCents)}
+          {bill.refundedCents > 0 && (
+            <span className="ml-2 font-normal text-amber-600 dark:text-amber-400">
+              ({formatCents(bill.refundedCents)} refunded)
+            </span>
+          )}
         </p>
       </Card>
 

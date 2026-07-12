@@ -85,6 +85,11 @@ export default async function PersonStatementPage({
               </p>
             )}
           </div>
+          {bill.billedRiderNames.length > 0 && (
+            <p className="mt-1 text-sm text-stone-600">
+              Barn bill for: {bill.billedRiderNames.join(", ")}
+            </p>
+          )}
         </div>
 
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
@@ -98,6 +103,9 @@ export default async function PersonStatementPage({
               {bill.lineItems.map((li) => (
                 <tr key={li.entryClassId}>
                   <td className="py-1.5 pr-4">
+                    {li.riderName && (
+                      <span className="text-stone-500">{li.riderName} — </span>
+                    )}
                     {li.classNumber} — {li.className}
                     {li.status === "scratched" && (
                       <span className="ml-2 text-xs text-stone-500">(scratched)</span>
@@ -168,6 +176,7 @@ export default async function PersonStatementPage({
               {bill.payments.map((p) => (
                 <tr key={p.id}>
                   <td className="py-1.5 pr-4">
+                    {p.isRefund && <span className="text-stone-500">Refund — </span>}
                     {new Date(p.createdAt).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
@@ -181,6 +190,7 @@ export default async function PersonStatementPage({
                     )}
                   </td>
                   <td className="py-1.5 text-right font-mono">
+                    {p.isRefund ? "−" : ""}
                     {formatCents(p.amountCents)}
                   </td>
                 </tr>

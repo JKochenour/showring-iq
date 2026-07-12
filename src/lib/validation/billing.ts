@@ -49,3 +49,15 @@ export const recordPaymentSchema = z.object({
 });
 
 export type RecordPaymentInput = z.infer<typeof recordPaymentSchema>;
+
+export const recordRefundSchema = z.object({
+  paymentId: z.uuid(),
+  amount: z
+    .string()
+    .trim()
+    .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00"),
+  reason: z.string().trim().min(3, "A reason is required").max(200),
+  method: z.enum(["cash", "check", "card", "other"]).optional(),
+});
+
+export type RecordRefundInput = z.infer<typeof recordRefundSchema>;

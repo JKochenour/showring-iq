@@ -336,6 +336,53 @@ export async function scratchEntry(
   return {};
 }
 
+/** Toggles barn billing for one entry: when true, the entry's charges
+ * bill to its trainer instead of the owner/rider (see 00035). A plain
+ * column update, not an RPC — entries.bill_to_trainer already has an
+ * entry.edit-gated update grant and a DB check that a trainer is set. */
+export async function setEntryBillToTrainer(
+  entryId: string,
+  billToTrainer: boolean
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: entry } = await supabase
+    .from("entries")
+    .select("show_id, organization_id, trainer_person_id, trainer_name")
+    .eq("id", entryId)
+    .maybeSingle();
+  if (!entry) return { error: "Entry not found." };
+  if (billToTrainer && !entry.trainer_person_id) {
+    return { error: "Add a trainer to this entry before billing them." };
+  }
+
+  const { data: updated, error } = await supabase
+    .from("entries")
+    .update({ bill_to_trainer: billToTrainer })
+    .eq("id", entryId)
+    .select("id");
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error: "Update was not applied. You may lack the entry.edit permission, or the show is locked/archived.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: entry.organization_id,
+    p_action: billToTrainer ? "entry.billed_to_trainer" : "entry.billed_to_trainer_unset",
+    p_entity_type: "entry",
+    p_entity_id: entryId,
+    p_old: null,
+    p_new: { bill_to_trainer: billToTrainer, trainer_name: entry.trainer_name },
+    p_show: entry.show_id,
+  });
+
+  revalidatePath(`/shows/${entry.show_id}/entries/${entryId}`);
+  revalidatePath(`/shows/${entry.show_id}/financials`);
+  return {};
+}
+
 export async function reinstateEntry(entryId: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: entry } = await supabase

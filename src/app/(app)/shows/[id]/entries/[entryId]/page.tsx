@@ -5,6 +5,7 @@ import { deleteEntry } from "@/app/(app)/shows/[id]/entries/actions";
 import {
   AddEntryClassForm,
   BackNumberControl,
+  BillToTrainerToggle,
   EntryScratchControls,
   ScratchClassButton,
 } from "@/components/show/entry-detail-controls";
@@ -139,6 +140,18 @@ export default async function EntryDetailPage({
           canAssign={canAssignBack && showEditable}
         />
       </Card>
+
+      {e.trainer_name && (
+        <Card>
+          <h3 className="mb-3 text-base font-semibold">Billing</h3>
+          <BillToTrainerToggle
+            entryId={entryId}
+            trainerName={e.trainer_name}
+            billToTrainer={e.bill_to_trainer}
+            canEdit={canEdit && showEditable}
+          />
+        </Card>
+      )}
 
       <Card>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

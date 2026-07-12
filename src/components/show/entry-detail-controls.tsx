@@ -9,9 +9,54 @@ import {
   releaseBackNumber,
   scratchEntry,
   scratchEntryClass,
+  setEntryBillToTrainer,
 } from "@/app/(app)/shows/[id]/entries/actions";
 import { Alert, Button, Input, Select } from "@/components/ui";
 import { useConfirmDialog } from "@/components/confirm-dialog";
+
+export function BillToTrainerToggle({
+  entryId,
+  trainerName,
+  billToTrainer,
+  canEdit,
+}: {
+  entryId: string;
+  trainerName: string | null;
+  billToTrainer: boolean;
+  canEdit: boolean;
+}) {
+  const [error, setError] = useState<string>();
+  const [isPending, startTransition] = useTransition();
+
+  if (!trainerName) return null;
+
+  const toggle = () => {
+    setError(undefined);
+    startTransition(async () => {
+      const result = await setEntryBillToTrainer(entryId, !billToTrainer);
+      if (result?.error) setError(result.error);
+    });
+  };
+
+  return (
+    <div>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-stone-300 accent-brand-700"
+          checked={billToTrainer}
+          disabled={!canEdit || isPending}
+          onChange={toggle}
+        />
+        Bill entry fees and charges to trainer ({trainerName}) instead of
+        owner/rider
+      </label>
+      {error && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
+      )}
+    </div>
+  );
+}
 
 export function BackNumberControl({
   entryId,
