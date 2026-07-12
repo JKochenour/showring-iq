@@ -156,6 +156,7 @@ export default async function ClassResultsPage({
           showId={id}
           retainagePercent={showClass.retainage_percent}
           schedule={showClass.payout_schedule}
+          entryCount={rows.length}
           canEdit={canEditClass}
         />
         {hasResults && (

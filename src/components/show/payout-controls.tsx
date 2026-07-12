@@ -8,7 +8,13 @@ import {
   updatePayoutSettings,
 } from "@/app/(app)/shows/[id]/results/actions";
 import { EXAMPLE_PAYOUT_SCHEDULE } from "@/lib/validation/payout";
-import { Alert, Button, Input, Label } from "@/components/ui";
+import {
+  buildPaybackSchedule,
+  PAYBACK_SCHEDULE_LABELS,
+  placesPaid,
+  type PaybackScheduleId,
+} from "@/lib/nrha-payback-schedules";
+import { Alert, Button, Input, Label, Select } from "@/components/ui";
 import { useConfirmDialog } from "@/components/confirm-dialog";
 import type { PayoutScheduleEntry } from "@/lib/types";
 
@@ -17,12 +23,14 @@ export function PayoutScheduleEditor({
   showId,
   retainagePercent,
   schedule,
+  entryCount,
   canEdit,
 }: {
   classId: string;
   showId: string;
   retainagePercent: number;
   schedule: PayoutScheduleEntry[];
+  entryCount: number;
   canEdit: boolean;
 }) {
   const [error, setError] = useState<string>();
@@ -32,6 +40,8 @@ export function PayoutScheduleEditor({
   const [rows, setRows] = useState<PayoutScheduleEntry[]>(
     schedule.length > 0 ? schedule : []
   );
+  const [paybackId, setPaybackId] = useState<PaybackScheduleId>("A");
+  const [paybackEntries, setPaybackEntries] = useState(String(entryCount));
 
   const total = rows.reduce((sum, r) => sum + (Number(r.percent) || 0), 0);
 
@@ -143,6 +153,58 @@ export function PayoutScheduleEditor({
                 Load example schedule
               </Button>
             )}
+          </div>
+        )}
+        {canEdit && (
+          <div className="mt-3 rounded-md border border-stone-200 p-3 dark:border-stone-800">
+            <p className="text-sm font-medium">Fill from NRHA Payback Schedule</p>
+            <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
+              Replaces the rows above with the published NRHA percentages for
+              the entry count. Verify against the current handbook before
+              relying on it.
+            </p>
+            <div className="mt-2 flex flex-wrap items-end gap-2">
+              <div>
+                <Label htmlFor="payback-schedule">Schedule</Label>
+                <Select
+                  id="payback-schedule"
+                  value={paybackId}
+                  onChange={(e) => setPaybackId(e.target.value as PaybackScheduleId)}
+                >
+                  {(Object.keys(PAYBACK_SCHEDULE_LABELS) as PaybackScheduleId[]).map(
+                    (id) => (
+                      <option key={id} value={id}>
+                        {PAYBACK_SCHEDULE_LABELS[id]}
+                      </option>
+                    )
+                  )}
+                </Select>
+              </div>
+              <div className="max-w-[120px]">
+                <Label htmlFor="payback-entries">Horses entered</Label>
+                <Input
+                  id="payback-entries"
+                  type="number"
+                  min={1}
+                  value={paybackEntries}
+                  onChange={(e) => setPaybackEntries(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="secondary"
+                disabled={(parseInt(paybackEntries, 10) || 0) < 1}
+                onClick={() =>
+                  setRows(
+                    buildPaybackSchedule(paybackId, parseInt(paybackEntries, 10) || 0)
+                  )
+                }
+              >
+                Fill{" "}
+                {(parseInt(paybackEntries, 10) || 0) >= 1
+                  ? `(pays ${placesPaid(paybackId, parseInt(paybackEntries, 10) || 0)} places)`
+                  : ""}
+              </Button>
+            </div>
           </div>
         )}
         <p
