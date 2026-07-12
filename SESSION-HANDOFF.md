@@ -5,7 +5,102 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: five more NRHA-rulebook features shipped this session — tie run-off/co-champion resolution (00026), youth class fee/retainage exemptions (00027), scribe role + official pattern picker + printable scribe score sheet (00028), Single Purse tiered aged-show payouts (00029), and fee-cap validation warnings (00030). All five migrations applied and fully browser-verified live, all committed. That closes out every item on the NRHA rulebook punch list except two small ones (Payback Schedule A/B auto-fill, event-classification compliance checklist) plus two low-priority process items (results/scores timing reminders, payout distribution deadline tracking) — see `nrha-rulebook-punch-list.md` in memory for current status of each. Stripe/online payments and exhibitor email notifications remain explicitly deferred. See "2026-07-12 (7th session)" for the newest work; older sections below are prior-session history.
+## Status: the entire remaining punch list except Stripe is now DONE. 8th session shipped six features — NRHA Payback Schedule A/B auto-fill, event-classification compliance checklist (00031), results/scores timing reminders (P(9)/(10)), payout distribution deadline tracking (00032), the first real Resend email wiring (entry confirmations + results-posted notifications, graceful no-key fallback), and inline editing for rule-package class codes. Both migrations applied, all six features browser-verified live, all committed. **Stripe/online payments is the only deferred build item left.** Email sends are currently skipped-with-a-log because RESEND_API_KEY isn't set — add RESEND_API_KEY + RESEND_FROM to .env.local (see SETUP.md) to turn them on. See "2026-07-12 (8th session)" below; older sections are prior-session history.
+
+## 2026-07-12 (8th session): punch-list closeout — payback schedules, classification checklist, timing reminders, payout deadline, Resend email, class-code edit
+
+User resumed with "everything but option 1" (Stripe). Six features, five
+commits (8d37289, 64127dd, 25b2061, 142aedf, fdaac19, 7de1956 — class-code
+edit and email were separate), migrations 00031-00032, same
+one-feature-at-a-time build/lint/verify/commit rhythm.
+
+**1. Payback Schedule A/B auto-fill** — `src/lib/nrha-payback-schedules.ts`
+(no migration). Both handbook tables transcribed from the 2024 Handbook
+PDF (extracted with pdfjs-dist in the scratchpad; the rotated table pages
+needed hand-reconstruction, every row cross-checked to sum to exactly
+100%). Key structural insight: A and B share identical percentage rows
+per number-of-places-paid; only the entries→places thresholds differ
+(B escalates faster, 15 places at 30+ entries vs 61+ for A). The class
+results page payout editor gained a "Fill from NRHA Payback Schedule"
+control (schedule picker + horse count defaulting to entered entries +
+live "pays N places" preview). Verified live: A/20 → 32/22/19/10/9/8;
+B/20 → 25/18/13/10/8.5/7/6/5/4/3.5 (both exactly the published rows).
+
+**2. Event-classification compliance checklist (G(10))** — migration
+`00031_event_classification.sql`: `shows.event_classification` (declared
+D/C/B/BB/A/AA) + 'videographer' added to show_staff roles. Reference
+matrix in `src/lib/nrha-event-classification.ts`. Card on the Staff page
+(chosen over a 16th nav tab — G(10) is mostly staffing requirements):
+declared-vs-money-implied comparison, auto-checked items (secretary/
+manager/steward assigned and genuinely separate individuals, videographer
+warning at BB / fail at A/AA, five judges on $50k+ classes at AA,
+secretary-vs-rider name cross-check), manual-confirm items (NRHA
+certification, judges-list/immediate-family, 12-hour judging). Verified
+live: declared C, saved, checklist recomputed to pass; the no-secretary
+fail correctly fired on real staff data.
+
+**3. Results/scores timing reminders (P(9)/(10))** — no migration, soft
+only. Scoring page flags classes fully scored >1h ago with results still
+unposted (P(9)); static timing notes on Scoring and Results; the
+score-correction dialog now states the P(10) lock (judge-sheet
+corrections end when the judge leaves the grounds; inputting-error
+corrections any time). "Class completion" is approximated by the last
+score's updated_at since status transitions aren't timestamped. Verified
+live: both Official classes showed the amber hint, the Results-posted
+class didn't, and the dialog text rendered.
+
+**4. Payout distribution deadline (P(5))** — migration
+`00032_payout_distribution.sql`: `shows.payouts_distributed_at` + a
+security-definer `mark_payouts_distributed(p_show, p_distributed)` RPC
+gated on payout.approve. RPC rather than a column grant because the shows
+UPDATE policy only allows draft/published rows and distribution happens
+after a show locks. Financials card: end_date+30-days deadline
+(amber ≤7 days, red overdue), total money won, P(4) 10-business-day
+results note, audited mark/unmark toggle. Verified live round-trip
+(marked July 12 → unmarked → "due by August 18, 2026 (37 days left)").
+**Reviewer catch worth noting:** first draft passed p_show as log_audit's
+7th positional arg — that slot is p_reason; the signature is (org,
+action, entity_type, entity_id, old, new, reason, show).
+
+**5. Resend email notifications** — first Resend footprint (package
+installed, `src/lib/email.ts` + `src/lib/email-templates.ts`).
+`sendEmail` skips with a console log when RESEND_API_KEY is unset and
+never throws — email must never break the triggering flow. Two
+notifications: entry confirmation to the signed-in exhibitor on
+self-service entry (fee table, idempotency key
+`entry-confirmation/<entryId>`), and results-posted fan-out on publish
+(recipients resolved entry→rider_person→people.email, sequential single
+sends, `results-posted/<entryClassId>` keys so re-publishing within 24h
+can't double-send). Verified live with no key: publishing class 1 logged
+`[email skipped — RESEND_API_KEY not set] to=jamie.tester+exhibitor@...
+subject="Results posted — Class 1, ..."` and the publish itself was
+unaffected; class 1 was then unposted to restore its real Official state.
+SETUP.md documents RESEND_API_KEY/RESEND_FROM (set both together — the
+sandbox sender only delivers to the Resend account owner's inbox).
+
+**6. Class-code edit** — no migration (the rules.edit UPDATE RLS policy
+has existed since 00011; only UI/action were missing). AddClassCodeForm
+gained an `existing` mode (pre-filled, "Save changes" + Cancel, submits
+a new updateClassCode server action); new ClassCodeRow client component
+renders each row with an Edit button expanding an inline full-width
+editor row. Covers the 00030 fee-cap fields too. Verified live:
+pre-fill correct, edit persisted across a full reload, reverted, editor
+closes on save. Known cosmetic quirk: the add-form and edit-form share
+element ids (cc-code etc.) — functional but not ideal a11y.
+
+**Environment notes:** dev-mode Next server-action logging prints action
+arguments to the server console INCLUDING the login password — dev-only
+Next.js behavior, not app code, but worth knowing when sharing logs.
+Two react-compiler lint errors ("Cannot call impure function during
+render") were hit for Date.now() — fixed both times by moving time math
+into `src/lib/results-timing.ts` and passing computed values as props.
+
+Build and lint clean after every feature (only the 2 pre-existing benign
+RHF watch() warnings). All verification used the live EPRHA Summer Slide
+2026 show; every state change made during verification (classification
+C stayed declared — harmless and accurate; everything else reverted:
+payout schedule not saved, distribution unmarked, class code reverted,
+class 1 unposted).
 
 ## 2026-07-12 (7th session): tie resolution, youth exemptions, scribe/pattern tooling, Single Purse payouts, fee-cap validation
 
@@ -623,6 +718,12 @@ RHF `watch()` warnings).
 
 ## Database
 
+**Migrations 00031 and 00032 are applied** — 00031
+(`00031_event_classification.sql`, shows.event_classification +
+videographer staff role) and 00032 (`00032_payout_distribution.sql`,
+payouts_distributed_at + mark_payouts_distributed RPC), both confirmed
+live and browser-verified (2026-07-12, 8th session).
+
 **Migrations 00026 through 00030 are applied** — 00026
 (`00026_tie_resolution.sql`, tie run-off/co-champion resolution),
 00027 (`00027_youth_classes.sql`, youth class fee/retainage
@@ -642,7 +743,7 @@ auto-applied via `assign_back_number`), 00024
 (`00025_concurrent_classes.sql`, concurrent class grouping + draw/gate/
 score propagation), all confirmed live and browser-verified
 (2026-07-11, 3rd–6th sessions).
-All 30 migrations are now live. Details below are from earlier
+All 32 migrations are now live. Details below are from earlier
 sessions and still
 accurate for 00001–00020:
 
