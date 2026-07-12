@@ -1,11 +1,186 @@
-# ShowRing IQ — Session Handoff (updated 2026-07-11)
+# ShowRing IQ — Session Handoff (updated 2026-07-12)
 
 This is a plain-text snapshot of where this project stands. Claude's
 persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Status: public live-results (00021), guest-access share-link/QR + per-show billing (00022), standard per-entry charges (00023), schedule with estimated start times (00024), AND concurrent classes (00025) are all built, all five migrations applied, all fully browser-verified live. Nothing outstanding on any of these. A rulebook-derived punch list of further gaps (tie run-off workflow, single-purse aged-show payouts, youth results reporting, fee-cap validation, etc.) is recorded in memory (`nrha-rulebook-punch-list.md`) for the user to prioritize next — none of it started. Stripe/online payments and exhibitor email notifications also remain explicitly deferred (Resend isn't wired up — no API key/dependency/code at all despite being named in CLAUDE.md's tech stack). See "2026-07-11 (6th session)" for the newest work; older sections below are prior-session history.
+## Status: five more NRHA-rulebook features shipped this session — tie run-off/co-champion resolution (00026), youth class fee/retainage exemptions (00027), scribe role + official pattern picker + printable scribe score sheet (00028), Single Purse tiered aged-show payouts (00029), and fee-cap validation warnings (00030). All five migrations applied and fully browser-verified live, all committed. That closes out every item on the NRHA rulebook punch list except two small ones (Payback Schedule A/B auto-fill, event-classification compliance checklist) plus two low-priority process items (results/scores timing reminders, payout distribution deadline tracking) — see `nrha-rulebook-punch-list.md` in memory for current status of each. Stripe/online payments and exhibitor email notifications remain explicitly deferred. See "2026-07-12 (7th session)" for the newest work; older sections below are prior-session history.
+
+## 2026-07-12 (7th session): tie resolution, youth exemptions, scribe/pattern tooling, Single Purse payouts, fee-cap validation
+
+Picked up from the punch list recorded at the end of the 6th session.
+User's instruction was "tackle everything but stripe" — worked through
+it one well-scoped feature at a time, each with its own migration,
+lint/build check, live verification, and commit, rather than a shallow
+pass across everything at once. Five features shipped.
+
+**1. Tie run-off / co-champion resolution** — migration
+`00026_tie_resolution.sql`. NRHA rule O: only a 1st-place tie may be
+worked off; other ties stand. `calculate_payouts` already split tied
+placings' money evenly (pre-existing logic from 00011) — the real gap
+was recording *how* a tie was resolved. Added
+`results.tie_resolution`/`tie_resolution_note`, a `resolve_tie` RPC,
+and `TieResolutionCard` (declare co-champions / mark run-off completed,
+both surfaced on the class results page whenever more than one entry
+is tied for 1st). `calculate_results` redefined to clear a stale
+tie_resolution when a recompute changes the standings (e.g. after a
+run-off score correction via the pre-existing `correct_score` RPC).
+
+**Real gotcha hit during verification — not a code bug, a Supabase
+schema-cache trap worth remembering**: after the user applied 00026,
+the app got `Could not find the function public.resolve_tie(...) in
+the schema cache` on every attempt. `NOTIFY pgrst, 'reload schema'`
+did NOT fix it after several retries. Turned out the function itself
+never actually landed in the database — confirmed by having the user
+run `select proname from pg_proc where proname = 'resolve_tie'`, which
+came back empty, meaning it was lost somewhere in copy/paste of the
+full migration file. Fix was re-running just the `create or replace
+function public.resolve_tie(...)` block in isolation. **Lesson: when
+"function not found in schema cache" persists after a reload attempt,
+verify the function actually exists in `pg_proc` before burning more
+retries on cache-refresh theories.**
+
+**2. Youth class fee/retainage exemptions** — migration
+`00027_youth_classes.sql`. Show Rules P(7): youth classes never pay
+NRHA's 5% retainage or any office fee. Added `classes.is_youth`;
+`calculate_payouts` forces retainage to 0% for youth classes;
+`assign_back_number` skips the show's `standard_entry_charges`
+auto-apply (00023) only when **all** of an entry's classes are
+youth — confirmed with the user first: "if a youth shows in only
+youth no office fee. that's correct. if they show in anything else
+they get an office fee," exactly matching the `bool_and(is_youth)`
+implementation.
+
+**3. Scribe role + official pattern library + printable scribe score
+sheet** — migration `00028_pattern_library_and_scribe.sql`, built from
+four NRHA PDFs the user uploaded (2024 Handbook, patterns-1.pdf,
+Score_Sheet.pdf, 2025 Membership Application). Three pieces:
+- `'scribe'` added to `show_staff.staff_role` — a free-text per-show
+  label like judge/gate/announcer, not a login permission (matches
+  steward/vet/farrier/photographer, none of which have an
+  `organization_roles` entry either). Per the Handbook's Judges'
+  Guide: "management's responsibility to supply a scribe at every
+  official NRHA event" — the scribe hand-writes the judge's called
+  scores on the paper card during a run.
+- All 20 official NRHA patterns (1–18, plus A/B for Youth 10 & Under
+  Short Stirrup/Para-Reining) transcribed into `src/lib/nrha-patterns.ts`
+  as structured data — deliberately NOT a database table, reasoned as
+  fixed association reference material (like the score-sheet layout
+  itself) rather than an org-configurable rule package item.
+  `class_patterns.pattern_key` (new column) records which library
+  pattern a class's freeform `pattern_text` was built from; a new
+  "Insert an official NRHA pattern" picker on the class Pattern editor
+  auto-fills the existing freeform textarea, which stays fully
+  editable afterward (NRHA Green/Ride & Slide/Category 11-13 classes
+  can use modified patterns).
+- New route `/shows/[id]/scoring/[classId]/score-sheet`: a print-ready
+  page replicating the official NRHA Judges Score Sheet (header fields
+  pre-filled from data, the maneuver-scoring legend, a numbered
+  maneuver key for the linked pattern — an addition beyond the stock
+  blank sheet, since the user explicitly wanted per-pattern maneuver
+  auto-fill — then a blank Draw/Exh#/8-maneuver/Total/Score grid,
+  paginated 10 entries per page). New `@media print` rules in
+  `globals.css` hide the app chrome so it prints clean.
+
+**4. Single Purse tiered payout structure for aged shows** — migration
+`00029_single_purse_payouts.sql`, Show Rules I(7). One class, one
+purse, one entry fee, riders of eligibility levels 1–4 compete
+together, but a rider's own level caps which payout tier they can
+actually cash a check in. Three scope decisions confirmed with the
+user via AskUserQuestion before writing code (the rule text itself is
+intentionally open on some edge cases — "show management may contact
+NRHA for formulas to calculate payouts for different sizes of
+events"):
+1. No career-earnings tracking exists in the app, so rider level is
+   office-declared per entry (`entry_classes.rider_level`, set via a
+   new `set_rider_level` RPC, editable on the Results page — same
+   "office declares it" pattern as eligibility overrides elsewhere).
+2. When a paid placing has no eligible rider, money redistributes
+   **proportionally** to the placings that DO qualify (scaled by their
+   relative payout-schedule percentages) so the full pool always pays
+   out.
+3. Level-champion award naming (Section 3(c)) is genuinely ambiguous
+   in the Handbook text — user asked for a best-effort interpretation
+   anyway, clearly flagged as such in the migration and in the app.
+
+Implements Section 1 (pay-spot count: entries/2, rounded up if odd,
+capped at 60), Section 2 (tier allocation with the Level-4->25%-of-
+entries and Level-1-<25%-of-entries exceptions, remainder distributed
+starting from Tier 4 downward among whichever tiers aren't fixed by an
+exception), the eligibility-gated proportional payout itself (a rider
+of level L can cash in placing-zone rank Z iff L <= 5-Z), and Section
+3(c) champion assignment.
+
+**A real bug caught before shipping, not after**: built an 8-entry
+hand-calculated test scenario (levels [2,4,1,1,1,4,2,3], scores 90.0
+down to 83.0, 40/30/20/10% schedule, $80 pool) and worked out the
+expected pay-spots (4), tiers (1-1-1-1), eligibility exclusions, and
+champions *by hand* before running the RPC. Doing that surfaced a
+real gap: Section 3(A) says "Level championships are only awarded to
+placings within the payout of the class" — the first draft's champion
+search queries had no `placing <= pay_spots` constraint, so an
+out-of-the-money rider (placing 5, a Level 1 rider with no check)
+would have been wrongly crowned Level 1 Champion. Fixed by adding the
+constraint to all four champion search queries and re-applying the
+corrected function (`create or replace`, no new migration file
+needed) before ever running it against the live database. Once fixed,
+every one of the 8 hand-calculated expected values (money down to the
+penny, all four champion assignments including the *absence* of a
+Level 1 champion) matched the app's actual output exactly. All 8 test
+entries and the scratch class deleted afterward.
+
+**5. Fee-cap validation warnings** — migration
+`00030_fee_cap_validation.sql`, Show Rules H/I/J/K/L (Ancillary/Aged/
+Jackpot Affiliate/Entry Level Ride & Slide/Green Level fee-cap
+tables — e.g. "Limited Open: max $500 added money, max entry fee 10%
+of added money or $50 jackpot"). Per CLAUDE.md's "rules are data, not
+code" principle, the actual dollar caps are NOT hardcoded — four new
+optional columns on `association_class_codes`
+(`max_added_money_cents`, `max_entry_fee_cents`,
+`max_entry_fee_percent_of_added_money`, `max_entry_fee_jackpot_cents`)
+that an org fills in per class code, covering both cap shapes seen in
+the Handbook (flat dollar, or percent-of-added-money with a separate
+jackpot-specific cap). `computeFeeCapIssues()`
+(`src/lib/fee-cap.ts`) is a pure function producing a soft (warning,
+not blocking) `ValidationIssue[]`, reusing the existing `IssueList`
+component from the entry-validation Issues page for visual
+consistency; it's rendered on the class detail page, above both the
+read-only summary and (more importantly) the edit form, so it's
+visible while actively editing a class's fees. `AddClassCodeForm`
+gained the four optional cap input fields (there's still no *edit*
+action for existing class codes — a pre-existing gap this feature
+didn't introduce or fix).
+
+**Verification methodology this session**: every feature was verified
+against real or deliberately-scoped scratch data on the live EPRHA
+Summer Slide 2026 show, with all test data (scratch classes, test
+entries, test people/horses, test class codes, test staff rows)
+created, exercised, and then fully deleted/reverted afterward — real
+show configuration (Stall/Office/Drug charges, schedule settings,
+etc.) was never touched. Reused the same rider ("Jamie Tester") and
+horse ("Chex My Spook") across multiple synthetic entries in test
+classes where possible, since entries aren't unique per rider+horse
+pair — this avoided creating throwaway people/horse records for the
+Single Purse 8-entry test. Two dev-server restarts happened mid-
+session (browser preview died and had to be reopened + the user had
+to re-sign in each time — Claude cannot sign in itself, a standing
+hard boundary).
+
+Build (`npm run build`) and lint (`npx eslint src`) both clean after
+every feature (only the 2 pre-existing benign RHF `watch()` warnings).
+Five commits: `a11cef5` (tie resolution + youth exemptions + scribe/
+pattern/score-sheet, bundled since git doesn't support clean partial-
+file staging without `-i` which is disallowed), `9d80763` (Single
+Purse payouts), `2ac459f` (fee-cap validation).
+
+Memory updated: new files `tie-resolution-and-youth-classes.md`,
+`scribe-pattern-library-score-sheet.md`, `single-purse-payouts.md`,
+`fee-cap-validation.md`; `nrha-rulebook-punch-list.md` updated to mark
+items A.1/A.2/A.3/A.4 done, leaving only A.5 (event-classification
+checklist), A.6 (results/scores timing reminders), A.7 (payout
+distribution deadline tracking), and the B-section rule-package data-
+entry items (which don't need app code).
 
 ## 2026-07-11 (6th session): concurrent classes (NRHA Show Rules)
 
@@ -448,6 +623,16 @@ RHF `watch()` warnings).
 
 ## Database
 
+**Migrations 00026 through 00030 are applied** — 00026
+(`00026_tie_resolution.sql`, tie run-off/co-champion resolution),
+00027 (`00027_youth_classes.sql`, youth class fee/retainage
+exemptions), 00028 (`00028_pattern_library_and_scribe.sql`, scribe
+staff role + pattern-key column), 00029
+(`00029_single_purse_payouts.sql`, Single Purse tiered payout
+structure), and 00030 (`00030_fee_cap_validation.sql`, fee-cap warning
+columns), all confirmed live and browser-verified (2026-07-12, 7th
+session).
+
 **Migrations 00021 through 00025 are applied** — 00021
 (`00021_public_live_results.sql`, public live-results RPCs), 00022
 (`00022_show_billing.sql`, misc_charges table + billing RPCs), 00023
@@ -457,7 +642,7 @@ auto-applied via `assign_back_number`), 00024
 (`00025_concurrent_classes.sql`, concurrent class grouping + draw/gate/
 score propagation), all confirmed live and browser-verified
 (2026-07-11, 3rd–6th sessions).
-All 25 migrations are now live. Details below are from earlier
+All 30 migrations are now live. Details below are from earlier
 sessions and still
 accurate for 00001–00020:
 
