@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { setRunStatus } from "@/app/(app)/shows/[id]/draws/actions";
+import { runOrQueue } from "@/lib/offline-queue";
 import { useConfirmDialog } from "@/components/confirm-dialog";
 
 const ACTIONS: {
@@ -43,14 +43,21 @@ export function GateActionButtons({
   currentStatus: string;
 }) {
   const [error, setError] = useState<string>();
+  const [queuedNote, setQueuedNote] = useState(false);
   const [isPending, startTransition] = useTransition();
   const confirm = useConfirmDialog();
 
   const run = (status: string, reason?: string) => {
     setError(undefined);
+    setQueuedNote(false);
     startTransition(async () => {
-      const result = await setRunStatus(rowId, status, reason);
+      const result = await runOrQueue(
+        "setRunStatus",
+        [rowId, status, reason],
+        `Gate: ${status.replace(/_/g, " ")}`
+      );
       if (result?.error) setError(result.error);
+      else if (result?.queued) setQueuedNote(true);
     });
   };
 
@@ -97,6 +104,11 @@ export function GateActionButtons({
       </div>
       {error && (
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
+      )}
+      {queuedNote && (
+        <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+          Saved offline — will sync when the connection returns.
+        </p>
       )}
     </div>
   );

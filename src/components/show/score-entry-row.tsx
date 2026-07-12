@@ -3,11 +3,11 @@
 import { useState, useTransition } from "react";
 import {
   correctScore,
-  enterScore,
   reopenScore,
   submitScore,
   verifyScore,
 } from "@/app/(app)/shows/[id]/scoring/actions";
+import { runOrQueue } from "@/lib/offline-queue";
 import { formatScore, tenthsToInput } from "@/lib/score";
 import { RESULT_STATUS_OPTIONS } from "@/lib/validation/score";
 import { Alert, Button, Input, Select } from "@/components/ui";
@@ -58,12 +58,21 @@ export function ScoreEntryRow({
   const canCorrectNow =
     status === "verified" ? canCorrectOfficial : canCorrectUnofficial;
 
-  const run = (fn: () => Promise<{ error?: string }>) => {
+  const [queuedNote, setQueuedNote] = useState(false);
+
+  const run = (fn: () => Promise<{ error?: string; queued?: boolean }>) => {
     setError(undefined);
+    setQueuedNote(false);
     startTransition(async () => {
       const result = await fn();
       if (result?.error) setError(result.error);
-      else setEditing(false);
+      else if (result?.queued) {
+        // Keep the form (the server hasn't stored anything yet) but make
+        // the queued state unmistakable.
+        setQueuedNote(true);
+      } else {
+        setEditing(false);
+      }
     });
   };
 
@@ -166,6 +175,12 @@ export function ScoreEntryRow({
   return (
     <div className="space-y-2">
       {error && <Alert>{error}</Alert>}
+      {queuedNote && (
+        <Alert tone="info">
+          Saved offline — this score is queued on this device and will sync
+          when the connection returns.
+        </Alert>
+      )}
       <div className="grid gap-2 sm:grid-cols-[1fr_110px_110px_1fr]">
         <Select
           value={resultStatus}
@@ -254,14 +269,20 @@ export function ScoreEntryRow({
               );
             } else {
               run(() =>
-                enterScore({
-                  entryClassId,
-                  resultStatus,
-                  totalScore,
-                  penaltyPoints,
-                  judgeStaffId,
-                  notes,
-                })
+                runOrQueue(
+                  "enterScore",
+                  [
+                    {
+                      entryClassId,
+                      resultStatus,
+                      totalScore,
+                      penaltyPoints,
+                      judgeStaffId,
+                      notes,
+                    },
+                  ],
+                  `Score entry (${resultStatus === "shown" ? totalScore || "?" : resultStatus})`
+                )
               );
             }
           }}
