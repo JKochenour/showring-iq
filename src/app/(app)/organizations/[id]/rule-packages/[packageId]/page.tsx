@@ -4,6 +4,7 @@ import { hasOrgPermission, requireUser } from "@/lib/authz";
 import {
   AddClassCodeForm,
   AddEligibilityRuleForm,
+  ClassCodeRow,
 } from "@/components/org/rule-package-forms";
 import { RulePackageStatusActions } from "@/components/org/rule-package-status";
 import {
@@ -135,31 +136,13 @@ export default async function RulePackageDetailPage({
               </thead>
               <tbody className="divide-y divide-stone-200 dark:divide-stone-800">
                 {codes.map((c) => (
-                  <tr key={c.id}>
-                    <td className="py-2 pr-4 font-mono">{c.code}</td>
-                    <td className="py-2 pr-4">{c.name}</td>
-                    <td className="py-2 pr-4 text-xs text-stone-500 dark:text-stone-400">
-                      {[
-                        c.is_youth && "Youth",
-                        c.is_amateur && "Amateur",
-                        c.is_open && "Open",
-                        c.is_non_pro && "Non Pro",
-                        c.counts_for_points && "Points",
-                        c.counts_for_money && "Money",
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                      {feeCapSummary(c) && <p className="mt-1">{feeCapSummary(c)}</p>}
-                    </td>
-                    {canCreate && (
-                      <td className="py-2">
-                        <RemoveButton
-                          action={deleteClassCode.bind(null, c.id)}
-                          confirmText={`Remove code ${c.code} — ${c.name}?`}
-                        />
-                      </td>
-                    )}
-                  </tr>
+                  <ClassCodeRow
+                    key={c.id}
+                    code={c}
+                    feeCapSummary={feeCapSummary(c)}
+                    canEdit={canCreate}
+                    removeAction={deleteClassCode.bind(null, c.id)}
+                  />
                 ))}
               </tbody>
             </table>

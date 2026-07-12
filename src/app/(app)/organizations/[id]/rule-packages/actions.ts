@@ -8,10 +8,12 @@ import {
   createClassCodeSchema,
   createEligibilityRuleSchema,
   createRulePackageSchema,
+  updateClassCodeSchema,
   type CreateAssociationInput,
   type CreateClassCodeInput,
   type CreateEligibilityRuleInput,
   type CreateRulePackageInput,
+  type UpdateClassCodeInput,
 } from "@/lib/validation/rule-package";
 import { normalizeBoolean } from "@/lib/import/normalize";
 import { dollarsToCents } from "@/lib/money";
@@ -250,6 +252,54 @@ export async function createClassCode(
       return { error: "That code already exists in this rule package." };
     }
     return { error: error.message };
+  }
+
+  revalidatePath(`/organizations`, "layout");
+  return {};
+}
+
+export async function updateClassCode(
+  input: UpdateClassCodeInput
+): Promise<ActionResult> {
+  const parsed = updateClassCodeSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("association_class_codes")
+    .update({
+      code: d.code,
+      name: d.name,
+      discipline: d.discipline || null,
+      division: d.division || null,
+      is_youth: d.isYouth,
+      is_amateur: d.isAmateur,
+      is_open: d.isOpen,
+      is_non_pro: d.isNonPro,
+      counts_for_points: d.countsForPoints,
+      counts_for_money: d.countsForMoney,
+      max_added_money_cents: optionalDollarsToCents(d.maxAddedMoney),
+      max_entry_fee_cents: optionalDollarsToCents(d.maxEntryFee),
+      max_entry_fee_percent_of_added_money: d.maxEntryFeePercentOfAddedMoney ?? null,
+      max_entry_fee_jackpot_cents: optionalDollarsToCents(d.maxEntryFeeJackpot),
+    })
+    .eq("id", d.classCodeId)
+    .select("id");
+
+  if (error) {
+    if (error.message.includes("association_class_codes_rule_package_id_code_key")) {
+      return { error: "That code already exists in this rule package." };
+    }
+    return { error: error.message };
+  }
+  if (!updated || updated.length === 0) {
+    return {
+      error:
+        "Update was not applied. You may lack the rules.edit permission.",
+    };
   }
 
   revalidatePath(`/organizations`, "layout");

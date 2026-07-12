@@ -8,6 +8,7 @@ import {
   createClassCode,
   createEligibilityRule,
   createRulePackage,
+  updateClassCode,
 } from "@/app/(app)/organizations/[id]/rule-packages/actions";
 import {
   CONDITION_OPERATORS,
@@ -22,6 +23,7 @@ import {
   type CreateRulePackageFormValues,
   type CreateRulePackageInput,
 } from "@/lib/validation/rule-package";
+import { centsToInput } from "@/lib/money";
 import {
   Alert,
   Button,
@@ -31,6 +33,8 @@ import {
   Label,
   Select,
 } from "@/components/ui";
+import { RemoveButton } from "@/components/remove-button";
+import type { AssociationClassCode } from "@/lib/types";
 
 export function CreateAssociationForm({ organizationId }: { organizationId: string }) {
   const [serverError, setServerError] = useState<string>();
@@ -147,9 +151,35 @@ export function CreateRulePackageForm({
   );
 }
 
-export function AddClassCodeForm({ rulePackageId }: { rulePackageId: string }) {
+export function AddClassCodeForm({
+  rulePackageId,
+  existing,
+  onDone,
+}: {
+  rulePackageId: string;
+  /** When set, the form edits this class code instead of creating one. */
+  existing?: AssociationClassCode;
+  onDone?: () => void;
+}) {
   const [serverError, setServerError] = useState<string>();
   const [isPending, startTransition] = useTransition();
+  const emptyValues: CreateClassCodeFormValues = {
+    rulePackageId,
+    code: "",
+    name: "",
+    discipline: "",
+    division: "",
+    isYouth: false,
+    isAmateur: false,
+    isOpen: false,
+    isNonPro: false,
+    countsForPoints: true,
+    countsForMoney: true,
+    maxAddedMoney: "",
+    maxEntryFee: "",
+    maxEntryFeePercentOfAddedMoney: "",
+    maxEntryFeeJackpot: "",
+  };
   const {
     register,
     handleSubmit,
@@ -157,48 +187,54 @@ export function AddClassCodeForm({ rulePackageId }: { rulePackageId: string }) {
     formState: { errors },
   } = useForm<CreateClassCodeFormValues, unknown, CreateClassCodeInput>({
     resolver: zodResolver(createClassCodeSchema),
-    defaultValues: {
-      rulePackageId,
-      code: "",
-      name: "",
-      discipline: "",
-      division: "",
-      isYouth: false,
-      isAmateur: false,
-      isOpen: false,
-      isNonPro: false,
-      countsForPoints: true,
-      countsForMoney: true,
-      maxAddedMoney: "",
-      maxEntryFee: "",
-      maxEntryFeePercentOfAddedMoney: "",
-      maxEntryFeeJackpot: "",
-    },
+    defaultValues: existing
+      ? {
+          rulePackageId,
+          code: existing.code,
+          name: existing.name,
+          discipline: existing.discipline ?? "",
+          division: existing.division ?? "",
+          isYouth: existing.is_youth,
+          isAmateur: existing.is_amateur,
+          isOpen: existing.is_open,
+          isNonPro: existing.is_non_pro,
+          countsForPoints: existing.counts_for_points,
+          countsForMoney: existing.counts_for_money,
+          maxAddedMoney:
+            existing.max_added_money_cents !== null
+              ? centsToInput(existing.max_added_money_cents)
+              : "",
+          maxEntryFee:
+            existing.max_entry_fee_cents !== null
+              ? centsToInput(existing.max_entry_fee_cents)
+              : "",
+          maxEntryFeePercentOfAddedMoney:
+            existing.max_entry_fee_percent_of_added_money ?? "",
+          maxEntryFeeJackpot:
+            existing.max_entry_fee_jackpot_cents !== null
+              ? centsToInput(existing.max_entry_fee_jackpot_cents)
+              : "",
+        }
+      : emptyValues,
   });
 
   const onSubmit = (values: CreateClassCodeInput) => {
     setServerError(undefined);
     startTransition(async () => {
-      const result = await createClassCode(values);
-      if (result?.error) setServerError(result.error);
-      else
-        reset({
-          rulePackageId,
-          code: "",
-          name: "",
-          discipline: "",
-          division: "",
-          isYouth: false,
-          isAmateur: false,
-          isOpen: false,
-          isNonPro: false,
-          countsForPoints: true,
-          countsForMoney: true,
-          maxAddedMoney: "",
-          maxEntryFee: "",
-          maxEntryFeePercentOfAddedMoney: "",
-          maxEntryFeeJackpot: "",
+      if (existing) {
+        const { rulePackageId, ...rest } = values;
+        void rulePackageId;
+        const result = await updateClassCode({
+          ...rest,
+          classCodeId: existing.id,
         });
+        if (result?.error) setServerError(result.error);
+        else onDone?.();
+      } else {
+        const result = await createClassCode(values);
+        if (result?.error) setServerError(result.error);
+        else reset(emptyValues);
+      }
     });
   };
 
@@ -295,10 +331,88 @@ export function AddClassCodeForm({ rulePackageId }: { rulePackageId: string }) {
           </label>
         ))}
       </div>
-      <Button type="submit" variant="secondary" disabled={isPending}>
-        {isPending ? "Adding…" : "Add class code"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" variant="secondary" disabled={isPending}>
+          {isPending
+            ? existing
+              ? "Saving…"
+              : "Adding…"
+            : existing
+              ? "Save changes"
+              : "Add class code"}
+        </Button>
+        {existing && onDone && (
+          <Button type="button" variant="secondary" onClick={onDone}>
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
+  );
+}
+
+/** One class-code table row with inline edit: the display row, plus an
+ * expanded full-width editor row while editing. Rendered inside the
+ * server page's <tbody>. */
+export function ClassCodeRow({
+  code,
+  feeCapSummary,
+  canEdit,
+  removeAction,
+}: {
+  code: AssociationClassCode;
+  feeCapSummary: string | null;
+  canEdit: boolean;
+  removeAction: () => Promise<{ error?: string }>;
+}) {
+  const [editing, setEditing] = useState(false);
+
+  return (
+    <>
+      <tr>
+        <td className="py-2 pr-4 font-mono">{code.code}</td>
+        <td className="py-2 pr-4">{code.name}</td>
+        <td className="py-2 pr-4 text-xs text-stone-500 dark:text-stone-400">
+          {[
+            code.is_youth && "Youth",
+            code.is_amateur && "Amateur",
+            code.is_open && "Open",
+            code.is_non_pro && "Non Pro",
+            code.counts_for_points && "Points",
+            code.counts_for_money && "Money",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+          {feeCapSummary && <p className="mt-1">{feeCapSummary}</p>}
+        </td>
+        {canEdit && (
+          <td className="py-2">
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setEditing((v) => !v)}>
+                {editing ? "Close" : "Edit"}
+              </Button>
+              <RemoveButton
+                action={removeAction}
+                confirmText={`Remove code ${code.code} — ${code.name}?`}
+              />
+            </div>
+          </td>
+        )}
+      </tr>
+      {editing && (
+        <tr>
+          <td colSpan={canEdit ? 4 : 3} className="py-3">
+            <div className="rounded-md border border-stone-200 p-3 dark:border-stone-800">
+              <AddClassCodeForm
+                rulePackageId={code.rule_package_id}
+                existing={code}
+                onDone={() => setEditing(false)}
+              />
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 

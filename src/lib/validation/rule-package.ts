@@ -52,6 +52,10 @@ export const createClassCodeSchema = z.object({
   maxEntryFeeJackpot: optionalMoney,
 });
 
+export const updateClassCodeSchema = createClassCodeSchema
+  .omit({ rulePackageId: true })
+  .extend({ classCodeId: z.uuid() });
+
 export const CONDITION_OPERATORS = [
   "equals",
   "not_equals",
@@ -78,4 +82,6 @@ export type CreateRulePackageInput = z.infer<typeof createRulePackageSchema>;
 export type CreateRulePackageFormValues = z.input<typeof createRulePackageSchema>;
 export type CreateClassCodeInput = z.infer<typeof createClassCodeSchema>;
 export type CreateClassCodeFormValues = z.input<typeof createClassCodeSchema>;
+export type UpdateClassCodeInput = z.infer<typeof updateClassCodeSchema>;
+export type UpdateClassCodeFormValues = z.input<typeof updateClassCodeSchema>;
 export type CreateEligibilityRuleInput = z.infer<typeof createEligibilityRuleSchema>;
