@@ -68,6 +68,7 @@ export interface Show {
   schedule_start_time: string;
   schedule_break_minutes: number;
   schedule_drag_minutes: number;
+  event_classification: "D" | "C" | "B" | "BB" | "A" | "AA" | null;
   created_at: string;
 }
 

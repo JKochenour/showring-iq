@@ -10,11 +10,13 @@ import {
   updateShowSchema,
   updateStandardChargesSchema,
   updateScheduleSettingsSchema,
+  updateEventClassificationSchema,
   type AddStaffInput,
   type CreateShowInput,
   type UpdateShowInput,
   type UpdateStandardChargesInput,
   type UpdateScheduleSettingsInput,
+  type UpdateEventClassificationInput,
 } from "@/lib/validation/show";
 import type { ShowStatus } from "@/lib/types";
 
@@ -168,6 +170,53 @@ export async function updateStandardCharges(
   });
 
   revalidatePath(`/shows/${d.showId}/settings`);
+  return {};
+}
+
+export async function updateEventClassification(
+  input: UpdateEventClassificationInput
+): Promise<ActionResult> {
+  const parsed = updateEventClassificationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+
+  const { data: before, error: beforeError } = await supabase
+    .from("shows")
+    .select("organization_id, event_classification")
+    .eq("id", d.showId)
+    .maybeSingle();
+  if (beforeError) return { error: beforeError.message };
+  if (!before) return { error: "Show not found." };
+
+  const { data: updated, error } = await supabase
+    .from("shows")
+    .update({ event_classification: d.classification })
+    .eq("id", d.showId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error:
+        "Update was not applied. You may lack the show.edit permission, or the show is locked/archived.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: before.organization_id,
+    p_action: "show.classification_updated",
+    p_entity_type: "show",
+    p_entity_id: d.showId,
+    p_old: { event_classification: before.event_classification },
+    p_new: { event_classification: d.classification },
+    p_show: d.showId,
+  });
+
+  revalidatePath(`/shows/${d.showId}/staff`);
   return {};
 }
 

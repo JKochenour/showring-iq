@@ -26,6 +26,7 @@ export const STAFF_ROLES = [
   { value: "score_verifier", label: "Score Verifier" },
   { value: "show_representative", label: "Show Representative" },
   { value: "steward", label: "Steward" },
+  { value: "videographer", label: "Videographer" },
   { value: "veterinarian", label: "Veterinarian" },
   { value: "farrier", label: "Farrier" },
   { value: "photographer", label: "Photographer" },
@@ -140,6 +141,14 @@ export const updateScheduleSettingsSchema = z.object({
   dragMinutes: z.coerce.number().int().min(0).max(120),
 });
 
+export const updateEventClassificationSchema = z.object({
+  showId: z.uuid(),
+  classification: z.union([
+    z.enum(["D", "C", "B", "BB", "A", "AA"]),
+    z.null(),
+  ]),
+});
+
 export type CreateShowInput = z.infer<typeof createShowSchema>;
 export type UpdateShowInput = z.infer<typeof updateShowSchema>;
 export type AddStaffInput = z.infer<typeof addStaffSchema>;
@@ -147,3 +156,4 @@ export type StandardChargeRow = z.infer<typeof standardChargeRowSchema>;
 export type UpdateStandardChargesInput = z.infer<typeof updateStandardChargesSchema>;
 export type UpdateScheduleSettingsInput = z.infer<typeof updateScheduleSettingsSchema>;
 export type UpdateScheduleSettingsFormValues = z.input<typeof updateScheduleSettingsSchema>;
+export type UpdateEventClassificationInput = z.infer<typeof updateEventClassificationSchema>;
