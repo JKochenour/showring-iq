@@ -68,7 +68,7 @@ export default async function ClassScoringPage({
       .maybeSingle(),
     supabase
       .from("class_patterns")
-      .select("id, class_id, pattern_text, document_id, updated_at")
+      .select("id, class_id, pattern_text, pattern_key, document_id, updated_at")
       .eq("class_id", classId)
       .maybeSingle(),
     supabase
@@ -142,6 +142,13 @@ export default async function ClassScoringPage({
             Pattern {showClass.pattern_number}
           </p>
         )}
+        <Link
+          href={`/shows/${id}/scoring/${classId}/score-sheet`}
+          target="_blank"
+          className="mt-2 inline-block text-sm text-brand-700 hover:underline dark:text-brand-500"
+        >
+          Print scribe score sheet →
+        </Link>
       </div>
 
       <ClassScoringActions

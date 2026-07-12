@@ -8,6 +8,7 @@ import {
   ResultsClassActions,
 } from "@/components/show/results-controls";
 import { PayoutActions, PayoutScheduleEditor } from "@/components/show/payout-controls";
+import { TieResolutionCard } from "@/components/show/tie-resolution-card";
 import { Card, EmptyState } from "@/components/ui";
 import { formatCents } from "@/lib/money";
 import type { Result, Score, ShowClass } from "@/lib/types";
@@ -101,6 +102,9 @@ export default async function ClassResultsPage({
   });
 
   const hasResults = rows.some((r) => r.result !== null);
+  const firstPlaceTie = rows.filter(
+    (r) => r.result?.placing === 1 && r.result?.tie_status === "tied"
+  );
 
   return (
     <div className="space-y-6">
@@ -129,6 +133,18 @@ export default async function ClassResultsPage({
           canUnpublish={canUnpublish}
         />
       </Card>
+
+      {firstPlaceTie.length > 1 && (
+        <TieResolutionCard
+          showId={id}
+          classId={classId}
+          representativeEntryClassId={firstPlaceTie[0].entryClassId}
+          tiedNames={firstPlaceTie.map((r) => r.riderName)}
+          resolution={firstPlaceTie[0].result?.tie_resolution ?? null}
+          resolutionNote={firstPlaceTie[0].result?.tie_resolution_note ?? null}
+          canResolve={canPublish}
+        />
+      )}
 
       <Card>
         <h3 className="mb-3 text-base font-semibold">Payouts</h3>

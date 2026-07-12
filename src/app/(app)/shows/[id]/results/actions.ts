@@ -19,6 +19,25 @@ function revalidateResults(showId: string, classId: string) {
   revalidatePath(`/shows/${showId}/classes`);
 }
 
+export async function resolveTie(
+  entryClassId: string,
+  resolution: "co_champions" | "run_off_completed",
+  note: string,
+  showId: string,
+  classId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("resolve_tie", {
+    p_entry_class: entryClassId,
+    p_resolution: resolution,
+    p_note: note || null,
+  });
+  if (error) return { error: error.message };
+
+  revalidateResults(showId, classId);
+  return {};
+}
+
 export async function calculateResults(
   classId: string,
   showId: string

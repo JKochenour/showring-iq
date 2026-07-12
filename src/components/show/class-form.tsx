@@ -56,6 +56,7 @@ export function CreateClassForm({
       discipline: "Reining",
       division: "",
       avgRunMinutes: "3",
+      isYouth: false,
       entryFee: "",
       addedMoney: "",
       scheduledDate: "",
@@ -113,6 +114,7 @@ export function EditClassForm({
       patternNumber: showClass.pattern_number ?? undefined,
       dragEveryN: showClass.drag_every_n ?? undefined,
       avgRunMinutes: String(showClass.avg_run_minutes),
+      isYouth: showClass.is_youth,
       entryFee: centsToInput(showClass.entry_fee_cents),
       addedMoney: centsToInput(showClass.added_money_cents),
       status: showClass.status,
@@ -327,6 +329,19 @@ function ClassFields({ register, errors, control, classCodeOptions }: { register
           <FieldError message={errors.notes?.message} />
         </div>
       </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-stone-300 accent-brand-700"
+          {...register("isYouth")}
+        />
+        Youth class
+      </label>
+      <p className="-mt-3 text-xs text-stone-500 dark:text-stone-400">
+        Exempts this class from NRHA retainage in payout calculations and
+        from the show&apos;s standard per-entry charges for entries that are
+        youth-only (Show Rules P(7)).
+      </p>
     </>
   );
 }

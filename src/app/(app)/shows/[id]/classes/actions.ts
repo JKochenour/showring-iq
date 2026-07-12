@@ -53,6 +53,7 @@ export async function createClass(
       pattern_number: d.patternNumber ?? null,
       drag_every_n: d.dragEveryN ?? null,
       avg_run_minutes: parseFloat(d.avgRunMinutes),
+      is_youth: d.isYouth,
       nrha_class_code: d.nrhaClassCode || null,
       class_code_id: d.classCodeId || null,
       entry_fee_cents: dollarsToCents(d.entryFee ?? ""),
@@ -122,6 +123,7 @@ export async function updateClass(
     pattern_number: d.patternNumber ?? null,
     drag_every_n: d.dragEveryN ?? null,
     avg_run_minutes: parseFloat(d.avgRunMinutes),
+    is_youth: d.isYouth,
     nrha_class_code: d.nrhaClassCode || null,
     class_code_id: d.classCodeId || null,
     entry_fee_cents: dollarsToCents(d.entryFee ?? ""),
@@ -243,6 +245,7 @@ export async function setClassPattern(
   const values = {
     class_id: d.classId,
     pattern_text: d.patternText?.trim() || null,
+    pattern_key: d.patternKey || null,
     document_id: d.documentId || null,
   };
 

@@ -80,7 +80,7 @@ export default async function ClassDetailPage({
       .order("is_primary", { ascending: false }),
     supabase
       .from("class_patterns")
-      .select("id, class_id, pattern_text, document_id, updated_at")
+      .select("id, class_id, pattern_text, pattern_key, document_id, updated_at")
       .eq("class_id", classId)
       .maybeSingle(),
     supabase

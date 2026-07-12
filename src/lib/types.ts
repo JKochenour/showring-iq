@@ -141,6 +141,7 @@ export interface ShowClass {
   scheduled_date: string | null;
   drag_every_n: number | null;
   avg_run_minutes: number;
+  is_youth: boolean;
   concurrent_group_id: string | null;
   nrha_class_code: string | null;
   class_code_id: string | null;
@@ -334,6 +335,7 @@ export interface ClassPatternRow {
   id: string;
   class_id: string;
   pattern_text: string | null;
+  pattern_key: string | null;
   document_id: string | null;
   updated_at: string;
 }
@@ -344,6 +346,8 @@ export interface Result {
   class_id: string;
   placing: number | null;
   tie_status: "none" | "tied";
+  tie_resolution: "co_champions" | "run_off_completed" | null;
+  tie_resolution_note: string | null;
   money_won_cents: number;
   manual_override: boolean;
 }

@@ -19,6 +19,7 @@ export const STAFF_ROLES = [
   { value: "secretary", label: "Show Secretary" },
   { value: "assistant_secretary", label: "Assistant Secretary" },
   { value: "judge", label: "Judge" },
+  { value: "scribe", label: "Scribe" },
   { value: "gate", label: "Gate / Paddock" },
   { value: "announcer", label: "Announcer" },
   { value: "treasurer", label: "Treasurer" },
