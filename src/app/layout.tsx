@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import { ConfirmDialogProvider } from "@/components/confirm-dialog";
+import { PwaSetup } from "@/components/pwa";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,6 +23,8 @@ export const metadata: Metadata = {
   title: "ShowRing IQ",
   description:
     "The modern horse show operating system for entries, scoring, eligibility, results, and association-ready reporting.",
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({
@@ -35,6 +38,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-paper text-stone-900">
+        <PwaSetup />
         <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
       </body>
     </html>

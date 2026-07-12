@@ -1,0 +1,17 @@
+{
+  "name": "ShowRing IQ",
+  "short_name": "ShowRing",
+  "description": "The horse show operating system — entries, scoring, results, and association-ready reporting.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#faf9f7",
+  "theme_color": "#1c1917",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
