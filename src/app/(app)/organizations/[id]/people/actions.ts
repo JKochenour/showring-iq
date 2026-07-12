@@ -16,6 +16,33 @@ import { normalizeDate, normalizeRoles, normalizeStatus } from "@/lib/import/nor
 
 export type ActionResult = { error?: string };
 
+/** Legal name for 1099 purposes (may differ from the display name —
+ * e.g. an LLC/business name for an EIN-based payee). Gated on
+ * invoice.edit, not person.edit — tax reporting is financial-staff
+ * territory even though the column lives on the general people table. */
+export async function updateTaxName(
+  personId: string,
+  organizationId: string,
+  taxName: string
+): Promise<ActionResult> {
+  const canEdit = await hasOrgPermission(organizationId, "invoice.edit");
+  if (!canEdit) return { error: "Missing permission: invoice.edit" };
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("people")
+    .update({ tax_name: taxName.trim() || null })
+    .eq("id", personId)
+    .eq("organization_id", organizationId)
+    .select("id");
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) return { error: "Person not found." };
+
+  revalidatePath(`/organizations/${organizationId}/people/${personId}`);
+  revalidatePath(`/organizations/${organizationId}/payee-report`);
+  return {};
+}
+
 const MAX_IMPORT_ROWS = 1000;
 
 export type ImportRowResult = {

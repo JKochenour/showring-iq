@@ -232,6 +232,7 @@ export interface Person {
   birthdate: string | null;
   roles: string[];
   notes: string | null;
+  tax_name: string | null;
   created_at: string;
   user_id: string | null;
 }

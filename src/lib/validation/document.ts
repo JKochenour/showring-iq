@@ -8,6 +8,7 @@ export const DOCUMENT_TYPES = [
   { value: "non_pro_declaration", label: "Non Pro declaration" },
   { value: "ownership_transfer", label: "Ownership transfer" },
   { value: "show_card", label: "Show card" },
+  { value: "w9", label: "W-9" },
   { value: "other", label: "Other" },
 ] as const;
 

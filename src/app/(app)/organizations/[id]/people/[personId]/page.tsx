@@ -8,6 +8,7 @@ import {
 import { EditPersonForm } from "@/components/org/person-form";
 import { AddMembershipForm } from "@/components/org/membership-manager";
 import { DocumentManager } from "@/components/org/document-manager";
+import { TaxNameField } from "@/components/org/tax-name-field";
 import { InviteExhibitorForm } from "@/components/org/invite-exhibitor-form";
 import { RemoveButton } from "@/components/remove-button";
 import { Card } from "@/components/ui";
@@ -34,6 +35,8 @@ export default async function PersonDetailPage({
     canRejectDocs,
     canDeleteDocs,
     canInviteExhibitor,
+    canViewTaxInfo,
+    canEditTaxInfo,
   ] = await Promise.all([
     supabase
       .from("people")
@@ -58,6 +61,8 @@ export default async function PersonDetailPage({
     hasOrgPermission(id, "document.reject"),
     hasOrgPermission(id, "document.delete"),
     hasOrgPermission(id, "org.members.invite"),
+    hasOrgPermission(id, "invoice.view"),
+    hasOrgPermission(id, "invoice.edit"),
   ]);
 
   if (!person) notFound();
@@ -94,6 +99,28 @@ export default async function PersonDetailPage({
           ) : (
             <InviteExhibitorForm personId={personId} />
           )}
+        </Card>
+      )}
+
+      {canViewTaxInfo && (
+        <Card>
+          <h3 className="mb-1 text-base font-semibold">Tax reporting</h3>
+          <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
+            For year-end 1099-NEC prep — see the org-wide{" "}
+            <Link
+              href={`/organizations/${id}/payee-report`}
+              className="text-brand-700 hover:underline dark:text-brand-500"
+            >
+              payee report
+            </Link>
+            .
+          </p>
+          <TaxNameField
+            personId={personId}
+            organizationId={id}
+            taxName={p.tax_name}
+            canEdit={canEditTaxInfo}
+          />
         </Card>
       )}
 
