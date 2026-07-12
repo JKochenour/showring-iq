@@ -46,7 +46,15 @@ export default async function ClassesPage({
         description="Class list in schedule order, with association codes and eligibility from each class's rule packages."
         action={
           canCreate && showEditable ? (
-            <ButtonLink href={`/shows/${id}/classes/new`}>Add class</ButtonLink>
+            <div className="flex flex-wrap gap-2">
+              <ButtonLink
+                href={`/shows/${id}/classes/import-bill`}
+                variant="secondary"
+              >
+                Import from show bill
+              </ButtonLink>
+              <ButtonLink href={`/shows/${id}/classes/new`}>Add class</ButtonLink>
+            </div>
           ) : undefined
         }
       />

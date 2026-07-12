@@ -98,6 +98,36 @@ export type UpdateClassInput = z.infer<typeof updateClassSchema>;
 export type CreateClassFormValues = z.input<typeof createClassSchema>;
 export type UpdateClassFormValues = z.input<typeof updateClassSchema>;
 
+/** One reviewed row from the show-bill import preview. Money as dollar
+ * strings (matches the other class forms); fees default to 0 when blank. */
+export const importBillClassRowSchema = z.object({
+  name: z.string().trim().min(2, "Name is required").max(160),
+  entryFee: z
+    .string()
+    .trim()
+    .regex(MONEY_PATTERN, "Enter a dollar amount")
+    .or(z.literal(""))
+    .optional(),
+  addedMoney: z
+    .string()
+    .trim()
+    .regex(MONEY_PATTERN, "Enter a dollar amount")
+    .or(z.literal(""))
+    .optional(),
+  scheduledDate: z.iso.date().or(z.literal("")).optional(),
+  patternNumber: z.coerce.number().int().min(1).max(999).nullable().optional(),
+  isYouth: z.boolean(),
+  notes: z.string().trim().max(1000).optional(),
+});
+
+export const importBillClassesSchema = z.object({
+  showId: z.uuid(),
+  classes: z.array(importBillClassRowSchema).min(1, "Nothing to import").max(300),
+});
+
+export type ImportBillClassRow = z.infer<typeof importBillClassRowSchema>;
+export type ImportBillClassesInput = z.infer<typeof importBillClassesSchema>;
+
 export const addClassAffiliationSchema = z.object({
   classId: z.uuid(),
   associationClassCodeId: z.uuid("Choose a class code"),

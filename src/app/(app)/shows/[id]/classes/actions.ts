@@ -9,11 +9,14 @@ import {
   updateClassSchema,
   addClassAffiliationSchema,
   updateClassAffiliationSchema,
+  importBillClassesSchema,
   type CreateClassInput,
   type UpdateClassInput,
   type AddClassAffiliationInput,
   type UpdateClassAffiliationInput,
+  type ImportBillClassesInput,
 } from "@/lib/validation/class";
+import { extractPdfText } from "@/lib/import/pdf-text";
 import {
   setClassPatternSchema,
   type SetClassPatternInput,
@@ -93,6 +96,106 @@ export async function createClass(
 
   revalidatePath(`/shows/${d.showId}/classes`);
   redirect(`/shows/${d.showId}/classes`);
+}
+
+/** Extracts the text layer of an uploaded show-bill PDF so the client can
+ * run the parser on it. Read-only — nothing is created here. */
+export async function extractShowBillText(
+  formData: FormData
+): Promise<{ text?: string; error?: string }> {
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { error: "Choose a PDF file." };
+  if (file.size > 20 * 1024 * 1024) return { error: "PDF is too large (20 MB max)." };
+
+  try {
+    const text = await extractPdfText(new Uint8Array(await file.arrayBuffer()));
+    if (!text.trim()) {
+      return {
+        error:
+          "No text layer found — this looks like a scanned image. Paste the class schedule text instead.",
+      };
+    }
+    return { text };
+  } catch (err) {
+    return {
+      error: `Couldn't read that PDF: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+}
+
+/** Bulk-creates classes reviewed in the show-bill import preview.
+ * Class numbers continue from the show's current highest; RLS enforces
+ * class.create and an unlocked show on every row. */
+export async function importBillClasses(
+  input: ImportBillClassesInput
+): Promise<{ created?: number; error?: string }> {
+  const parsed = importBillClassesSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+
+  const { data: show, error: showError } = await supabase
+    .from("shows")
+    .select("organization_id")
+    .eq("id", d.showId)
+    .maybeSingle();
+  if (showError) return { error: showError.message };
+  if (!show) return { error: "Show not found." };
+
+  const { data: maxRow } = await supabase
+    .from("classes")
+    .select("class_number")
+    .eq("show_id", d.showId)
+    .order("class_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const base = (maxRow?.class_number ?? 0) + 1;
+
+  const rows = d.classes.map((c, i) => ({
+    show_id: d.showId,
+    organization_id: show.organization_id,
+    class_number: base + i,
+    name: c.name,
+    pattern_number: c.patternNumber ?? null,
+    is_youth: c.isYouth,
+    entry_fee_cents: dollarsToCents(c.entryFee ?? ""),
+    added_money_cents: dollarsToCents(c.addedMoney ?? ""),
+    scheduled_date: c.scheduledDate || null,
+    notes: c.notes || null,
+  }));
+
+  const { data: created, error } = await supabase
+    .from("classes")
+    .insert(rows)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!created || created.length === 0) {
+    return {
+      error:
+        "No classes were created. You may lack the class.create permission, or the show is locked/archived.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: show.organization_id,
+    p_action: "class.bill_imported",
+    p_entity_type: "show",
+    p_entity_id: d.showId,
+    p_old: null,
+    p_new: {
+      count: created.length,
+      class_numbers: `${base}-${base + created.length - 1}`,
+    },
+    p_show: d.showId,
+  });
+
+  revalidatePath(`/shows/${d.showId}/classes`);
+  revalidatePath(`/shows/${d.showId}/schedule`);
+  return { created: created.length };
 }
 
 export async function updateClass(
