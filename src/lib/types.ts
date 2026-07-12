@@ -196,6 +196,10 @@ export interface AssociationClassCode {
   counts_for_points: boolean;
   counts_for_money: boolean;
   active: boolean;
+  max_added_money_cents: number | null;
+  max_entry_fee_cents: number | null;
+  max_entry_fee_percent_of_added_money: number | null;
+  max_entry_fee_jackpot_cents: number | null;
 }
 
 export interface AssociationEligibilityRule {

@@ -14,6 +14,7 @@ import {
   type CreateRulePackageInput,
 } from "@/lib/validation/rule-package";
 import { normalizeBoolean } from "@/lib/import/normalize";
+import { dollarsToCents } from "@/lib/money";
 
 export type ActionResult = { error?: string };
 
@@ -211,6 +212,11 @@ export async function deleteRulePackage(
   return {};
 }
 
+function optionalDollarsToCents(value: string | undefined): number | null {
+  if (!value || !value.trim()) return null;
+  return dollarsToCents(value);
+}
+
 export async function createClassCode(
   input: CreateClassCodeInput
 ): Promise<ActionResult> {
@@ -233,6 +239,10 @@ export async function createClassCode(
     is_non_pro: d.isNonPro,
     counts_for_points: d.countsForPoints,
     counts_for_money: d.countsForMoney,
+    max_added_money_cents: optionalDollarsToCents(d.maxAddedMoney),
+    max_entry_fee_cents: optionalDollarsToCents(d.maxEntryFee),
+    max_entry_fee_percent_of_added_money: d.maxEntryFeePercentOfAddedMoney ?? null,
+    max_entry_fee_jackpot_cents: optionalDollarsToCents(d.maxEntryFeeJackpot),
   });
 
   if (error) {

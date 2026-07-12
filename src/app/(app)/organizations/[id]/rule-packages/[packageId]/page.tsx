@@ -13,6 +13,7 @@ import {
 } from "@/app/(app)/organizations/[id]/rule-packages/actions";
 import { RemoveButton } from "@/components/remove-button";
 import { ButtonLink, Card, EmptyState } from "@/components/ui";
+import { formatCents } from "@/lib/money";
 import type {
   AssociationClassCode,
   AssociationEligibilityRule,
@@ -20,6 +21,23 @@ import type {
 } from "@/lib/types";
 
 export const metadata = { title: "Rule package — ShowRing IQ" };
+
+function feeCapSummary(c: AssociationClassCode): string | null {
+  const parts: string[] = [];
+  if (c.max_added_money_cents !== null) {
+    parts.push(`max added money ${formatCents(c.max_added_money_cents)}`);
+  }
+  if (c.max_entry_fee_percent_of_added_money !== null) {
+    let entryFeePart = `max entry fee ${c.max_entry_fee_percent_of_added_money}% of added money`;
+    if (c.max_entry_fee_jackpot_cents !== null) {
+      entryFeePart += ` (or ${formatCents(c.max_entry_fee_jackpot_cents)} if jackpot)`;
+    }
+    parts.push(entryFeePart);
+  } else if (c.max_entry_fee_cents !== null) {
+    parts.push(`max entry fee ${formatCents(c.max_entry_fee_cents)}`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
 
 export default async function RulePackageDetailPage({
   params,
@@ -131,6 +149,7 @@ export default async function RulePackageDetailPage({
                       ]
                         .filter(Boolean)
                         .join(" · ")}
+                      {feeCapSummary(c) && <p className="mt-1">{feeCapSummary(c)}</p>}
                     </td>
                     {canCreate && (
                       <td className="py-2">

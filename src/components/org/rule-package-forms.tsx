@@ -169,6 +169,10 @@ export function AddClassCodeForm({ rulePackageId }: { rulePackageId: string }) {
       isNonPro: false,
       countsForPoints: true,
       countsForMoney: true,
+      maxAddedMoney: "",
+      maxEntryFee: "",
+      maxEntryFeePercentOfAddedMoney: "",
+      maxEntryFeeJackpot: "",
     },
   });
 
@@ -190,6 +194,10 @@ export function AddClassCodeForm({ rulePackageId }: { rulePackageId: string }) {
           isNonPro: false,
           countsForPoints: true,
           countsForMoney: true,
+          maxAddedMoney: "",
+          maxEntryFee: "",
+          maxEntryFeePercentOfAddedMoney: "",
+          maxEntryFeeJackpot: "",
         });
     });
   };
@@ -213,6 +221,59 @@ export function AddClassCodeForm({ rulePackageId }: { rulePackageId: string }) {
           <Input id="cc-discipline" {...register("discipline")} />
         </div>
       </div>
+      <div className="grid gap-3 sm:grid-cols-4">
+        <div>
+          <Label htmlFor="cc-maxAddedMoney">Max added money ($, optional)</Label>
+          <Input
+            id="cc-maxAddedMoney"
+            inputMode="decimal"
+            placeholder="e.g. 500"
+            {...register("maxAddedMoney")}
+          />
+          <FieldError message={errors.maxAddedMoney?.message} />
+        </div>
+        <div>
+          <Label htmlFor="cc-maxEntryFee">Max entry fee ($, flat, optional)</Label>
+          <Input
+            id="cc-maxEntryFee"
+            inputMode="decimal"
+            placeholder="e.g. 30"
+            {...register("maxEntryFee")}
+          />
+          <FieldError message={errors.maxEntryFee?.message} />
+        </div>
+        <div>
+          <Label htmlFor="cc-maxEntryFeePercent">
+            Or max entry fee (% of added money, optional)
+          </Label>
+          <Input
+            id="cc-maxEntryFeePercent"
+            inputMode="decimal"
+            placeholder="e.g. 10"
+            {...register("maxEntryFeePercentOfAddedMoney")}
+          />
+          <FieldError message={errors.maxEntryFeePercentOfAddedMoney?.message} />
+        </div>
+        <div>
+          <Label htmlFor="cc-maxEntryFeeJackpot">
+            Max entry fee if jackpot ($, optional)
+          </Label>
+          <Input
+            id="cc-maxEntryFeeJackpot"
+            inputMode="decimal"
+            placeholder="e.g. 50"
+            {...register("maxEntryFeeJackpot")}
+          />
+          <FieldError message={errors.maxEntryFeeJackpot?.message} />
+        </div>
+      </div>
+      <p className="-mt-2 text-xs text-stone-500 dark:text-stone-400">
+        These caps power a soft warning on classes linked to this code —
+        not enforced, and not an approved NRHA formula. Use either the
+        flat entry-fee cap or the percent-of-added-money cap (with an
+        optional separate jackpot cap), matching how the Handbook states
+        it for this class type.
+      </p>
       <div className="flex flex-wrap gap-4 text-sm">
         {(
           [

@@ -9,6 +9,8 @@ import { ClassPatternEditor } from "@/components/show/class-pattern-editor";
 import { ClassAffiliationsManager } from "@/components/show/class-affiliations-manager";
 import { ClassConcurrencyManager } from "@/components/show/class-concurrency-manager";
 import { getClassCodeOptions, getClassCodeAffiliationMeta } from "@/lib/rule-package-options";
+import { computeFeeCapIssues } from "@/lib/fee-cap";
+import { IssueList } from "@/components/show/issue-badges";
 import { Alert, Card } from "@/components/ui";
 import { formatCents } from "@/lib/money";
 import type {
@@ -30,7 +32,9 @@ export default async function ClassDetailPage({
 
   const { data: cls } = await supabase
     .from("classes")
-    .select("*, show:shows(status), linked_code:association_class_codes(code, name)")
+    .select(
+      "*, show:shows(status), linked_code:association_class_codes(code, name, max_added_money_cents, max_entry_fee_cents, max_entry_fee_percent_of_added_money, max_entry_fee_jackpot_cents)"
+    )
     .eq("id", classId)
     .eq("show_id", id)
     .maybeSingle();
@@ -38,8 +42,20 @@ export default async function ClassDetailPage({
 
   const showClass = cls as unknown as ShowClass & {
     show: { status: string } | null;
-    linked_code: { code: string; name: string } | null;
+    linked_code: {
+      code: string;
+      name: string;
+      max_added_money_cents: number | null;
+      max_entry_fee_cents: number | null;
+      max_entry_fee_percent_of_added_money: number | null;
+      max_entry_fee_jackpot_cents: number | null;
+    } | null;
   };
+  const feeCapIssues = computeFeeCapIssues(
+    showClass.entry_fee_cents,
+    showClass.added_money_cents,
+    showClass.linked_code
+  );
   const showStatus = showClass.show?.status ?? "draft";
   const showEditable = showStatus === "draft" || showStatus === "published";
 
@@ -132,6 +148,12 @@ export default async function ClassDetailPage({
           <ClassStatusBadge status={showClass.status} />
         </div>
       </div>
+
+      {feeCapIssues.length > 0 && (
+        <Card>
+          <IssueList issues={feeCapIssues} />
+        </Card>
+      )}
 
       {canEdit && showEditable ? (
         <EditClassForm showClass={showClass} classCodeOptions={classCodeOptions} />

@@ -1,4 +1,17 @@
 import { z } from "zod";
+import { MONEY_PATTERN } from "@/lib/money";
+
+const optionalMoney = z
+  .string()
+  .trim()
+  .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00")
+  .or(z.literal(""))
+  .optional();
+
+const optionalPercent = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? undefined : v),
+  z.coerce.number().min(0).max(100).optional()
+);
 
 export const createAssociationSchema = z.object({
   organizationId: z.uuid(),
@@ -33,6 +46,10 @@ export const createClassCodeSchema = z.object({
   isNonPro: z.boolean().default(false),
   countsForPoints: z.boolean().default(true),
   countsForMoney: z.boolean().default(true),
+  maxAddedMoney: optionalMoney,
+  maxEntryFee: optionalMoney,
+  maxEntryFeePercentOfAddedMoney: optionalPercent,
+  maxEntryFeeJackpot: optionalMoney,
 });
 
 export const CONDITION_OPERATORS = [
