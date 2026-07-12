@@ -57,6 +57,7 @@ export async function recordPayment(
     p_amount_cents: dollarsToCents(d.amount),
     p_reference: d.reference ?? "",
     p_notes: d.notes ?? "",
+    p_apply_card_surcharge: d.applyCardSurcharge,
   });
   if (error) return { error: error.message };
 

@@ -46,9 +46,11 @@ export const recordPaymentSchema = z.object({
     .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00"),
   reference: z.string().trim().max(60).optional(),
   notes: z.string().trim().max(200).optional(),
+  applyCardSurcharge: z.boolean().default(false),
 });
 
 export type RecordPaymentInput = z.infer<typeof recordPaymentSchema>;
+export type RecordPaymentFormValues = z.input<typeof recordPaymentSchema>;
 
 export const recordRefundSchema = z.object({
   paymentId: z.uuid(),

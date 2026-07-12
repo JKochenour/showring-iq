@@ -118,6 +118,9 @@ export const standardChargeRowSchema = z.object({
     .trim()
     .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00")
     .or(z.literal("")),
+  /** When true, applies once per CLASS entered (e.g. a per-run video
+   * fee) instead of once per entry/back number. */
+  perRun: z.boolean().default(false),
 });
 
 export const updateStandardChargesSchema = z.object({
@@ -149,6 +152,22 @@ export const updateEventClassificationSchema = z.object({
   ]),
 });
 
+export const updateConditionalFeesSchema = z.object({
+  showId: z.uuid(),
+  lateEntryFee: z
+    .string()
+    .trim()
+    .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00")
+    .or(z.literal("")),
+  closeOutFee: z
+    .string()
+    .trim()
+    .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00")
+    .or(z.literal("")),
+  closeOutDeadline: z.iso.datetime({ local: true }).or(z.literal("")).optional(),
+  cardSurchargePercent: z.coerce.number().min(0).max(100),
+});
+
 export type CreateShowInput = z.infer<typeof createShowSchema>;
 export type UpdateShowInput = z.infer<typeof updateShowSchema>;
 export type AddStaffInput = z.infer<typeof addStaffSchema>;
@@ -157,3 +176,5 @@ export type UpdateStandardChargesInput = z.infer<typeof updateStandardChargesSch
 export type UpdateScheduleSettingsInput = z.infer<typeof updateScheduleSettingsSchema>;
 export type UpdateScheduleSettingsFormValues = z.input<typeof updateScheduleSettingsSchema>;
 export type UpdateEventClassificationInput = z.infer<typeof updateEventClassificationSchema>;
+export type UpdateConditionalFeesInput = z.infer<typeof updateConditionalFeesSchema>;
+export type UpdateConditionalFeesFormValues = z.input<typeof updateConditionalFeesSchema>;

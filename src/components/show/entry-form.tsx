@@ -40,6 +40,7 @@ export function CreateEntryForm({
   trainers,
   horses,
   classes,
+  lateEntryFeeCents,
 }: {
   showId: string;
   riders: PersonOption[];
@@ -47,6 +48,7 @@ export function CreateEntryForm({
   trainers: PersonOption[];
   horses: { id: string; label: string }[];
   classes: ClassOption[];
+  lateEntryFeeCents?: number;
 }) {
   const [serverError, setServerError] = useState<string>();
   const [isPending, startTransition] = useTransition();
@@ -67,6 +69,7 @@ export function CreateEntryForm({
       classIds: [],
       backNumberMode: "auto",
       backNumber: "",
+      lateEntry: false,
       notes: "",
     },
   });
@@ -225,6 +228,19 @@ export function CreateEntryForm({
           </div>
           <FieldError message={errors.backNumber?.message} />
         </div>
+
+        {!!lateEntryFeeCents && lateEntryFeeCents > 0 && (
+          <div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-stone-300 accent-brand-700"
+                {...register("lateEntry")}
+              />
+              Late entry (adds a {formatCents(lateEntryFeeCents)} fee to the bill)
+            </label>
+          </div>
+        )}
 
         <div>
           <Label htmlFor="notes">Notes (optional)</Label>

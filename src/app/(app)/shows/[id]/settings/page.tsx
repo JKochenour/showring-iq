@@ -7,6 +7,7 @@ import { ShowSettingsForm } from "@/components/show/show-settings-form";
 import { ShowStatusActions } from "@/components/show/show-status-actions";
 import { PublicLinkCard } from "@/components/show/public-link-card";
 import { StandardChargesEditor } from "@/components/show/standard-charges-editor";
+import { ConditionalFeesForm } from "@/components/show/conditional-fees-form";
 import { ScheduleSettingsForm } from "@/components/show/schedule-settings-form";
 import { Alert, Card } from "@/components/ui";
 import type { Show } from "@/lib/types";
@@ -105,7 +106,24 @@ export default async function ShowSettingsPage({
             charges={(s.standard_entry_charges ?? []).map((c) => ({
               label: c.label,
               amount: centsToInput(c.amount_cents),
+              perRun: c.per_run ?? false,
             }))}
+            canEdit={editable}
+          />
+        </Card>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-base font-semibold">
+          Late entry, close-out, and card fees
+        </h2>
+        <Card>
+          <ConditionalFeesForm
+            showId={s.id}
+            lateEntryFee={centsToInput(s.late_entry_fee_cents ?? 0)}
+            closeOutFee={centsToInput(s.close_out_fee_cents ?? 0)}
+            closeOutDeadline={s.close_out_deadline ? s.close_out_deadline.slice(0, 16) : ""}
+            cardSurchargePercent={s.card_surcharge_percent ?? 0}
             canEdit={editable}
           />
         </Card>

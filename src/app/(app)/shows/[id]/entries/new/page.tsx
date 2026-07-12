@@ -16,7 +16,7 @@ export default async function NewEntryPage({
 
   const { data: show } = await supabase
     .from("shows")
-    .select("id, organization_id, status")
+    .select("id, organization_id, status, late_entry_fee_cents")
     .eq("id", id)
     .maybeSingle();
   if (!show) notFound();
@@ -92,6 +92,7 @@ export default async function NewEntryPage({
           trainers={byRole("trainer")}
           horses={horseOptions}
           classes={classOptions}
+          lateEntryFeeCents={show.late_entry_fee_cents ?? 0}
         />
       )}
     </div>

@@ -12,6 +12,7 @@ import {
   PAYMENT_METHODS,
   recordPaymentSchema,
   type RecordPaymentInput,
+  type RecordPaymentFormValues,
 } from "@/lib/validation/billing";
 import { Alert, Button, FieldError, Input, Label, Select } from "@/components/ui";
 import { useConfirmDialog } from "@/components/confirm-dialog";
@@ -27,11 +28,13 @@ export function PaymentManager({
   personId,
   payments,
   canEdit,
+  cardSurchargePercent = 0,
 }: {
   showId: string;
   personId: string;
   payments: PersonBillPayment[];
   canEdit: boolean;
+  cardSurchargePercent?: number;
 }) {
   const [serverError, setServerError] = useState<string>();
   const [isPending, startTransition] = useTransition();
@@ -41,8 +44,9 @@ export function PaymentManager({
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
-  } = useForm<RecordPaymentInput>({
+  } = useForm<RecordPaymentFormValues, unknown, RecordPaymentInput>({
     resolver: zodResolver(recordPaymentSchema),
     defaultValues: {
       showId,
@@ -51,8 +55,15 @@ export function PaymentManager({
       amount: "",
       reference: "",
       notes: "",
+      applyCardSurcharge: false,
     },
   });
+  const method = watch("method");
+  const amount = watch("amount");
+  const surchargePreview =
+    cardSurchargePercent > 0 && amount
+      ? Math.round((parseFloat(amount) || 0) * 100 * (cardSurchargePercent / 100))
+      : 0;
 
   const onSubmit = (values: RecordPaymentInput) => {
     setServerError(undefined);
@@ -60,7 +71,15 @@ export function PaymentManager({
       const result = await recordPayment(values, showId);
       if (result?.error) setServerError(result.error);
       else
-        reset({ showId, personId, method: "cash", amount: "", reference: "", notes: "" });
+        reset({
+          showId,
+          personId,
+          method: "cash",
+          amount: "",
+          reference: "",
+          notes: "",
+          applyCardSurcharge: false,
+        });
     });
   };
 
@@ -223,6 +242,17 @@ export function PaymentManager({
               <Input id="pm-notes" {...register("notes")} />
             </div>
           </div>
+          {cardSurchargePercent > 0 && method === "card" && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-stone-300 accent-brand-700"
+                {...register("applyCardSurcharge")}
+              />
+              Add {cardSurchargePercent}% card surcharge
+              {surchargePreview > 0 && ` (+${formatCents(surchargePreview)})`}
+            </label>
+          )}
           <Button type="submit" variant="secondary" disabled={isPending}>
             {isPending ? "Recording…" : "Record payment"}
           </Button>

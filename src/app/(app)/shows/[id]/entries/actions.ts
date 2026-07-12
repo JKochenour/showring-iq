@@ -108,18 +108,31 @@ export async function createEntry(
     };
   }
 
-  const { error: classesError } = await supabase.from("entry_classes").insert(
-    classes.map((c) => ({
-      entry_id: entry.id,
-      class_id: c.id,
-      fee_cents: c.entry_fee_cents,
-    }))
-  );
+  const { data: createdClasses, error: classesError } = await supabase
+    .from("entry_classes")
+    .insert(
+      classes.map((c) => ({
+        entry_id: entry.id,
+        class_id: c.id,
+        fee_cents: c.entry_fee_cents,
+      }))
+    )
+    .select("id");
 
   if (classesError) {
     // Best-effort cleanup so we don't leave a classless entry behind
     await supabase.from("entries").delete().eq("id", entry.id);
     return { error: classesError.message };
+  }
+
+  // Per-run standard charges (e.g. a per-run video fee) apply once per
+  // class entered — see 00036_conditional_fees.sql.
+  for (const ec of createdClasses ?? []) {
+    await supabase.rpc("apply_per_run_charges", { p_entry_class: ec.id });
+  }
+
+  if (d.lateEntry) {
+    await supabase.rpc("apply_late_entry_fee", { p_entry: entry.id });
   }
 
   await supabase.rpc("log_audit", {
@@ -224,7 +237,13 @@ export async function addEntryClass(
     p_show: entry.show_id,
   });
 
+  // Per-run standard charges (e.g. a per-run video fee) apply once per
+  // class entered — see 00036_conditional_fees.sql. Best-effort: a
+  // charge failure here shouldn't undo the class that was just added.
+  await supabase.rpc("apply_per_run_charges", { p_entry_class: created.id });
+
   revalidatePath(`/shows/${entry.show_id}/entries/${d.entryId}`);
+  revalidatePath(`/shows/${entry.show_id}/financials`);
   return {};
 }
 

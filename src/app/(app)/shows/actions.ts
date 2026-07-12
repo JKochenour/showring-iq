@@ -11,12 +11,14 @@ import {
   updateStandardChargesSchema,
   updateScheduleSettingsSchema,
   updateEventClassificationSchema,
+  updateConditionalFeesSchema,
   type AddStaffInput,
   type CreateShowInput,
   type UpdateShowInput,
   type UpdateStandardChargesInput,
   type UpdateScheduleSettingsInput,
   type UpdateEventClassificationInput,
+  type UpdateConditionalFeesInput,
 } from "@/lib/validation/show";
 import type { ShowStatus } from "@/lib/types";
 
@@ -143,7 +145,11 @@ export async function updateStandardCharges(
 
   const charges = d.charges
     .filter((c) => c.label.trim() !== "" && c.amount.trim() !== "")
-    .map((c) => ({ label: c.label.trim(), amount_cents: dollarsToCents(c.amount) }));
+    .map((c) => ({
+      label: c.label.trim(),
+      amount_cents: dollarsToCents(c.amount),
+      per_run: c.perRun,
+    }));
 
   const { data: updated, error } = await supabase
     .from("shows")
@@ -171,6 +177,75 @@ export async function updateStandardCharges(
 
   revalidatePath(`/shows/${d.showId}/settings`);
   return {};
+}
+
+export async function updateConditionalFees(
+  input: UpdateConditionalFeesInput
+): Promise<ActionResult> {
+  const parsed = updateConditionalFeesSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+
+  const { data: before, error: beforeError } = await supabase
+    .from("shows")
+    .select(
+      "organization_id, late_entry_fee_cents, close_out_fee_cents, close_out_deadline, card_surcharge_percent"
+    )
+    .eq("id", d.showId)
+    .maybeSingle();
+  if (beforeError) return { error: beforeError.message };
+  if (!before) return { error: "Show not found." };
+
+  const updates = {
+    late_entry_fee_cents: d.lateEntryFee.trim() ? dollarsToCents(d.lateEntryFee) : 0,
+    close_out_fee_cents: d.closeOutFee.trim() ? dollarsToCents(d.closeOutFee) : 0,
+    close_out_deadline: d.closeOutDeadline?.trim() ? d.closeOutDeadline : null,
+    card_surcharge_percent: d.cardSurchargePercent,
+  };
+
+  const { data: updated, error } = await supabase
+    .from("shows")
+    .update(updates)
+    .eq("id", d.showId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error:
+        "Update was not applied. You may lack the show.edit permission, or the show is locked/archived.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: before.organization_id,
+    p_action: "show.conditional_fees_updated",
+    p_entity_type: "show",
+    p_entity_id: d.showId,
+    p_old: before,
+    p_new: updates,
+    p_show: d.showId,
+  });
+
+  revalidatePath(`/shows/${d.showId}/settings`);
+  return {};
+}
+
+export async function applyCloseOutFee(
+  showId: string
+): Promise<ActionResult & { applied?: number }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("apply_close_out_fee", {
+    p_show: showId,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/shows/${showId}/financials`);
+  return { applied: data as number };
 }
 
 export async function updateEventClassification(

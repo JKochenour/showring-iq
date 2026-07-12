@@ -64,12 +64,16 @@ export interface Show {
   description: string | null;
   nrha_show_number: string | null;
   medication_fee_cents: number;
-  standard_entry_charges: { label: string; amount_cents: number }[];
+  standard_entry_charges: { label: string; amount_cents: number; per_run?: boolean }[];
   schedule_start_time: string;
   schedule_break_minutes: number;
   schedule_drag_minutes: number;
   event_classification: "D" | "C" | "B" | "BB" | "A" | "AA" | null;
   payouts_distributed_at: string | null;
+  late_entry_fee_cents: number;
+  close_out_fee_cents: number;
+  close_out_deadline: string | null;
+  card_surcharge_percent: number;
   created_at: string;
 }
 

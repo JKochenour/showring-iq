@@ -21,6 +21,7 @@ export const createEntrySchema = z
       (v) => (v === "" || v === null || v === undefined ? undefined : v),
       z.coerce.number().int("Whole numbers only").min(1).max(9999).optional()
     ),
+    lateEntry: z.boolean().default(false),
     notes: z.string().trim().max(1000).optional(),
   })
   .refine((d) => d.backNumberMode !== "manual" || d.backNumber !== undefined, {

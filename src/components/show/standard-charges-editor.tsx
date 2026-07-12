@@ -70,6 +70,20 @@ export function StandardChargesEditor({
                   setRows(next);
                 }}
               />
+              <label className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-stone-300 accent-brand-700"
+                  checked={row.perRun}
+                  disabled={!canEdit}
+                  onChange={(e) => {
+                    const next = [...rows];
+                    next[i] = { ...next[i], perRun: e.target.checked };
+                    setRows(next);
+                  }}
+                />
+                Per run
+              </label>
               {canEdit && (
                 <Button
                   type="button"
@@ -88,7 +102,7 @@ export function StandardChargesEditor({
           <Button
             type="button"
             variant="secondary"
-            onClick={() => setRows([...rows, { label: "", amount: "" }])}
+            onClick={() => setRows([...rows, { label: "", amount: "", perRun: false }])}
           >
             Add row
           </Button>
@@ -96,7 +110,9 @@ export function StandardChargesEditor({
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setRows(STANDARD_CHARGE_STARTER_SET.map((r) => ({ ...r })))}
+              onClick={() =>
+                setRows(STANDARD_CHARGE_STARTER_SET.map((r) => ({ ...r, perRun: false })))
+              }
             >
               Load stall / office / drug fee starter set
             </Button>

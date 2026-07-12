@@ -20,11 +20,11 @@ export default async function PersonBillPage({
 
   const { data: show } = await supabase
     .from("shows")
-    .select("id, organization_id")
+    .select("id, organization_id, card_surcharge_percent")
     .eq("id", id)
     .maybeSingle();
   if (!show) notFound();
-  const s = show as Pick<Show, "id" | "organization_id">;
+  const s = show as Pick<Show, "id" | "organization_id" | "card_surcharge_percent">;
 
   const [canView, canEdit] = await Promise.all([
     hasOrgPermission(s.organization_id, "invoice.view"),
@@ -139,6 +139,7 @@ export default async function PersonBillPage({
           personId={personId}
           payments={bill.payments}
           canEdit={canEdit}
+          cardSurchargePercent={s.card_surcharge_percent ?? 0}
         />
         <p className="mt-3 text-right text-sm font-semibold">
           Paid: {formatCents(bill.paidCents)}
