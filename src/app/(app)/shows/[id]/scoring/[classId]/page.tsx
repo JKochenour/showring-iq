@@ -6,6 +6,7 @@ import { ClassScoringActions } from "@/components/show/class-scoring-actions";
 import { ClassPatternCard } from "@/components/show/class-pattern-editor";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
 import { ScoreEntryRow } from "@/components/show/score-entry-row";
+import { MultiJudgeScoreEntry } from "@/components/show/multi-judge-score-entry";
 import { Card } from "@/components/ui";
 import type { ClassPatternRow, Score, ShowClass } from "@/lib/types";
 
@@ -41,6 +42,8 @@ export default async function ClassScoringPage({
     { data: myAssignment },
     { data: patternRow },
     { data: showDocuments },
+    { data: assignedJudges },
+    { data: judgeScores },
   ] = await Promise.all([
     loadClassDraw(supabase, id, classId),
     supabase
@@ -75,6 +78,14 @@ export default async function ClassScoringPage({
       .from("documents")
       .select("id, file_name")
       .eq("show_id", id),
+    supabase
+      .from("class_judges")
+      .select("show_staff_id, show_staff:show_staff(id, display_name)")
+      .eq("class_id", classId),
+    supabase
+      .from("score_judges")
+      .select("entry_class_id, judge_staff_id, total_score_tenths")
+      .eq("class_id", classId),
   ]);
 
   // Office staff (score.edit_unofficial) may view/act on any class, as
@@ -88,6 +99,29 @@ export default async function ClassScoringPage({
   const scoreByEntryClass = new Map<string, Score>();
   for (const s of (scores as Score[]) ?? []) {
     scoreByEntryClass.set(s.entry_class_id, s);
+  }
+
+  // Classes with 2+ assigned judges use per-judge entry (see 00037) —
+  // each judge's score is recorded independently and the RPC averages
+  // them into the composite `scores` row once every judge is in.
+  const assignedJudgeList = (assignedJudges ?? [])
+    .map((cj) => {
+      const staff = cj.show_staff as unknown as { id: string; display_name: string } | null;
+      return staff ? { id: staff.id, name: staff.display_name } : null;
+    })
+    .filter((j): j is { id: string; name: string } => j !== null);
+  const isMultiJudgeClass = assignedJudgeList.length >= 2;
+  const judgeScoresByEntryClass = new Map<
+    string,
+    { judgeStaffId: string; totalScoreTenths: number }[]
+  >();
+  for (const row of judgeScores ?? []) {
+    const list = judgeScoresByEntryClass.get(row.entry_class_id as string) ?? [];
+    list.push({
+      judgeStaffId: row.judge_staff_id as string,
+      totalScoreTenths: row.total_score_tenths as number,
+    });
+    judgeScoresByEntryClass.set(row.entry_class_id as string, list);
   }
 
   const documentOptions =
@@ -196,15 +230,25 @@ export default async function ClassScoringPage({
                   </p>
                 ) : (
                   <div className="ml-12">
-                    <ScoreEntryRow
-                      entryClassId={row.entry_class_id}
-                      score={scoreByEntryClass.get(row.entry_class_id) ?? null}
-                      judges={judgeOptions}
-                      canEnter={canEnter}
-                      canVerify={canVerify}
-                      canCorrectUnofficial={canCorrectUnofficial}
-                      canCorrectOfficial={canCorrectOfficial}
-                    />
+                    {isMultiJudgeClass &&
+                    !scoreByEntryClass.get(row.entry_class_id) ? (
+                      <MultiJudgeScoreEntry
+                        entryClassId={row.entry_class_id}
+                        judges={assignedJudgeList}
+                        recorded={judgeScoresByEntryClass.get(row.entry_class_id) ?? []}
+                        canEnter={canEnter}
+                      />
+                    ) : (
+                      <ScoreEntryRow
+                        entryClassId={row.entry_class_id}
+                        score={scoreByEntryClass.get(row.entry_class_id) ?? null}
+                        judges={judgeOptions}
+                        canEnter={canEnter}
+                        canVerify={canVerify}
+                        canCorrectUnofficial={canCorrectUnofficial}
+                        canCorrectOfficial={canCorrectOfficial}
+                      />
+                    )}
                   </div>
                 )}
               </li>
@@ -227,15 +271,24 @@ export default async function ClassScoringPage({
                     {ec.entry?.horse_name} · entry {ec.entry?.entry_number}
                   </p>
                 </div>
-                <ScoreEntryRow
-                  entryClassId={ec.id}
-                  score={scoreByEntryClass.get(ec.id) ?? null}
-                  judges={judgeOptions}
-                  canEnter={canEnter}
-                  canVerify={canVerify}
-                  canCorrectUnofficial={canCorrectUnofficial}
-                  canCorrectOfficial={canCorrectOfficial}
-                />
+                {isMultiJudgeClass && !scoreByEntryClass.get(ec.id) ? (
+                  <MultiJudgeScoreEntry
+                    entryClassId={ec.id}
+                    judges={assignedJudgeList}
+                    recorded={judgeScoresByEntryClass.get(ec.id) ?? []}
+                    canEnter={canEnter}
+                  />
+                ) : (
+                  <ScoreEntryRow
+                    entryClassId={ec.id}
+                    score={scoreByEntryClass.get(ec.id) ?? null}
+                    judges={judgeOptions}
+                    canEnter={canEnter}
+                    canVerify={canVerify}
+                    canCorrectUnofficial={canCorrectUnofficial}
+                    canCorrectOfficial={canCorrectOfficial}
+                  />
+                )}
               </li>
             ))}
           </ul>

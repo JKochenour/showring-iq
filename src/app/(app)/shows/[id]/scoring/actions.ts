@@ -6,8 +6,10 @@ import { scoreToTenths } from "@/lib/score";
 import {
   correctScoreSchema,
   enterScoreSchema,
+  enterJudgeScoreSchema,
   type CorrectScoreInput,
   type EnterScoreInput,
+  type EnterJudgeScoreInput,
 } from "@/lib/validation/score";
 
 export type ActionResult = { error?: string };
@@ -45,6 +47,32 @@ export async function enterScore(input: EnterScoreInput): Promise<ActionResult> 
     p_result_status: d.resultStatus,
     p_total_score_tenths: scoreToTenths(d.totalScore ?? ""),
     p_judge_staff_id: d.judgeStaffId || null,
+    p_penalty_points_tenths: scoreToTenths(d.penaltyPoints ?? "") ?? 0,
+    p_notes: d.notes || null,
+  });
+  if (error) return { error: error.message };
+
+  revalidateScoring(location.showId, location.classId);
+  return {};
+}
+
+export async function enterJudgeScore(
+  input: EnterJudgeScoreInput
+): Promise<ActionResult> {
+  const parsed = enterJudgeScoreSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+  const location = await classIdForEntryClass(supabase, d.entryClassId);
+  if (!location) return { error: "Entry not found." };
+
+  const { error } = await supabase.rpc("enter_judge_score", {
+    p_entry_class: d.entryClassId,
+    p_judge_staff_id: d.judgeStaffId,
+    p_total_score_tenths: scoreToTenths(d.totalScore) ?? null,
     p_penalty_points_tenths: scoreToTenths(d.penaltyPoints ?? "") ?? 0,
     p_notes: d.notes || null,
   });

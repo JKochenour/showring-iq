@@ -58,3 +58,15 @@ export const correctScoreSchema = baseScoreFields
 
 export type EnterScoreInput = z.infer<typeof enterScoreSchema>;
 export type CorrectScoreInput = z.infer<typeof correctScoreSchema>;
+
+/** One judge's independent call on a multi-judge run — see
+ * enter_judge_score / score_judges (migration 00037). */
+export const enterJudgeScoreSchema = z.object({
+  entryClassId: z.uuid(),
+  judgeStaffId: z.uuid(),
+  totalScore: z.string().trim().regex(SCORE_PATTERN, "Enter a score like 70 or 70.5"),
+  penaltyPoints: scoreValue,
+  notes: z.string().trim().max(500).optional(),
+});
+
+export type EnterJudgeScoreInput = z.infer<typeof enterJudgeScoreSchema>;
