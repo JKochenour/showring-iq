@@ -74,6 +74,28 @@ export interface Show {
   close_out_fee_cents: number;
   close_out_deadline: string | null;
   card_surcharge_percent: number;
+  reservation_types: {
+    key: string;
+    label: string;
+    unitPriceCents: number;
+    slotOptions: string[];
+  }[];
+  created_at: string;
+}
+
+export interface Reservation {
+  id: string;
+  show_id: string;
+  organization_id: string;
+  person_id: string;
+  type_key: string;
+  label: string;
+  quantity: number;
+  unit_price_cents: number;
+  slot_label: string | null;
+  status: "requested" | "confirmed" | "cancelled";
+  charge_id: string | null;
+  notes: string | null;
   created_at: string;
 }
 

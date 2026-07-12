@@ -36,6 +36,7 @@ export default async function ShowLayout({
     { href: `/shows/${id}/scoring`, label: "Scoring" },
     { href: `/shows/${id}/results`, label: "Results" },
     { href: `/shows/${id}/financials`, label: "Financials" },
+    { href: `/shows/${id}/reservations`, label: "Reservations" },
     { href: `/shows/${id}/exports`, label: "Exports" },
     { href: `/shows/${id}/gate`, label: "Gate" },
     { href: `/shows/${id}/announcer`, label: "Announcer" },
