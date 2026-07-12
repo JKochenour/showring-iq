@@ -85,3 +85,15 @@ export type CreateClassCodeFormValues = z.input<typeof createClassCodeSchema>;
 export type UpdateClassCodeInput = z.infer<typeof updateClassCodeSchema>;
 export type UpdateClassCodeFormValues = z.input<typeof updateClassCodeSchema>;
 export type CreateEligibilityRuleInput = z.infer<typeof createEligibilityRuleSchema>;
+
+export const pointsScheduleRowSchema = z.object({
+  placing: z.coerce.number().int().min(1).max(50),
+  points: z.coerce.number().min(0).max(1000),
+});
+
+export const updatePointsScheduleSchema = z.object({
+  rulePackageId: z.uuid(),
+  schedule: z.array(pointsScheduleRowSchema).max(50),
+});
+
+export type UpdatePointsScheduleInput = z.infer<typeof updatePointsScheduleSchema>;

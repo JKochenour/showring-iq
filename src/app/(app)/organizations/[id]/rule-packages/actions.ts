@@ -9,11 +9,13 @@ import {
   createEligibilityRuleSchema,
   createRulePackageSchema,
   updateClassCodeSchema,
+  updatePointsScheduleSchema,
   type CreateAssociationInput,
   type CreateClassCodeInput,
   type CreateEligibilityRuleInput,
   type CreateRulePackageInput,
   type UpdateClassCodeInput,
+  type UpdatePointsScheduleInput,
 } from "@/lib/validation/rule-package";
 import { normalizeBoolean } from "@/lib/import/normalize";
 import { dollarsToCents } from "@/lib/money";
@@ -98,6 +100,34 @@ export async function setRulePackageStatus(
 
   revalidatePath(`/organizations/${organizationId}/rule-packages`);
   revalidatePath(`/organizations/${organizationId}/rule-packages/${packageId}`);
+  return {};
+}
+
+export async function updatePointsSchedule(
+  input: UpdatePointsScheduleInput,
+  organizationId: string
+): Promise<ActionResult> {
+  const parsed = updatePointsScheduleSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("association_rule_packages")
+    .update({ points_schedule: d.schedule })
+    .eq("id", d.rulePackageId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error: "Update was not applied. You may lack the rules.edit permission.",
+    };
+  }
+
+  revalidatePath(`/organizations/${organizationId}/rule-packages/${d.rulePackageId}`);
   return {};
 }
 

@@ -7,6 +7,7 @@ import {
   ClassCodeRow,
 } from "@/components/org/rule-package-forms";
 import { RulePackageStatusActions } from "@/components/org/rule-package-status";
+import { PointsScheduleEditor } from "@/components/org/points-schedule-editor";
 import {
   deleteClassCode,
   deleteEligibilityRule,
@@ -104,6 +105,16 @@ export default async function RulePackageDetailPage({
           organizationId={id}
           status={rulePkg.status}
           canPublish={canPublish}
+        />
+      </Card>
+
+      <Card>
+        <h3 className="mb-3 text-base font-semibold">Standings points schedule</h3>
+        <PointsScheduleEditor
+          organizationId={id}
+          rulePackageId={packageId}
+          schedule={rulePkg.points_schedule ?? []}
+          canEdit={canCreate}
         />
       </Card>
 

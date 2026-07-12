@@ -185,6 +185,7 @@ export interface RulePackage {
   version: string;
   status: RulePackageStatus;
   source_notes: string | null;
+  points_schedule: { placing: number; points: number }[];
   created_at: string;
 }
 

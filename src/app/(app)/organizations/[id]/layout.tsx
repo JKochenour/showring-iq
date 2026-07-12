@@ -27,6 +27,7 @@ export default async function OrganizationLayout({
     { href: `/organizations/${id}/people`, label: "People" },
     { href: `/organizations/${id}/horses`, label: "Horses" },
     { href: `/organizations/${id}/rule-packages`, label: "Rule Packages" },
+    { href: `/organizations/${id}/standings`, label: "Standings" },
     { href: `/organizations/${id}/members`, label: "Members" },
     { href: `/organizations/${id}/settings`, label: "Settings" },
     { href: `/organizations/${id}/audit`, label: "Audit log" },
