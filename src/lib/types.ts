@@ -142,6 +142,7 @@ export interface ShowClass {
   drag_every_n: number | null;
   avg_run_minutes: number;
   is_youth: boolean;
+  is_single_purse: boolean;
   concurrent_group_id: string | null;
   nrha_class_code: string | null;
   class_code_id: string | null;
@@ -348,6 +349,7 @@ export interface Result {
   tie_status: "none" | "tied";
   tie_resolution: "co_champions" | "run_off_completed" | null;
   tie_resolution_note: string | null;
+  champion_level: 1 | 2 | 3 | 4 | null;
   money_won_cents: number;
   manual_override: boolean;
 }

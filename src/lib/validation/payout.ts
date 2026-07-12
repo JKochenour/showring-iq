@@ -26,3 +26,13 @@ export const EXAMPLE_PAYOUT_SCHEDULE = [
 ];
 
 export type UpdatePayoutSettingsInput = z.infer<typeof updatePayoutSettingsSchema>;
+
+/** Single Purse structure (Show Rules I(7)) — office-declared rider
+ * eligibility level, 1-4. Level 1 is the least restrictive (can cash
+ * anywhere in the paid placings); level 4 the most (top tier only). */
+export const setRiderLevelSchema = z.object({
+  entryClassId: z.uuid(),
+  level: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.null()]),
+});
+
+export type SetRiderLevelInput = z.infer<typeof setRiderLevelSchema>;

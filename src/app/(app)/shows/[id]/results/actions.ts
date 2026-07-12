@@ -8,7 +8,9 @@ import {
 } from "@/lib/validation/result";
 import {
   updatePayoutSettingsSchema,
+  setRiderLevelSchema,
   type UpdatePayoutSettingsInput,
+  type SetRiderLevelInput,
 } from "@/lib/validation/payout";
 
 export type ActionResult = { error?: string };
@@ -117,6 +119,42 @@ export async function calculatePayouts(
   const supabase = await createClient();
   const { error } = await supabase.rpc("calculate_payouts", {
     p_class: classId,
+  });
+  if (error) return { error: error.message };
+
+  revalidateResults(showId, classId);
+  return {};
+}
+
+export async function calculateSinglePursePayouts(
+  classId: string,
+  showId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("calculate_single_purse_payouts", {
+    p_class: classId,
+  });
+  if (error) return { error: error.message };
+
+  revalidateResults(showId, classId);
+  return {};
+}
+
+export async function setRiderLevel(
+  input: SetRiderLevelInput,
+  showId: string,
+  classId: string
+): Promise<ActionResult> {
+  const parsed = setRiderLevelSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_rider_level", {
+    p_entry_class: d.entryClassId,
+    p_level: d.level,
   });
   if (error) return { error: error.message };
 

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import {
   approvePayouts,
   calculatePayouts,
+  calculateSinglePursePayouts,
   updatePayoutSettings,
 } from "@/app/(app)/shows/[id]/results/actions";
 import { EXAMPLE_PAYOUT_SCHEDULE } from "@/lib/validation/payout";
@@ -164,11 +165,13 @@ export function PayoutActions({
   showId,
   canCalculate,
   canApprove,
+  isSinglePurse = false,
 }: {
   classId: string;
   showId: string;
   canCalculate: boolean;
   canApprove: boolean;
+  isSinglePurse?: boolean;
 }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
@@ -194,7 +197,13 @@ export function PayoutActions({
           <Button
             variant="secondary"
             disabled={isPending}
-            onClick={() => run(() => calculatePayouts(classId, showId))}
+            onClick={() =>
+              run(() =>
+                isSinglePurse
+                  ? calculateSinglePursePayouts(classId, showId)
+                  : calculatePayouts(classId, showId)
+              )
+            }
           >
             {isPending ? "Calculating…" : "Calculate payouts"}
           </Button>

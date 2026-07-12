@@ -54,6 +54,7 @@ export async function createClass(
       drag_every_n: d.dragEveryN ?? null,
       avg_run_minutes: parseFloat(d.avgRunMinutes),
       is_youth: d.isYouth,
+      is_single_purse: d.isSinglePurse,
       nrha_class_code: d.nrhaClassCode || null,
       class_code_id: d.classCodeId || null,
       entry_fee_cents: dollarsToCents(d.entryFee ?? ""),

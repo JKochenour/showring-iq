@@ -72,6 +72,7 @@ const classFields = {
     .trim()
     .regex(AVG_RUN_MINUTES_PATTERN, "Enter minutes like 3 or 3.5"),
   isYouth: z.boolean(),
+  isSinglePurse: z.boolean(),
   entryFee: money,
   addedMoney: money,
   scheduledDate: z.iso.date("Enter a valid date").or(z.literal("")).optional(),

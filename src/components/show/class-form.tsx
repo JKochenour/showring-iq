@@ -57,6 +57,7 @@ export function CreateClassForm({
       division: "",
       avgRunMinutes: "3",
       isYouth: false,
+      isSinglePurse: false,
       entryFee: "",
       addedMoney: "",
       scheduledDate: "",
@@ -115,6 +116,7 @@ export function EditClassForm({
       dragEveryN: showClass.drag_every_n ?? undefined,
       avgRunMinutes: String(showClass.avg_run_minutes),
       isYouth: showClass.is_youth,
+      isSinglePurse: showClass.is_single_purse,
       entryFee: centsToInput(showClass.entry_fee_cents),
       addedMoney: centsToInput(showClass.added_money_cents),
       status: showClass.status,
@@ -341,6 +343,20 @@ function ClassFields({ register, errors, control, classCodeOptions }: { register
         Exempts this class from NRHA retainage in payout calculations and
         from the show&apos;s standard per-entry charges for entries that are
         youth-only (Show Rules P(7)).
+      </p>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-stone-300 accent-brand-700"
+          {...register("isSinglePurse")}
+        />
+        Single Purse structure (aged shows)
+      </label>
+      <p className="-mt-3 text-xs text-stone-500 dark:text-stone-400">
+        One purse, one entry fee, all eligibility levels compete together;
+        a rider&apos;s declared level (1-4) gates which payout tier they can
+        actually cash a check in (Show Rules I(7)). Set each entry&apos;s
+        level from the Results tab once entries are in.
       </p>
     </>
   );

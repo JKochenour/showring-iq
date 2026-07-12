@@ -9,6 +9,7 @@ import {
 } from "@/components/show/results-controls";
 import { PayoutActions, PayoutScheduleEditor } from "@/components/show/payout-controls";
 import { TieResolutionCard } from "@/components/show/tie-resolution-card";
+import { RiderLevelSelect } from "@/components/show/rider-level-select";
 import { Card, EmptyState } from "@/components/ui";
 import { formatCents } from "@/lib/money";
 import type { Result, Score, ShowClass } from "@/lib/types";
@@ -21,6 +22,7 @@ interface ResultRow {
   riderName: string;
   horseName: string;
   backNumber: number | null;
+  riderLevel: 1 | 2 | 3 | 4 | null;
   score: Score | null;
   result: Result | null;
 }
@@ -55,7 +57,7 @@ export default async function ClassResultsPage({
   ] = await Promise.all([
     supabase
       .from("entry_classes")
-      .select("id, entry:entries(id, entry_number, rider_name, horse_name)")
+      .select("id, rider_level, entry:entries(id, entry_number, rider_name, horse_name)")
       .eq("class_id", classId)
       .eq("status", "entered"),
     supabase.from("scores").select("*").eq("class_id", classId),
@@ -89,6 +91,7 @@ export default async function ClassResultsPage({
         riderName: entry?.rider_name ?? "Unknown",
         horseName: entry?.horse_name ?? "Unknown",
         backNumber: entry ? (backByEntry.get(entry.id) ?? null) : null,
+        riderLevel: (ec.rider_level as 1 | 2 | 3 | 4 | null) ?? null,
         score: scoreByEntryClass.get(ec.id as string) ?? null,
         result: resultByEntryClass.get(ec.id as string) ?? null,
       };
@@ -162,6 +165,7 @@ export default async function ClassResultsPage({
               showId={id}
               canCalculate={canCalculatePayouts}
               canApprove={canApprovePayouts}
+              isSinglePurse={showClass.is_single_purse}
             />
           </div>
         )}
@@ -178,6 +182,9 @@ export default async function ClassResultsPage({
                   <th className="py-2 pr-4 font-medium">Placing</th>
                   <th className="py-2 pr-4 font-medium">Back #</th>
                   <th className="py-2 pr-4 font-medium">Rider / Horse</th>
+                  {showClass.is_single_purse && (
+                    <th className="py-2 pr-4 font-medium">Level</th>
+                  )}
                   <th className="py-2 pr-4 font-medium">Score</th>
                   <th className="py-2 pr-4 font-medium">Money won</th>
                   {canPublish && <th className="py-2 font-medium"></th>}
@@ -204,6 +211,11 @@ export default async function ClassResultsPage({
                       ) : (
                         <span className="text-stone-400">—</span>
                       )}
+                      {row.result?.champion_level && (
+                        <p className="text-xs font-normal text-accent-600 dark:text-accent-400">
+                          Level {row.result.champion_level} Champion
+                        </p>
+                      )}
                     </td>
                     <td className="py-3 pr-4 font-mono">
                       {row.backNumber ? `#${row.backNumber}` : "—"}
@@ -214,6 +226,17 @@ export default async function ClassResultsPage({
                         {row.horseName}
                       </p>
                     </td>
+                    {showClass.is_single_purse && (
+                      <td className="py-3 pr-4">
+                        <RiderLevelSelect
+                          entryClassId={row.entryClassId}
+                          showId={id}
+                          classId={classId}
+                          level={row.riderLevel}
+                          disabled={!canCalculatePayouts}
+                        />
+                      </td>
+                    )}
                     <td className="py-3 pr-4 font-mono">
                       {row.score
                         ? row.score.result_status === "shown" ||
