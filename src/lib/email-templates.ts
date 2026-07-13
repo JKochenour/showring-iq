@@ -45,6 +45,21 @@ export function entryConfirmationEmail(opts: {
   };
 }
 
+export function announcementEmail(opts: {
+  showName: string;
+  subject: string;
+  body: string;
+}): { subject: string; html: string } {
+  const paragraphs = opts.body
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 12px">${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+  return {
+    subject: `${opts.showName}: ${opts.subject}`,
+    html: layout(opts.subject, paragraphs),
+  };
+}
+
 export function resultsPostedEmail(opts: {
   showName: string;
   className: string;
