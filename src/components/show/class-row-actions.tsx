@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import {
+  cancelClass,
   deleteClass,
   moveClass,
 } from "@/app/(app)/shows/[id]/classes/actions";
@@ -49,6 +50,46 @@ export function ReorderButtons({
       >
         ▼
       </button>
+    </div>
+  );
+}
+
+export function CancelClassButton({
+  classId,
+  label,
+}: {
+  classId: string;
+  label: string;
+}) {
+  const [error, setError] = useState<string>();
+  const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
+
+  return (
+    <div>
+      <Button
+        variant="danger"
+        disabled={isPending}
+        onClick={async () => {
+          const result = await confirm({
+            title: "Cancel class",
+            message: `Cancel ${label}? It stays in the schedule and records, marked cancelled — entries already in it are unaffected and should be scratched separately if needed.`,
+            tone: "danger",
+            confirmLabel: "Cancel class",
+          });
+          if (!result) return;
+          setError(undefined);
+          startTransition(async () => {
+            const result = await cancelClass(classId);
+            if (result?.error) setError(result.error);
+          });
+        }}
+      >
+        {isPending ? "Cancelling…" : "Cancel class"}
+      </Button>
+      {error && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
+      )}
     </div>
   );
 }

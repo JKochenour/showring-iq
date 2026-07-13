@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { EditClassForm } from "@/components/show/class-form";
-import { DeleteClassButton } from "@/components/show/class-row-actions";
+import { CancelClassButton, DeleteClassButton } from "@/components/show/class-row-actions";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
 import { ClassJudgesManager } from "@/components/show/class-judges-manager";
 import { ClassPatternEditor } from "@/components/show/class-pattern-editor";
@@ -238,17 +238,29 @@ export default async function ClassDetailPage({
         editable={canEdit && showEditable}
       />
 
-      {canDelete && showEditable && (
+      {(canDelete || canEdit) && showEditable && showClass.status !== "cancelled" && (
         <Card className="max-w-2xl border-red-200 dark:border-red-900">
           <h3 className="mb-1 text-sm font-semibold">Danger zone</h3>
           <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
             Deleting a class removes it from the schedule. Once entries exist
-            for it, cancel the class instead.
+            for it (including after a draw or scores, when the status above
+            is no longer editable), cancel the class instead — that works at
+            any stage.
           </p>
-          <DeleteClassButton
-            classId={showClass.id}
-            label={`Class ${showClass.class_number} — ${showClass.name}`}
-          />
+          <div className="flex flex-wrap gap-2">
+            {canEdit && (
+              <CancelClassButton
+                classId={showClass.id}
+                label={`Class ${showClass.class_number} — ${showClass.name}`}
+              />
+            )}
+            {canDelete && (
+              <DeleteClassButton
+                classId={showClass.id}
+                label={`Class ${showClass.class_number} — ${showClass.name}`}
+              />
+            )}
+          </div>
         </Card>
       )}
     </div>

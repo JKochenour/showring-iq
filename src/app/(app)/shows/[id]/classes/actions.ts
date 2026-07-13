@@ -322,6 +322,52 @@ export async function deleteClass(
   redirect(`/shows/${cls.show_id}/classes`);
 }
 
+/** Cancels a class regardless of its current workflow stage. The edit
+ * form only exposes the status dropdown for early-stage classes (draft/
+ * open/entry_closed) since later stages are workflow-driven — but once
+ * entries exist, deleteClass is blocked by the entries FK and its own
+ * error message says "cancel the class instead," which the status
+ * dropdown can no longer do. This is the dedicated escape hatch: same
+ * "cancelled" status set by updateClass, reachable from any status. */
+export async function cancelClass(classId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("show_id, organization_id, class_number, name, status")
+    .eq("id", classId)
+    .maybeSingle();
+  if (!cls) return { error: "Class not found." };
+  if (cls.status === "cancelled") return {};
+
+  const { data: updated, error } = await supabase
+    .from("classes")
+    .update({ status: "cancelled" })
+    .eq("id", classId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error:
+        "Cancel was not applied. You may lack the class.edit permission, or the show is locked/archived.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: cls.organization_id,
+    p_action: "class.cancelled",
+    p_entity_type: "class",
+    p_entity_id: classId,
+    p_old: { status: cls.status },
+    p_new: { status: "cancelled" },
+    p_show: cls.show_id,
+  });
+
+  revalidatePath(`/shows/${cls.show_id}/classes`, "layout");
+  return {};
+}
+
 export async function setClassPattern(
   input: SetClassPatternInput
 ): Promise<ActionResult> {
