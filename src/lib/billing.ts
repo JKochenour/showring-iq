@@ -67,7 +67,29 @@ interface RawPayment {
   refund_of_payment_id: string | null;
 }
 
-async function loadShowBillingData(supabase: SupabaseClient, showId: string) {
+/** Resolve the show ids that make up a weekend (its slates). */
+export async function loadWeekendShowIds(
+  supabase: SupabaseClient,
+  weekendId: string
+): Promise<string[]> {
+  const { data } = await supabase
+    .from("shows")
+    .select("id")
+    .eq("weekend_id", weekendId)
+    .order("start_date");
+  return (data ?? []).map((s) => s.id as string);
+}
+
+async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) {
+  if (showIds.length === 0) {
+    return {
+      entries: [] as RawEntry[],
+      entryClasses: [] as RawEntryClass[],
+      backNumbers: [] as { entry_id: string; number: number }[],
+      miscCharges: [] as RawMiscCharge[],
+      payments: [] as RawPayment[],
+    };
+  }
   const [
     { data: entries },
     { data: entryClasses },
@@ -80,23 +102,23 @@ async function loadShowBillingData(supabase: SupabaseClient, showId: string) {
       .select(
         "id, rider_person_id, rider_name, owner_person_id, owner_name, trainer_person_id, trainer_name, bill_to_trainer, status"
       )
-      .eq("show_id", showId),
+      .in("show_id", showIds),
     supabase
       .from("entry_classes")
       .select("id, entry_id, fee_cents, status, class:classes(class_number, name)")
-      .eq("show_id", showId),
-    supabase.from("back_numbers").select("entry_id, number").eq("show_id", showId),
+      .in("show_id", showIds),
+    supabase.from("back_numbers").select("entry_id, number").in("show_id", showIds),
     supabase
       .from("misc_charges")
       .select("id, person_id, description, category, amount_cents, created_at")
-      .eq("show_id", showId)
+      .in("show_id", showIds)
       .order("created_at", { ascending: false }),
     supabase
       .from("payments")
       .select(
         "id, person_id, method, amount_cents, reference, notes, created_at, is_refund, refund_of_payment_id"
       )
-      .eq("show_id", showId)
+      .in("show_id", showIds)
       .order("created_at", { ascending: false }),
   ]);
 
@@ -127,7 +149,17 @@ export async function loadShowBillingRoster(
   supabase: SupabaseClient,
   showId: string
 ): Promise<BillingRosterRow[]> {
-  return buildRoster(await loadShowBillingData(supabase, showId));
+  return buildRoster(await loadShowBillingData(supabase, [showId]));
+}
+
+/** Roster billed across a whole weekend — one row per responsible party,
+ * aggregating every slate's entry fees, misc charges, and payments. */
+export async function loadWeekendBillingRoster(
+  supabase: SupabaseClient,
+  weekendId: string
+): Promise<BillingRosterRow[]> {
+  const showIds = await loadWeekendShowIds(supabase, weekendId);
+  return buildRoster(await loadShowBillingData(supabase, showIds));
 }
 
 function buildRoster({
@@ -263,8 +295,29 @@ export async function loadPersonBill(
   showId: string,
   personId: string
 ): Promise<PersonBill | null> {
-  const { entries, entryClasses, backNumbers, miscCharges, payments } =
-    await loadShowBillingData(supabase, showId);
+  return buildPersonBill(await loadShowBillingData(supabase, [showId]), personId);
+}
+
+/** One person's consolidated bill across an entire weekend (all slates). */
+export async function loadWeekendPersonBill(
+  supabase: SupabaseClient,
+  weekendId: string,
+  personId: string
+): Promise<PersonBill | null> {
+  const showIds = await loadWeekendShowIds(supabase, weekendId);
+  return buildPersonBill(await loadShowBillingData(supabase, showIds), personId);
+}
+
+function buildPersonBill(
+  {
+    entries,
+    entryClasses,
+    backNumbers,
+    miscCharges,
+    payments,
+  }: Awaited<ReturnType<typeof loadShowBillingData>>,
+  personId: string
+): PersonBill | null {
 
   const personEntries = entries.filter((e) => billedPersonId(e) === personId);
   if (personEntries.length === 0) return null;
@@ -384,7 +437,7 @@ export async function loadReconciliation(
   supabase: SupabaseClient,
   showId: string
 ): Promise<ReconciliationReport> {
-  const raw = await loadShowBillingData(supabase, showId);
+  const raw = await loadShowBillingData(supabase, [showId]);
   const roster = buildRoster(raw);
 
   const entryFeeCents = roster.reduce((sum, r) => sum + r.entryFeeCents, 0);

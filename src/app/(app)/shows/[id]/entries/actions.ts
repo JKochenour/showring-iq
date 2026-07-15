@@ -13,8 +13,11 @@ import {
 export type ActionResult = { error?: string };
 
 function friendlyBackNumberError(message: string): string {
-  if (message.includes("back_numbers_show_id_number_key")) {
-    return "That back number is already in use at this show.";
+  if (
+    message.includes("weekend_back_numbers_weekend_id_number_key") ||
+    message.includes("already used by another horse")
+  ) {
+    return "That back number is already used by another horse this weekend.";
   }
   return message;
 }

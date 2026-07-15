@@ -80,6 +80,14 @@ export interface Show {
     unitPriceCents: number;
     slotOptions: string[];
   }[];
+  weekend_id: string | null;
+  created_at: string;
+}
+
+export interface ShowWeekend {
+  id: string;
+  organization_id: string;
+  name: string;
   created_at: string;
 }
 
