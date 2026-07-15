@@ -1,9 +1,78 @@
-# ShowRing IQ — Session Handoff (updated 2026-07-13)
+# ShowRing IQ — Session Handoff (updated 2026-07-15)
 
 This is a plain-text snapshot of where this project stands. Claude's
 persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
+
+## Latest (2026-07-15, 12th session — SHOW WEEKENDS live-verified, then RUN-LEVEL FEES + EPRHA-STYLE STATEMENT + YOUTH $0 built)
+
+Three things this session, all on branch `feature/show-weekends`, all
+live-verified to the penny and committed. The user drove the direction by
+sharing real EPRHA reference material: a Horse Show for Windows (HSW) entry
+walkthrough video, the paper entry form, and — critically — a **real live
+statement** (Matt Murphy, $3,898) that the run-fee model was validated
+against exactly.
+
+**1. Show weekends — finally LIVE-VERIFIED (commit `118b02a`, migration 00041,
+from the 11th session).** Grouped the two pre-staged QA slates into a weekend,
+entered ONE horse under TWO riders across BOTH slates via the class×day grid,
+and confirmed to the penny: ONE shared back number on the horse; Office $25
+charged ONCE (to the first signer); Video $17 + class $50 per run (4 runs);
+the 2nd rider added per-run fees but NOT another Office. Consolidated weekend
+bill: Jamie $159 / QAJudge One $134. Each slate still exports its own NRHA
+readiness independently. No product bugs. QA slates + weekend deleted after.
+
+**2. Run-level fees (commit `d45c7c9`, migration 00042, applied + verified).**
+Reworked how judge/video/photo bill. The rule (confirmed against the live
+statement): **entry fee per class; judge/video/photo once per RUN** (a set of
+classes that run concurrent — the app's existing `concurrent_group_id`), where
+the judge fee is the **highest** among the run's classes; office/stall/drug
+stay once per horse per weekend. Previously per-run charges were materialized
+once per CLASS (over-charging) and there was no judge-fee concept.
+- Migration 00042: `classes.judge_fee_cents`; `entry_run_fee_overrides` +
+  `set/clear_run_fee_override` RPCs; `update_misc_charge_amount` (edit a
+  charge to $0 while keeping the row); `misc_charges.amount_cents >= 0`;
+  `apply_per_run_charges` retired to a no-op + its stale rows cleaned up.
+- Run fees are **computed live** in `src/lib/billing.ts` (`computeEntryRunFees`,
+  unit-tested), self-correcting when a class is scratched/regrouped — not
+  materialized. Judge fee $ field on the class form. Bill page: Run fees card
+  with per-line **Edit price / Reset** (override a run fee, $0 comps it while
+  the line stays); misc charges gained **Edit price** beside Remove (the
+  camper case: keep the line for the head count, comp the price).
+- **Vitest added** (`npm test`) — 9 tests on the run-fee math.
+- Live-verified: 1100(J$75)+1200(J$55, concurrent)+1400(J$55, separate) + Video
+  $17 + Office $25, one horse in all three → entry $250, judge $130, video ×2
+  $34, office $25 = **$439**. Override video→$0 = $405 (line kept), reset =
+  $439, edit office→$0 = $414, scratch 1400 → auto-recompute = $267. All exact.
+
+**3. EPRHA-style itemized statement + youth office $0 line (commit `1bb3762`,
+migration 00043, applied + verified).**
+- **Statement** rebuilt to match how EPRHA hands bills to exhibitors: grouped
+  by **Back # (horse) → slate → itemized rows** (Qty · Description ·
+  [Exhibitor] · Amount), per-horse subtotals, **Total Fees / Total amount due**
+  footer. Shared `StatementDocument` component; `loadPersonStatement` /
+  `loadWeekendPersonStatement`; new **weekend statement** route linked from the
+  weekend bill. To itemize office/stall/drug under the right horse, added a
+  nullable **`misc_charges.entry_id`** (set by `assign_back_number`;
+  legacy/manual charges stay null → shown under an "Other charges" block).
+- **Youth office fee** is now a kept **$0 line** ("Office fee - youth entry
+  only"), not an omission. `assign_back_number` charges stall/drug to
+  youth-only horses and zeroes any charge flagged **youth_exempt**; per-charge
+  flag + a **"Youth $0"** settings checkbox; starter-set + a backfill pre-flag
+  the office fee. **Behavior change:** youth-only horses now pay stall/drug
+  (this matches the live bill; previously the app skipped ALL standard charges
+  for youth-only).
+- Live-verified: Jamie billed for two horses — Chex (QA Open + QA Int Open
+  concurrent → entry $175, judge $75, video $17, office+stall+drug $220 = $487)
+  + A Little Chrome (youth-only QA Youth → entry $0, video $17, stall $185 +
+  drug $10 + **office $0 "youth entry only"** = $212) = **$699**. The itemized
+  statement grouped both horses correctly to the penny.
+
+**Both migrations 00042 + 00043 are applied live.** Build, lint, and 9 tests
+green throughout. STILL OPEN (noted, not built): the **payee / winning-checks**
+concept (separate from bill-payer, needs a W-9 — both are on the paper entry
+form) and the **$50 Sunday close-out** timing.
 
 ## Latest (2026-07-13, 11th session — Horse Show for Windows deep dive → SHOW WEEKENDS / CIRCUITS): Did a full feature audit of the legacy competitor HSW (read its entire 131-page manual + changelog) against ShowRing IQ. Published a gap-analysis artifact. The user confirmed EPRHA **never runs multi-go classes and never prints checks** (dropping the two scariest gaps), but **runs every class as two "slates" per weekend** — the same class list offered as two separately-placed, separately-paid, separately-submitted NRHA shows, where a horse makes **two separate runs (one per slate)**. Terminology confirmed by the user: **"a circuit is an event weekend," and one circuit holds multiple slates** — which is exactly the model built here (I labeled it "Weekend" in the UI; rename to "Circuit" is trivial if wanted).
 
