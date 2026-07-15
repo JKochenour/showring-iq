@@ -37,11 +37,13 @@ export function StandardChargesEditor({
       {error && <Alert>{error}</Alert>}
       {saved && <Alert tone="success">Standard charges saved.</Alert>}
       <p className="text-sm text-stone-500 dark:text-stone-400">
-        Each of these lands on a person&apos;s bill automatically the first
-        time each of their back numbers is assigned — no manual entry
-        needed. Leave the list empty if this show doesn&apos;t use standard
-        per-entry charges. A charge already applied to a specific bill can
-        still be removed there if it doesn&apos;t apply to that entry.
+        These land on a person&apos;s bill automatically — no manual entry
+        needed. A normal charge (office, stall, drug) applies once per horse
+        the first time it gets a back number. Check <strong>Per run</strong>
+        for a video or photo fee: it&apos;s charged once per run (a set of
+        classes that run concurrent), so a horse making two runs pays it
+        twice. Leave the list empty if this show doesn&apos;t use standard
+        charges. Any amount can be edited or comped on a specific bill.
       </p>
       {rows.length > 0 && (
         <div className="space-y-2">

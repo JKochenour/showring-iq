@@ -102,6 +102,35 @@ export default async function WeekendPersonBillPage({
       </Card>
 
       <Card>
+        <h3 className="mb-3 text-base font-semibold">Run fees (all slates)</h3>
+        {bill.runFees.length === 0 ? (
+          <p className="text-sm text-stone-500 dark:text-stone-400">No run fees.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+              {bill.runFees.map((line) => (
+                <tr key={`${line.entryId}:${line.feeKey}`}>
+                  <td className="py-2 pr-4">
+                    {line.backNumber !== null && (
+                      <span className="text-stone-500 dark:text-stone-400">
+                        #{line.backNumber}{" "}
+                      </span>
+                    )}
+                    {line.label}
+                    {line.feeKey !== "judge" && line.runCount > 1 && ` ×${line.runCount}`}
+                  </td>
+                  <td className="py-2 text-right">{formatCents(line.effectiveCents)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p className="mt-3 text-right text-sm font-semibold">
+          Subtotal: {formatCents(bill.runFeeCents)}
+        </p>
+      </Card>
+
+      <Card>
         <h3 className="mb-3 text-base font-semibold">Misc charges (all slates)</h3>
         {bill.charges.length === 0 ? (
           <p className="text-sm text-stone-500 dark:text-stone-400">No misc charges.</p>

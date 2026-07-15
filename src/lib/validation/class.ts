@@ -74,6 +74,7 @@ const classFields = {
   isYouth: z.boolean(),
   isSinglePurse: z.boolean(),
   entryFee: money,
+  judgeFee: money,
   addedMoney: money,
   scheduledDate: z.iso.date("Enter a valid date").or(z.literal("")).optional(),
   nrhaClassCode: z.string().trim().max(20).optional(),

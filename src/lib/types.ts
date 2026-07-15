@@ -173,6 +173,7 @@ export interface ShowClass {
   go_number: number;
   entry_fee_cents: number;
   added_money_cents: number;
+  judge_fee_cents: number;
   status: ClassStatus;
   scheduled_date: string | null;
   drag_every_n: number | null;

@@ -217,14 +217,12 @@ export async function createWeekendEntry(
     const toAdd = slateClasses.filter((c) => !alreadyIn.has(c.id));
 
     if (toAdd.length > 0) {
-      const { data: createdECs, error: ecError } = await supabase
+      const { error: ecError } = await supabase
         .from("entry_classes")
-        .insert(toAdd.map((c) => ({ entry_id: entryId, class_id: c.id, fee_cents: c.entry_fee_cents })))
-        .select("id");
+        .insert(toAdd.map((c) => ({ entry_id: entryId, class_id: c.id, fee_cents: c.entry_fee_cents })));
       if (ecError) return { error: ecError.message };
-      for (const ec of createdECs ?? []) {
-        await supabase.rpc("apply_per_run_charges", { p_entry_class: ec.id });
-      }
+      // Run fees (judge/video/photo) are computed live per run in billing.ts
+      // (00042) from these classes — nothing to materialize here.
     }
 
     // Share the horse's weekend back number (also applies the once-per-

@@ -128,11 +128,8 @@ export async function createEntry(
     return { error: classesError.message };
   }
 
-  // Per-run standard charges (e.g. a per-run video fee) apply once per
-  // class entered — see 00036_conditional_fees.sql.
-  for (const ec of createdClasses ?? []) {
-    await supabase.rpc("apply_per_run_charges", { p_entry_class: ec.id });
-  }
+  // Run fees (judge/video/photo) are computed live per run in billing.ts
+  // (00042), not materialized per class — nothing to apply here.
 
   if (d.lateEntry) {
     await supabase.rpc("apply_late_entry_fee", { p_entry: entry.id });
@@ -328,10 +325,8 @@ export async function addEntryClass(
     p_show: entry.show_id,
   });
 
-  // Per-run standard charges (e.g. a per-run video fee) apply once per
-  // class entered — see 00036_conditional_fees.sql. Best-effort: a
-  // charge failure here shouldn't undo the class that was just added.
-  await supabase.rpc("apply_per_run_charges", { p_entry_class: created.id });
+  // Run fees are computed live per run in billing.ts (00042) — adding this
+  // class simply changes the run structure the bill reads from.
 
   revalidatePath(`/shows/${entry.show_id}/entries/${d.entryId}`);
   revalidatePath(`/shows/${entry.show_id}/financials`);

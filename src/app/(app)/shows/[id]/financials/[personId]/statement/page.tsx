@@ -132,6 +132,36 @@ export default async function PersonStatementPage({
           </table>
         )}
 
+        {bill.runFees.length > 0 && (
+          <>
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
+              Run fees
+            </h2>
+            <table className="mb-4 w-full text-sm">
+              <tbody className="divide-y divide-stone-200">
+                {bill.runFees.map((line) => (
+                  <tr key={`${line.entryId}:${line.feeKey}`}>
+                    <td className="py-1.5 pr-4">
+                      {line.backNumber !== null && `#${line.backNumber} `}
+                      {line.label}
+                      {line.feeKey !== "judge" && line.runCount > 1 && ` ×${line.runCount}`}
+                    </td>
+                    <td className="py-1.5 text-right font-mono">
+                      {formatCents(line.effectiveCents)}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="border-t border-stone-300">
+                  <td className="py-1.5 pr-4 font-semibold">Run fees subtotal</td>
+                  <td className="py-1.5 text-right font-mono font-semibold">
+                    {formatCents(bill.runFeeCents)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </>
+        )}
+
         {bill.charges.length > 0 && (
           <>
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">

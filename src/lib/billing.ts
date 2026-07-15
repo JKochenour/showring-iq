@@ -26,6 +26,7 @@ function billedPersonName(entry: {
 
 interface RawEntry {
   id: string;
+  show_id: string;
   rider_person_id: string;
   rider_name: string;
   owner_person_id: string | null;
@@ -41,7 +42,12 @@ interface RawEntryClass {
   entry_id: string;
   fee_cents: number;
   status: "entered" | "scratched";
-  class: { class_number: number; name: string } | null;
+  class: {
+    class_number: number;
+    name: string;
+    concurrent_group_id: string | null;
+    judge_fee_cents: number;
+  } | null;
 }
 
 interface RawMiscCharge {
@@ -52,6 +58,21 @@ interface RawMiscCharge {
   amount_cents: number;
   created_at: string;
 }
+
+/** A show's per-run standard charge (e.g. Video, Photo) — charged once per
+ * run (concurrent group), not per class. */
+interface PerRunCharge {
+  label: string;
+  amountCents: number;
+}
+
+interface RawRunFeeOverride {
+  entry_id: string;
+  fee_key: string;
+  amount_cents: number;
+}
+
+export const JUDGE_FEE_KEY = "judge";
 
 export type PaymentMethod = "cash" | "check" | "card" | "other";
 
@@ -65,6 +86,83 @@ interface RawPayment {
   created_at: string;
   is_refund: boolean;
   refund_of_payment_id: string | null;
+}
+
+/** One computed run fee for one entry: judge (max in each run, summed) or a
+ * per-run standard charge (amount × run count). The override, when set,
+ * replaces the computed total for that (entry, feeKey). */
+export interface RunFeeLine {
+  entryId: string;
+  backNumber: number | null;
+  feeKey: string;
+  label: string;
+  /** Number of runs (physical arena trips) this entry makes. */
+  runCount: number;
+  computedCents: number;
+  overrideCents: number | null;
+  effectiveCents: number;
+}
+
+/**
+ * Run-level fees for one entry. An entry's entered classes are partitioned
+ * into runs by classes.concurrent_group_id (each ungrouped class is its own
+ * run). Per run: the judge fee is the highest among the run's classes, and
+ * each per-run standard charge (video/photo) applies once. Overrides replace
+ * the computed total for a fee_key. Exported for unit testing.
+ */
+export function computeEntryRunFees(
+  enteredClasses: { concurrentGroupId: string | null; judgeFeeCents: number }[],
+  perRunCharges: PerRunCharge[],
+  overrides: Map<string, number>
+): { lines: Omit<RunFeeLine, "entryId" | "backNumber">[]; totalCents: number } {
+  // Partition into runs.
+  const runJudgeMax: number[] = [];
+  const groupToRun = new Map<string, number>();
+  for (const c of enteredClasses) {
+    let runIdx: number;
+    if (c.concurrentGroupId && groupToRun.has(c.concurrentGroupId)) {
+      runIdx = groupToRun.get(c.concurrentGroupId)!;
+    } else {
+      runIdx = runJudgeMax.length;
+      runJudgeMax.push(0);
+      if (c.concurrentGroupId) groupToRun.set(c.concurrentGroupId, runIdx);
+    }
+    runJudgeMax[runIdx] = Math.max(runJudgeMax[runIdx], c.judgeFeeCents);
+  }
+  const runCount = runJudgeMax.length;
+
+  const lines: Omit<RunFeeLine, "entryId" | "backNumber">[] = [];
+
+  const judgeComputed = runJudgeMax.reduce((s, m) => s + m, 0);
+  const judgeOverride = overrides.has(JUDGE_FEE_KEY) ? overrides.get(JUDGE_FEE_KEY)! : null;
+  if (judgeComputed > 0 || judgeOverride !== null) {
+    lines.push({
+      feeKey: JUDGE_FEE_KEY,
+      label: "Judge fee",
+      runCount,
+      computedCents: judgeComputed,
+      overrideCents: judgeOverride,
+      effectiveCents: judgeOverride ?? judgeComputed,
+    });
+  }
+
+  for (const charge of perRunCharges) {
+    const computed = runCount * charge.amountCents;
+    const override = overrides.has(charge.label) ? overrides.get(charge.label)! : null;
+    if (computed > 0 || override !== null) {
+      lines.push({
+        feeKey: charge.label,
+        label: charge.label,
+        runCount,
+        computedCents: computed,
+        overrideCents: override,
+        effectiveCents: override ?? computed,
+      });
+    }
+  }
+
+  const totalCents = lines.reduce((s, l) => s + l.effectiveCents, 0);
+  return { lines, totalCents };
 }
 
 /** Resolve the show ids that make up a weekend (its slates). */
@@ -81,31 +179,39 @@ export async function loadWeekendShowIds(
 }
 
 async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) {
-  if (showIds.length === 0) {
-    return {
-      entries: [] as RawEntry[],
-      entryClasses: [] as RawEntryClass[],
-      backNumbers: [] as { entry_id: string; number: number }[],
-      miscCharges: [] as RawMiscCharge[],
-      payments: [] as RawPayment[],
-    };
-  }
+  const empty = {
+    entries: [] as RawEntry[],
+    entryClasses: [] as RawEntryClass[],
+    backNumbers: [] as { entry_id: string; number: number }[],
+    miscCharges: [] as RawMiscCharge[],
+    payments: [] as RawPayment[],
+    perRunByShow: new Map<string, PerRunCharge[]>(),
+    overrides: [] as RawRunFeeOverride[],
+  };
+  if (showIds.length === 0) return empty;
+
+  const { data: entriesData } = await supabase
+    .from("entries")
+    .select(
+      "id, show_id, rider_person_id, rider_name, owner_person_id, owner_name, trainer_person_id, trainer_name, bill_to_trainer, status"
+    )
+    .in("show_id", showIds);
+  const entries = (entriesData as RawEntry[]) ?? [];
+  const entryIds = entries.map((e) => e.id);
+
   const [
-    { data: entries },
     { data: entryClasses },
     { data: backNumbers },
     { data: miscCharges },
     { data: payments },
+    { data: shows },
+    overridesRes,
   ] = await Promise.all([
     supabase
-      .from("entries")
-      .select(
-        "id, rider_person_id, rider_name, owner_person_id, owner_name, trainer_person_id, trainer_name, bill_to_trainer, status"
-      )
-      .in("show_id", showIds),
-    supabase
       .from("entry_classes")
-      .select("id, entry_id, fee_cents, status, class:classes(class_number, name)")
+      .select(
+        "id, entry_id, fee_cents, status, class:classes(class_number, name, concurrent_group_id, judge_fee_cents)"
+      )
       .in("show_id", showIds),
     supabase.from("back_numbers").select("entry_id, number").in("show_id", showIds),
     supabase
@@ -120,15 +226,84 @@ async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) 
       )
       .in("show_id", showIds)
       .order("created_at", { ascending: false }),
+    supabase.from("shows").select("id, standard_entry_charges").in("id", showIds),
+    entryIds.length > 0
+      ? supabase
+          .from("entry_run_fee_overrides")
+          .select("entry_id, fee_key, amount_cents")
+          .in("entry_id", entryIds)
+      : Promise.resolve({ data: [] as RawRunFeeOverride[] }),
   ]);
 
+  const perRunByShow = new Map<string, PerRunCharge[]>();
+  for (const s of (shows as { id: string; standard_entry_charges: { label: string; amount_cents: number; per_run?: boolean }[] }[]) ?? []) {
+    const perRun = (s.standard_entry_charges ?? [])
+      .filter((c) => c.per_run === true && c.label?.trim() && c.amount_cents > 0)
+      .map((c) => ({ label: c.label.trim(), amountCents: c.amount_cents }));
+    perRunByShow.set(s.id, perRun);
+  }
+
   return {
-    entries: (entries as RawEntry[]) ?? [],
+    entries,
     entryClasses: (entryClasses as unknown as RawEntryClass[]) ?? [],
     backNumbers: (backNumbers as { entry_id: string; number: number }[]) ?? [],
     miscCharges: (miscCharges as RawMiscCharge[]) ?? [],
     payments: (payments as RawPayment[]) ?? [],
+    perRunByShow,
+    overrides: (overridesRes.data as RawRunFeeOverride[]) ?? [],
   };
+}
+
+type BillingData = Awaited<ReturnType<typeof loadShowBillingData>>;
+
+/** Build, per entry, its entered classes + the run-fee lines for it, keyed by
+ * entry id. Shared by the roster and the per-person bill. */
+function runFeesByEntry(data: BillingData): Map<string, RunFeeLine[]> {
+  const enteredByEntry = new Map<string, { concurrentGroupId: string | null; judgeFeeCents: number }[]>();
+  for (const ec of data.entryClasses) {
+    if (ec.status !== "entered" || !ec.class) continue;
+    const list = enteredByEntry.get(ec.entry_id) ?? [];
+    list.push({
+      concurrentGroupId: ec.class.concurrent_group_id,
+      judgeFeeCents: ec.class.judge_fee_cents ?? 0,
+    });
+    enteredByEntry.set(ec.entry_id, list);
+  }
+
+  const overridesByEntry = new Map<string, Map<string, number>>();
+  for (const o of data.overrides) {
+    const m = overridesByEntry.get(o.entry_id) ?? new Map<string, number>();
+    m.set(o.fee_key, o.amount_cents);
+    overridesByEntry.set(o.entry_id, m);
+  }
+
+  const backByEntry = new Map<string, number>();
+  for (const bn of data.backNumbers) {
+    if (!backByEntry.has(bn.entry_id)) backByEntry.set(bn.entry_id, bn.number);
+  }
+
+  const showByEntry = new Map(data.entries.map((e) => [e.id, e.show_id]));
+
+  const result = new Map<string, RunFeeLine[]>();
+  // Cover every entry (an entry with an override but no entered class still
+  // shows the overridden line), plus every entry that has entered classes.
+  const entryIds = new Set<string>([...enteredByEntry.keys(), ...overridesByEntry.keys()]);
+  for (const entryId of entryIds) {
+    const showId = showByEntry.get(entryId);
+    if (!showId) continue;
+    const perRun = data.perRunByShow.get(showId) ?? [];
+    const { lines } = computeEntryRunFees(
+      enteredByEntry.get(entryId) ?? [],
+      perRun,
+      overridesByEntry.get(entryId) ?? new Map()
+    );
+    if (lines.length === 0) continue;
+    result.set(
+      entryId,
+      lines.map((l) => ({ ...l, entryId, backNumber: backByEntry.get(entryId) ?? null }))
+    );
+  }
+  return result;
 }
 
 export interface BillingRosterRow {
@@ -137,6 +312,7 @@ export interface BillingRosterRow {
   backNumbers: number[];
   entryFeeCents: number;
   miscChargeCents: number;
+  runFeeCents: number;
   totalCents: number;
   paidCents: number;
   balanceCents: number;
@@ -162,13 +338,9 @@ export async function loadWeekendBillingRoster(
   return buildRoster(await loadShowBillingData(supabase, showIds));
 }
 
-function buildRoster({
-  entries,
-  entryClasses,
-  backNumbers,
-  miscCharges,
-  payments,
-}: Awaited<ReturnType<typeof loadShowBillingData>>): BillingRosterRow[] {
+function buildRoster(data: BillingData): BillingRosterRow[] {
+  const { entries, entryClasses, backNumbers, miscCharges, payments } = data;
+
   const backByEntry = new Map<string, number[]>();
   for (const bn of backNumbers) {
     const list = backByEntry.get(bn.entry_id) ?? [];
@@ -184,6 +356,12 @@ function buildRoster({
     feesByEntry.set(ec.entry_id, (feesByEntry.get(ec.entry_id) ?? 0) + ec.fee_cents);
   }
 
+  const runFees = runFeesByEntry(data);
+  const runFeeByEntry = new Map<string, number>();
+  for (const [entryId, lines] of runFees) {
+    runFeeByEntry.set(entryId, lines.reduce((s, l) => s + l.effectiveCents, 0));
+  }
+
   const rows = new Map<string, BillingRosterRow>();
   const ridersByPerson = new Map<string, Set<string>>();
   for (const entry of entries) {
@@ -194,12 +372,14 @@ function buildRoster({
       backNumbers: [],
       entryFeeCents: 0,
       miscChargeCents: 0,
+      runFeeCents: 0,
       totalCents: 0,
       paidCents: 0,
       balanceCents: 0,
       billedRiderNames: [],
     };
     existing.entryFeeCents += feesByEntry.get(entry.id) ?? 0;
+    existing.runFeeCents += runFeeByEntry.get(entry.id) ?? 0;
     existing.backNumbers.push(...(backByEntry.get(entry.id) ?? []));
     rows.set(personId, existing);
 
@@ -229,11 +409,12 @@ function buildRoster({
   return [...rows.values()]
     .map((r) => {
       const riders = ridersByPerson.get(r.personId);
+      const totalCents = r.entryFeeCents + r.miscChargeCents + r.runFeeCents;
       return {
         ...r,
         backNumbers: [...new Set(r.backNumbers)].sort((a, b) => a - b),
-        totalCents: r.entryFeeCents + r.miscChargeCents,
-        balanceCents: r.entryFeeCents + r.miscChargeCents - r.paidCents,
+        totalCents,
+        balanceCents: totalCents - r.paidCents,
         billedRiderNames: riders && riders.size > 1 ? [...riders].sort() : [],
       };
     })
@@ -280,9 +461,11 @@ export interface PersonBill {
   backNumbers: number[];
   billedRiderNames: string[];
   lineItems: PersonBillLineItem[];
+  runFees: RunFeeLine[];
   charges: PersonBillCharge[];
   payments: PersonBillPayment[];
   entryFeeCents: number;
+  runFeeCents: number;
   miscChargeCents: number;
   totalCents: number;
   paidCents: number;
@@ -308,16 +491,8 @@ export async function loadWeekendPersonBill(
   return buildPersonBill(await loadShowBillingData(supabase, showIds), personId);
 }
 
-function buildPersonBill(
-  {
-    entries,
-    entryClasses,
-    backNumbers,
-    miscCharges,
-    payments,
-  }: Awaited<ReturnType<typeof loadShowBillingData>>,
-  personId: string
-): PersonBill | null {
+function buildPersonBill(data: BillingData, personId: string): PersonBill | null {
+  const { entries, entryClasses, backNumbers, miscCharges, payments } = data;
 
   const personEntries = entries.filter((e) => billedPersonId(e) === personId);
   if (personEntries.length === 0) return null;
@@ -338,6 +513,11 @@ function buildPersonBill(
       riderName: showRiderPerLine ? (riderNameByEntry.get(ec.entry_id) ?? null) : null,
     }))
     .sort((a, b) => a.classNumber - b.classNumber);
+
+  const runFeesAll = runFeesByEntry(data);
+  const runFees: RunFeeLine[] = [...personEntryIds]
+    .flatMap((id) => runFeesAll.get(id) ?? [])
+    .sort((a, b) => (a.backNumber ?? 0) - (b.backNumber ?? 0) || a.label.localeCompare(b.label));
 
   const backNums = [
     ...new Set(
@@ -384,6 +564,7 @@ function buildPersonBill(
   const entryFeeCents = lineItems
     .filter((li) => li.status === "entered")
     .reduce((sum, li) => sum + li.feeCents, 0);
+  const runFeeCents = runFees.reduce((sum, l) => sum + l.effectiveCents, 0);
   const miscChargeCents = charges.reduce((sum, c) => sum + c.amountCents, 0);
   const receivedCents = personPayments
     .filter((p) => !p.isRefund)
@@ -392,6 +573,7 @@ function buildPersonBill(
     .filter((p) => p.isRefund)
     .reduce((sum, p) => sum + p.amountCents, 0);
   const paidCents = receivedCents - refundedCents;
+  const totalCents = entryFeeCents + runFeeCents + miscChargeCents;
 
   return {
     personId,
@@ -399,14 +581,16 @@ function buildPersonBill(
     backNumbers: backNums,
     billedRiderNames: showRiderPerLine ? distinctRiders.sort() : [],
     lineItems,
+    runFees,
     charges,
     payments: personPayments,
     entryFeeCents,
+    runFeeCents,
     miscChargeCents,
-    totalCents: entryFeeCents + miscChargeCents,
+    totalCents,
     paidCents,
     refundedCents,
-    balanceCents: entryFeeCents + miscChargeCents - paidCents,
+    balanceCents: totalCents - paidCents,
   };
 }
 
@@ -414,7 +598,7 @@ export interface ReconciliationReport {
   /** Sum of entry fees for entered (non-scratched) rides. */
   entryFeeCents: number;
   enteredRideCount: number;
-  /** Misc charges grouped by category, largest first. */
+  /** Misc charges + computed run fees grouped by category, largest first. */
   chargesByCategory: { category: string; count: number; amountCents: number }[];
   miscChargeCents: number;
   totalChargedCents: number;
@@ -451,6 +635,17 @@ export async function loadReconciliation(
     bucket.count += 1;
     bucket.amountCents += c.amount_cents;
     byCategory.set(c.category, bucket);
+  }
+  // Fold computed run fees into the category breakdown so the report is whole
+  // even though they aren't materialized as misc_charges.
+  for (const lines of runFeesByEntry(raw).values()) {
+    for (const l of lines) {
+      if (l.effectiveCents === 0) continue;
+      const bucket = byCategory.get(l.label) ?? { count: 0, amountCents: 0 };
+      bucket.count += 1;
+      bucket.amountCents += l.effectiveCents;
+      byCategory.set(l.label, bucket);
+    }
   }
   const chargesByCategory = [...byCategory.entries()]
     .map(([category, v]) => ({ category, ...v }))
