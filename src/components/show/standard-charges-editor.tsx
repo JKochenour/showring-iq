@@ -42,8 +42,11 @@ export function StandardChargesEditor({
         the first time it gets a back number. Check <strong>Per run</strong>
         for a video or photo fee: it&apos;s charged once per run (a set of
         classes that run concurrent), so a horse making two runs pays it
-        twice. Leave the list empty if this show doesn&apos;t use standard
-        charges. Any amount can be edited or comped on a specific bill.
+        twice. Check <strong>Youth $0</strong> (e.g. the office fee) to zero
+        it for a youth-only horse — the line still shows as
+        &ldquo;… - youth entry only&rdquo; so you keep the count. Leave the
+        list empty if this show doesn&apos;t use standard charges. Any amount
+        can be edited or comped on a specific bill.
       </p>
       {rows.length > 0 && (
         <div className="space-y-2">
@@ -86,6 +89,20 @@ export function StandardChargesEditor({
                 />
                 Per run
               </label>
+              <label className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-stone-300 accent-brand-700"
+                  checked={row.youthExempt}
+                  disabled={!canEdit}
+                  onChange={(e) => {
+                    const next = [...rows];
+                    next[i] = { ...next[i], youthExempt: e.target.checked };
+                    setRows(next);
+                  }}
+                />
+                Youth $0
+              </label>
               {canEdit && (
                 <Button
                   type="button"
@@ -104,7 +121,9 @@ export function StandardChargesEditor({
           <Button
             type="button"
             variant="secondary"
-            onClick={() => setRows([...rows, { label: "", amount: "", perRun: false }])}
+            onClick={() =>
+              setRows([...rows, { label: "", amount: "", perRun: false, youthExempt: false }])
+            }
           >
             Add row
           </Button>
@@ -113,7 +132,13 @@ export function StandardChargesEditor({
               type="button"
               variant="secondary"
               onClick={() =>
-                setRows(STANDARD_CHARGE_STARTER_SET.map((r) => ({ ...r, perRun: false })))
+                setRows(
+                  STANDARD_CHARGE_STARTER_SET.map((r) => ({
+                    ...r,
+                    perRun: false,
+                    youthExempt: r.label.toLowerCase().includes("office"),
+                  }))
+                )
               }
             >
               Load stall / office / drug fee starter set

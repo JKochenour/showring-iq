@@ -118,9 +118,12 @@ export const standardChargeRowSchema = z.object({
     .trim()
     .regex(MONEY_PATTERN, "Enter a dollar amount like 25 or 25.00")
     .or(z.literal("")),
-  /** When true, applies once per CLASS entered (e.g. a per-run video
-   * fee) instead of once per entry/back number. */
+  /** When true, applies once per RUN (concurrent group) — e.g. a video
+   * fee — computed live in billing.ts instead of once per horse. */
   perRun: z.boolean().default(false),
+  /** When true, this charge is $0 for a youth-only horse (kept as a
+   * "- youth entry only" line), e.g. the office fee. */
+  youthExempt: z.boolean().default(false),
 });
 
 export const updateStandardChargesSchema = z.object({

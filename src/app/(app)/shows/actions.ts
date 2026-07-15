@@ -149,6 +149,7 @@ export async function updateStandardCharges(
       label: c.label.trim(),
       amount_cents: dollarsToCents(c.amount),
       per_run: c.perRun,
+      youth_exempt: c.youthExempt,
     }));
 
   const { data: updated, error } = await supabase

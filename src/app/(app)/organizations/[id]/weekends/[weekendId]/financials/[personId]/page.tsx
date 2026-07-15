@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadWeekendPersonBill } from "@/lib/billing";
-import { Alert, Badge, Card, PageHeader } from "@/components/ui";
+import { Alert, Badge, ButtonLink, Card, PageHeader } from "@/components/ui";
 import { formatCents } from "@/lib/money";
 
 export const metadata = { title: "Weekend bill — ShowRing IQ" };
@@ -50,14 +50,22 @@ export default async function WeekendPersonBillPage({
           </Link>{" "}
           / {bill.name}
         </p>
-        <PageHeader
-          title={bill.name}
-          description={
-            bill.backNumbers.length > 0
-              ? `Back ${bill.backNumbers.length > 1 ? "numbers" : "number"} ${bill.backNumbers.map((n) => `#${n}`).join(", ")} · whole weekend`
-              : "Whole weekend"
-          }
-        />
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <PageHeader
+            title={bill.name}
+            description={
+              bill.backNumbers.length > 0
+                ? `Back ${bill.backNumbers.length > 1 ? "numbers" : "number"} ${bill.backNumbers.map((n) => `#${n}`).join(", ")} · whole weekend`
+                : "Whole weekend"
+            }
+          />
+          <ButtonLink
+            href={`/organizations/${id}/weekends/${weekendId}/financials/${personId}/statement`}
+            variant="secondary"
+          >
+            Printable statement
+          </ButtonLink>
+        </div>
       </div>
 
       <Card>

@@ -64,7 +64,12 @@ export interface Show {
   description: string | null;
   nrha_show_number: string | null;
   medication_fee_cents: number;
-  standard_entry_charges: { label: string; amount_cents: number; per_run?: boolean }[];
+  standard_entry_charges: {
+    label: string;
+    amount_cents: number;
+    per_run?: boolean;
+    youth_exempt?: boolean;
+  }[];
   schedule_start_time: string;
   schedule_break_minutes: number;
   schedule_drag_minutes: number;

@@ -27,6 +27,8 @@ function billedPersonName(entry: {
 interface RawEntry {
   id: string;
   show_id: string;
+  horse_id: string;
+  horse_name: string | null;
   rider_person_id: string;
   rider_name: string;
   owner_person_id: string | null;
@@ -53,6 +55,7 @@ interface RawEntryClass {
 interface RawMiscCharge {
   id: string;
   person_id: string;
+  entry_id: string | null;
   description: string;
   category: string;
   amount_cents: number;
@@ -186,6 +189,7 @@ async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) 
     miscCharges: [] as RawMiscCharge[],
     payments: [] as RawPayment[],
     perRunByShow: new Map<string, PerRunCharge[]>(),
+    showNameById: new Map<string, string>(),
     overrides: [] as RawRunFeeOverride[],
   };
   if (showIds.length === 0) return empty;
@@ -193,7 +197,7 @@ async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) 
   const { data: entriesData } = await supabase
     .from("entries")
     .select(
-      "id, show_id, rider_person_id, rider_name, owner_person_id, owner_name, trainer_person_id, trainer_name, bill_to_trainer, status"
+      "id, show_id, horse_id, horse_name, rider_person_id, rider_name, owner_person_id, owner_name, trainer_person_id, trainer_name, bill_to_trainer, status"
     )
     .in("show_id", showIds);
   const entries = (entriesData as RawEntry[]) ?? [];
@@ -216,7 +220,7 @@ async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) 
     supabase.from("back_numbers").select("entry_id, number").in("show_id", showIds),
     supabase
       .from("misc_charges")
-      .select("id, person_id, description, category, amount_cents, created_at")
+      .select("id, person_id, entry_id, description, category, amount_cents, created_at")
       .in("show_id", showIds)
       .order("created_at", { ascending: false }),
     supabase
@@ -226,7 +230,7 @@ async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) 
       )
       .in("show_id", showIds)
       .order("created_at", { ascending: false }),
-    supabase.from("shows").select("id, standard_entry_charges").in("id", showIds),
+    supabase.from("shows").select("id, name, standard_entry_charges").in("id", showIds),
     entryIds.length > 0
       ? supabase
           .from("entry_run_fee_overrides")
@@ -236,7 +240,9 @@ async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) 
   ]);
 
   const perRunByShow = new Map<string, PerRunCharge[]>();
-  for (const s of (shows as { id: string; standard_entry_charges: { label: string; amount_cents: number; per_run?: boolean }[] }[]) ?? []) {
+  const showNameById = new Map<string, string>();
+  for (const s of (shows as { id: string; name: string; standard_entry_charges: { label: string; amount_cents: number; per_run?: boolean }[] }[]) ?? []) {
+    showNameById.set(s.id, s.name);
     const perRun = (s.standard_entry_charges ?? [])
       .filter((c) => c.per_run === true && c.label?.trim() && c.amount_cents > 0)
       .map((c) => ({ label: c.label.trim(), amountCents: c.amount_cents }));
@@ -250,6 +256,7 @@ async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) 
     miscCharges: (miscCharges as RawMiscCharge[]) ?? [],
     payments: (payments as RawPayment[]) ?? [],
     perRunByShow,
+    showNameById,
     overrides: (overridesRes.data as RawRunFeeOverride[]) ?? [],
   };
 }
@@ -592,6 +599,214 @@ function buildPersonBill(data: BillingData, personId: string): PersonBill | null
     refundedCents,
     balanceCents: totalCents - paidCents,
   };
+}
+
+// ── Itemized statement, grouped by horse (Back #) → slate ──────────────
+// Mirrors EPRHA's real printed statement: each horse's fees itemized under
+// its back number, split by slate, with a Total Fees / amount due footer.
+
+export interface StatementRow {
+  qty: number;
+  description: string;
+  exhibitor: string | null;
+  amountCents: number;
+  /** Scratched class fee — shown struck, excluded from subtotals. */
+  struck: boolean;
+}
+
+export interface StatementSlate {
+  showId: string;
+  showLabel: string;
+  rows: StatementRow[];
+  subtotalCents: number;
+}
+
+export interface StatementHorse {
+  backNumber: number | null;
+  horseName: string | null;
+  slates: StatementSlate[];
+}
+
+export interface PersonStatement {
+  personId: string;
+  name: string;
+  billedRiderNames: string[];
+  horses: StatementHorse[];
+  /** Person-level charges not tied to a horse (e.g. a hand-added camper). */
+  otherCharges: StatementRow[];
+  otherChargesCents: number;
+  totalFeesCents: number;
+  payments: PersonBillPayment[];
+  paidCents: number;
+  refundedCents: number;
+  balanceCents: number;
+}
+
+function mapPersonPayments(
+  payments: RawPayment[],
+  personId: string
+): { payments: PersonBillPayment[]; paidCents: number; refundedCents: number } {
+  const refundedByOriginal = new Map<string, number>();
+  for (const p of payments) {
+    if (p.is_refund && p.refund_of_payment_id) {
+      refundedByOriginal.set(
+        p.refund_of_payment_id,
+        (refundedByOriginal.get(p.refund_of_payment_id) ?? 0) + p.amount_cents
+      );
+    }
+  }
+  const personPayments: PersonBillPayment[] = payments
+    .filter((p) => p.person_id === personId)
+    .map((p) => ({
+      id: p.id,
+      method: p.method,
+      amountCents: p.amount_cents,
+      reference: p.reference,
+      notes: p.notes,
+      createdAt: p.created_at,
+      isRefund: p.is_refund,
+      refundOfPaymentId: p.refund_of_payment_id,
+      refundedCents: refundedByOriginal.get(p.id) ?? 0,
+    }));
+  const received = personPayments.filter((p) => !p.isRefund).reduce((s, p) => s + p.amountCents, 0);
+  const refundedCents = personPayments.filter((p) => p.isRefund).reduce((s, p) => s + p.amountCents, 0);
+  return { payments: personPayments, paidCents: received - refundedCents, refundedCents };
+}
+
+function buildPersonStatement(data: BillingData, personId: string): PersonStatement | null {
+  const { entries, entryClasses, backNumbers, miscCharges, payments, showNameById } = data;
+
+  const personEntries = entries.filter((e) => billedPersonId(e) === personId);
+  if (personEntries.length === 0) return null;
+  const personEntryIds = new Set(personEntries.map((e) => e.id));
+
+  const backByEntry = new Map<string, number>();
+  for (const bn of backNumbers) if (!backByEntry.has(bn.entry_id)) backByEntry.set(bn.entry_id, bn.number);
+
+  const ecByEntry = new Map<string, RawEntryClass[]>();
+  for (const ec of entryClasses) {
+    if (!personEntryIds.has(ec.entry_id) || !ec.class) continue;
+    const list = ecByEntry.get(ec.entry_id) ?? [];
+    list.push(ec);
+    ecByEntry.set(ec.entry_id, list);
+  }
+
+  const runFeesAll = runFeesByEntry(data);
+
+  const miscByEntry = new Map<string, RawMiscCharge[]>();
+  const otherChargesRaw: RawMiscCharge[] = [];
+  for (const c of miscCharges) {
+    if (c.person_id !== personId) continue;
+    if (c.entry_id && personEntryIds.has(c.entry_id)) {
+      const list = miscByEntry.get(c.entry_id) ?? [];
+      list.push(c);
+      miscByEntry.set(c.entry_id, list);
+    } else {
+      otherChargesRaw.push(c);
+    }
+  }
+
+  const horseMap = new Map<string, StatementHorse>();
+  const sortedEntries = [...personEntries].sort(
+    (a, b) =>
+      (backByEntry.get(a.id) ?? 0) - (backByEntry.get(b.id) ?? 0) ||
+      (showNameById.get(a.show_id) ?? "").localeCompare(showNameById.get(b.show_id) ?? "")
+  );
+
+  for (const entry of sortedEntries) {
+    const rows: StatementRow[] = [];
+
+    // Standard charges applied to this horse (office/stall/drug), oldest first.
+    for (const c of (miscByEntry.get(entry.id) ?? []).slice().reverse()) {
+      rows.push({ qty: 1, description: c.description, exhibitor: null, amountCents: c.amount_cents, struck: false });
+    }
+
+    // Entry fee per class.
+    const ecs = (ecByEntry.get(entry.id) ?? [])
+      .slice()
+      .sort((a, b) => a.class!.class_number - b.class!.class_number);
+    for (const ec of ecs) {
+      rows.push({
+        qty: 1,
+        description: `${ec.class!.class_number} — ${ec.class!.name} entry`,
+        exhibitor: entry.rider_name,
+        amountCents: ec.fee_cents,
+        struck: ec.status !== "entered",
+      });
+    }
+
+    // Run fees (judge / video / photo) for this slate's runs.
+    for (const rf of runFeesAll.get(entry.id) ?? []) {
+      rows.push({
+        qty: rf.feeKey === JUDGE_FEE_KEY ? 1 : rf.runCount,
+        description: rf.label,
+        exhibitor: entry.rider_name,
+        amountCents: rf.effectiveCents,
+        struck: false,
+      });
+    }
+
+    const subtotalCents = rows.filter((r) => !r.struck).reduce((s, r) => s + r.amountCents, 0);
+    const slate: StatementSlate = {
+      showId: entry.show_id,
+      showLabel: showNameById.get(entry.show_id) ?? "",
+      rows,
+      subtotalCents,
+    };
+
+    const horseKey = backByEntry.has(entry.id) ? `bn:${backByEntry.get(entry.id)}` : `h:${entry.horse_id}`;
+    let horse = horseMap.get(horseKey);
+    if (!horse) {
+      horse = { backNumber: backByEntry.get(entry.id) ?? null, horseName: entry.horse_name, slates: [] };
+      horseMap.set(horseKey, horse);
+    }
+    horse.slates.push(slate);
+  }
+
+  const horses = [...horseMap.values()].sort((a, b) => (a.backNumber ?? 0) - (b.backNumber ?? 0));
+
+  const otherCharges: StatementRow[] = otherChargesRaw
+    .slice()
+    .reverse()
+    .map((c) => ({ qty: 1, description: c.description, exhibitor: null, amountCents: c.amount_cents, struck: false }));
+  const otherChargesCents = otherCharges.reduce((s, r) => s + r.amountCents, 0);
+
+  const totalFeesCents =
+    horses.reduce((s, h) => s + h.slates.reduce((ss, sl) => ss + sl.subtotalCents, 0), 0) + otherChargesCents;
+
+  const distinctRiders = [...new Set(personEntries.map((e) => e.rider_name))];
+  const { payments: personPayments, paidCents, refundedCents } = mapPersonPayments(payments, personId);
+
+  return {
+    personId,
+    name: billedPersonName(personEntries[0]),
+    billedRiderNames: distinctRiders.length > 1 ? distinctRiders.sort() : [],
+    horses,
+    otherCharges,
+    otherChargesCents,
+    totalFeesCents,
+    payments: personPayments,
+    paidCents,
+    refundedCents,
+    balanceCents: totalFeesCents - paidCents,
+  };
+}
+
+export async function loadPersonStatement(
+  supabase: SupabaseClient,
+  showId: string,
+  personId: string
+): Promise<PersonStatement | null> {
+  return buildPersonStatement(await loadShowBillingData(supabase, [showId]), personId);
+}
+
+export async function loadWeekendPersonStatement(
+  supabase: SupabaseClient,
+  weekendId: string,
+  personId: string
+): Promise<PersonStatement | null> {
+  const showIds = await loadWeekendShowIds(supabase, weekendId);
+  return buildPersonStatement(await loadShowBillingData(supabase, showIds), personId);
 }
 
 export interface ReconciliationReport {
