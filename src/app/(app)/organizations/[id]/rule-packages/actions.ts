@@ -641,6 +641,225 @@ export async function createAqhaStarterPackage(
   return {};
 }
 
+/**
+ * Seeds a draft "APHA <year>" starter rule package, transcribed from the
+ * organization's own copy of the official APHA 2026 Rule Book — the same
+ * transcription approach as the AQHA starter. Class catalog follows the
+ * SC-190.A approved-events list plus the halter slate (SC-175.M) across
+ * the APHA divisions (Open / Amateur / Masters 45+ / Novice Amateur /
+ * Youth 18 & Under / Youth 13 & Under / Novice Youth / Walk-Trot /
+ * Green). The APHA rulebook publishes class NAMES only — no class codes
+ * exist in it — so the `code` values are INTERNAL mnemonics; align them
+ * with the APHA Performance Department's electronic-results format
+ * (SC-125.A) before publishing/submitting.
+ */
+const APHA_STARTER_CLASSES: {
+  code: string;
+  name: string;
+  discipline: string;
+  division: string;
+  isYouth: boolean;
+  isAmateur: boolean;
+  isOpen: boolean;
+  countsForPoints?: boolean;
+}[] = [
+  // Halter (SC-175; one point-earning open halter class per horse, SC-175.D)
+  { code: "HALT-O", name: "Halter", discipline: "Halter", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "PHALT-O", name: "Performance Halter", discipline: "Halter", division: "Open (needs a performance class at the same show, SC-175.M.7)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "COLOR-O", name: "Color Class (Overo/Tobiano)", discipline: "Halter", division: "Open (Regular Registry only, SC-176.A)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "HALT-AM", name: "Amateur Halter", discipline: "Halter", division: "Amateur (AM-090)", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "HALT-Y", name: "Youth Halter", discipline: "Halter", division: "Youth (no stallions, YP-080.B)", isYouth: true, isAmateur: false, isOpen: false },
+  // Showmanship — amateur/youth only (AM-095.C, YP-090)
+  { code: "SHOW-AM", name: "Amateur Showmanship at Halter", discipline: "Showmanship", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "SHOW-Y", name: "Youth Showmanship at Halter", discipline: "Showmanship", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  // Western Pleasure (SC-190.A; Green eligibility SC-246)
+  { code: "WP-O", name: "Western Pleasure", discipline: "Western Pleasure", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "WP-GR", name: "Green Western Pleasure", discipline: "Western Pleasure", division: "Green (horse eligibility, SC-246.D)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "WP-AM", name: "Amateur Western Pleasure", discipline: "Western Pleasure", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "WP-MAS", name: "Masters Amateur Western Pleasure", discipline: "Western Pleasure", division: "Masters Amateur (45+, AM-080.A.2.b)", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "WP-NAM", name: "Novice Amateur Western Pleasure", discipline: "Western Pleasure", division: "Novice Amateur (AM-205)", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "WP-Y", name: "Youth Western Pleasure", discipline: "Western Pleasure", division: "Youth 18 & Under (YP-075.A)", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "WP-Y13", name: "Youth Western Pleasure 13 & Under", discipline: "Western Pleasure", division: "Youth 13 & Under (YP-075.A)", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "WP-NY", name: "Novice Youth Western Pleasure", discipline: "Western Pleasure", division: "Novice Youth (YP-205)", isYouth: true, isAmateur: false, isOpen: false },
+  // Walk-Trot (AM-300; YP-109 — no lope class anywhere all year)
+  { code: "WTWP-AM", name: "Amateur Walk-Trot Western Pleasure", discipline: "Western Pleasure", division: "Amateur Walk-Trot (AM-300.G)", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "WTWP-Y", name: "Youth Walk-Trot Western Pleasure 11-18", discipline: "Western Pleasure", division: "Youth Walk-Trot 11-18 (YP-109)", isYouth: true, isAmateur: false, isOpen: false },
+  // Hunter Under Saddle (Green eligibility SC-206)
+  { code: "HUS-O", name: "Hunter Under Saddle", discipline: "Hunter Under Saddle", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "HUS-GR", name: "Green Hunter Under Saddle", discipline: "Hunter Under Saddle", division: "Green (horse eligibility, SC-206)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "HUS-AM", name: "Amateur Hunter Under Saddle", discipline: "Hunter Under Saddle", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "HUS-Y", name: "Youth Hunter Under Saddle", discipline: "Hunter Under Saddle", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "HUS-NY", name: "Novice Youth Hunter Under Saddle", discipline: "Hunter Under Saddle", division: "Novice Youth (YP-205)", isYouth: true, isAmateur: false, isOpen: false },
+  // Equitation / Horsemanship — amateur/youth only (AM-095.B, YP-090.C)
+  { code: "HSE-AM", name: "Amateur Hunt Seat Equitation", discipline: "Hunt Seat Equitation", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "HSE-Y", name: "Youth Hunt Seat Equitation", discipline: "Hunt Seat Equitation", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "HMS-AM", name: "Amateur Western Horsemanship", discipline: "Horsemanship", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "HMS-Y", name: "Youth Western Horsemanship", discipline: "Horsemanship", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  // Trail (Green eligibility SC-251)
+  { code: "TRAIL-O", name: "Trail", discipline: "Trail", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "TRAIL-GR", name: "Green Trail", discipline: "Trail", division: "Green (horse eligibility, SC-251)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "TRAIL-AM", name: "Amateur Trail", discipline: "Trail", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "TRAIL-Y", name: "Youth Trail", discipline: "Trail", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "TRAIL-NY", name: "Novice Youth Trail", discipline: "Trail", division: "Novice Youth (YP-205)", isYouth: true, isAmateur: false, isOpen: false },
+  // Western Riding (Green eligibility SC-256)
+  { code: "WR-O", name: "Western Riding", discipline: "Western Riding", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "WR-GR", name: "Green Western Riding", discipline: "Western Riding", division: "Green (horse eligibility, SC-256)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "WR-AM", name: "Amateur Western Riding", discipline: "Western Riding", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "WR-Y", name: "Youth Western Riding", discipline: "Western Riding", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  // Reining (Green eligibility SC-261; restricted specialty judges 60 days ahead, JU-000.C.2.c)
+  { code: "REIN-O", name: "Reining", discipline: "Reining", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "REIN-GR", name: "Green Reining", discipline: "Reining", division: "Green (horse eligibility, SC-261)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "REIN-AM", name: "Amateur Reining", discipline: "Reining", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "REIN-NAM", name: "Novice Amateur Reining", discipline: "Reining", division: "Novice Amateur (AM-205)", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "REIN-Y", name: "Youth Reining", discipline: "Reining", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "REIN-NY", name: "Novice Youth Reining", discipline: "Reining", division: "Novice Youth (YP-205)", isYouth: true, isAmateur: false, isOpen: false },
+  // Ranch classes (SC-190.A; Green Ranch SC-312; 3-year-olds & older)
+  { code: "RR-O", name: "Ranch Riding", discipline: "Ranch Riding", division: "Open (horses 3+, SC-185.E.4)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "RR-GR", name: "Green Ranch Riding", discipline: "Ranch Riding", division: "Green (horse eligibility, SC-312)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "RR-AM", name: "Amateur Ranch Riding", discipline: "Ranch Riding", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "RR-Y", name: "Youth Ranch Riding", discipline: "Ranch Riding", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "RTRAIL-O", name: "Ranch Trail", discipline: "Ranch Trail", division: "Open (horses 3+)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "RRAIL-O", name: "Ranch Rail Pleasure", discipline: "Ranch Rail Pleasure", division: "Open (horses 3+)", isYouth: false, isAmateur: false, isOpen: true },
+  // Cattle events (SC-190.A)
+  { code: "WCH-O", name: "Working Cow Horse", discipline: "Working Cow Horse", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "CUT-O", name: "Cutting", discipline: "Cutting", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "PEN-O", name: "Team Penning", discipline: "Team Penning", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "SORT-O", name: "Ranch Sorting", discipline: "Ranch Sorting", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  // Speed events (SC-190.A)
+  { code: "BARREL-O", name: "Barrel Racing", discipline: "Speed Events", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "BARREL-Y", name: "Youth Barrel Racing", discipline: "Speed Events", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "POLE-O", name: "Pole Bending", discipline: "Speed Events", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "POLE-Y", name: "Youth Pole Bending", discipline: "Speed Events", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  // Over fences (SC-190.A; equitation over fences amateur-only per AM-095.B)
+  { code: "WH-O", name: "Working Hunter", discipline: "Over Fences", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "HH-O", name: "Hunter Hack", discipline: "Over Fences", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "JMP-O", name: "Jumping", discipline: "Over Fences", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "EOF-AM", name: "Amateur Hunt Seat Equitation Over Fences", discipline: "Over Fences", division: "Amateur (AM-095.B)", isYouth: false, isAmateur: true, isOpen: false },
+  // In-hand futurity-style classes (date windows, SC-190.A; excluded from Novice Amateur, AM-250.A)
+  { code: "LL-O", name: "Yearling Longe Line", discipline: "Longe Line", division: "Open (after May 15 only, SC-190.A)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "IHT-O", name: "Yearling In-Hand Trail", discipline: "In-Hand Trail", division: "Open (before May 15 only, SC-190.A)", isYouth: false, isAmateur: false, isOpen: true },
+  // Participation events (no points)
+  { code: "LEAD-Y", name: "Leadline", discipline: "Leadline", division: "Youth 3-8, handler 16+ (YP-105)", isYouth: true, isAmateur: false, isOpen: false, countsForPoints: false },
+];
+
+export async function createAphaStarterPackage(
+  organizationId: string,
+  year: number
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  let { data: assoc } = await supabase
+    .from("associations")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .eq("name", "APHA")
+    .maybeSingle();
+
+  if (!assoc) {
+    const { data: created, error } = await supabase
+      .from("associations")
+      .insert({ organization_id: organizationId, name: "APHA" })
+      .select("id")
+      .maybeSingle();
+    if (error || !created) {
+      return { error: error?.message ?? "Could not create the APHA association." };
+    }
+    assoc = created;
+  }
+
+  const { data: pkg, error: pkgError } = await supabase
+    .from("association_rule_packages")
+    .insert({
+      association_id: assoc.id,
+      organization_id: organizationId,
+      year,
+      version: "1",
+      source_notes:
+        "Starter package transcribed from the organization's own copy of the official APHA 2026 Rule Book. Class catalog follows the approved-events list (SC-190.A) and halter slate (SC-175.M) across APHA divisions; eligibility rules cite their rule numbers. APHA publishes class NAMES only — codes here are internal mnemonics; align with the APHA Performance Department's electronic-results format (SC-125.A) before publishing. Key operational data points: results postmarked within 10 calendar days of the last show day, $29/day late fee (SC-125.A); electronic results required, $79/judge special handling otherwise; $3 show processing fee per entry per judge (SC-125.B); show application per judge ≥90 days out ($39 online), under 30 days not approved (SC-090.C-D); point chart SC-060.A.1 (½ pt at 2 shown … 6-5-4-3-2-1 at 18+; not expressible as a flat placing schedule); placings through 7th mandatory (SC-155.A); all exhibitors AND owners need current APHA/AjPHA membership, cards inspected at the show (SC-160.A); SPB horses compete with Regular Registry as of 2025 (SC-325.A.1); Novice caps <75 revalued pts / <$2,500 per category (AM-205.A, YP-205.A); Green: first year or ≤25 pts and ≤$2,500 lifetime in the event (SC-246.D); results corrections accepted 1 year (SC-125.E). NOTE: the widely-cited >5% results error-rate policy is NOT in the 2026 rulebook — it is Performance Department practice, so it carries no rule citation here.",
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (pkgError || !pkg) {
+    if (pkgError?.message.includes("association_rule_packages_association_id_year_version_key")) {
+      return { error: `An APHA ${year} v1 rule package already exists.` };
+    }
+    return { error: pkgError?.message ?? "Could not create the rule package." };
+  }
+
+  const { error: codesError } = await supabase.from("association_class_codes").insert(
+    APHA_STARTER_CLASSES.map((c) => ({
+      rule_package_id: pkg.id,
+      code: c.code,
+      name: c.name,
+      discipline: c.discipline,
+      division: c.division,
+      is_youth: c.isYouth,
+      is_amateur: c.isAmateur,
+      is_open: c.isOpen,
+      is_non_pro: false,
+      counts_for_points: c.countsForPoints ?? true,
+    }))
+  );
+  if (codesError) return { error: codesError.message };
+
+  // Eligibility rules in the engine's vocabulary (rider.age, ownership).
+  // Where APHA's rule is broader than the engine can check (immediate-family
+  // ownership, age as of Jan 1, cards, novice point caps), the rule is a
+  // WARNING with the citation so the office verifies by hand.
+  const { error: rulesError } = await supabase.from("association_eligibility_rules").insert([
+    {
+      rule_package_id: pkg.id,
+      rule_key: "apha_youth_age",
+      applies_to: ["youth"],
+      conditions: [{ field: "rider.age", operator: "less_than", value: "19" }],
+      severity: "warning",
+      message:
+        "APHA youth exhibitors must be 18 & under as of January 1 (YP-010.A; the Jan 1 age holds all year). Married persons/domestic partnerships are ineligible regardless of age (YP-010.B). Verify the current AjPHA card (YP-005.A.5).",
+    },
+    {
+      rule_package_id: pkg.id,
+      rule_key: "apha_amateur_age",
+      applies_to: ["amateur"],
+      conditions: [{ field: "rider.age", operator: "greater_than", value: "18" }],
+      severity: "warning",
+      message:
+        "APHA amateurs must be no longer youth-eligible — 19+ as of January 1 (AM-010.A.1, AM-080.A.1) — hold a current Amateur card (AM-015.A), and satisfy the 36-month no-remuneration rule (AM-010.A.2).",
+    },
+    {
+      rule_package_id: pkg.id,
+      rule_key: "apha_masters_age",
+      applies_to: ["WP-MAS"],
+      conditions: [{ field: "rider.age", operator: "greater_than", value: "44" }],
+      severity: "warning",
+      message:
+        "Masters amateur classes are for amateurs aged 45 & over as of January 1 (AM-080.A.2.b).",
+    },
+    {
+      rule_package_id: pkg.id,
+      rule_key: "apha_amateur_ownership",
+      applies_to: ["amateur"],
+      conditions: [{ field: "horse.ownedByRider", operator: "equals", value: "true" }],
+      severity: "warning",
+      message:
+        "APHA amateur classes require the horse to be recorded to the amateur or immediate family at entry (AM-020.A) — the rider isn't a listed owner, so verify the family relationship or an APHA Show Lease (AM-020.A.1). Any partnership with a non-family member is ineligible (AM-020.A.2). Novice Amateur may enter without ownership but earns no points (AM-210.B).",
+    },
+    {
+      rule_package_id: pkg.id,
+      rule_key: "apha_youth_ownership",
+      applies_to: ["youth"],
+      conditions: [{ field: "horse.ownedByRider", operator: "equals", value: "true" }],
+      severity: "warning",
+      message:
+        "Youth may enter without owning the horse, but APHA points/titles require ownership by the youth or immediate family (YP-015.A) or an APHA Show Lease (YP-015.A.2) — the rider isn't a listed owner, so verify before counting on points.",
+    },
+  ]);
+  if (rulesError) return { error: rulesError.message };
+
+  revalidatePath(`/organizations/${organizationId}/rule-packages`);
+  return {};
+}
+
 export async function createEligibilityRule(
   input: CreateEligibilityRuleInput
 ): Promise<ActionResult> {

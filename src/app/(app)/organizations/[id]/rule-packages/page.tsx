@@ -5,6 +5,7 @@ import {
   CreateAssociationForm,
   CreateRulePackageForm,
 } from "@/components/org/rule-package-forms";
+import { CreateAphaStarterButton } from "@/components/org/apha-starter-button";
 import { CreateAqhaStarterButton } from "@/components/org/aqha-starter-button";
 import { CreateNrhaStarterButton } from "@/components/org/nrha-starter-button";
 import { Alert, Card, EmptyState, PageHeader } from "@/components/ui";
@@ -80,6 +81,7 @@ export default async function RulePackagesPage({
 
       {canCreate && <CreateNrhaStarterButton organizationId={id} />}
       {canCreate && <CreateAqhaStarterButton organizationId={id} />}
+      {canCreate && <CreateAphaStarterButton organizationId={id} />}
 
       {packageRows.length === 0 ? (
         <EmptyState
