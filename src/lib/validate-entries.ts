@@ -20,8 +20,11 @@ function ageAt(birthdate: string, atDate: string): number {
   return age;
 }
 
-/** Associations this show validates against. Still a static default rather
- * than derived from the show's own rule packages; NRHA is the MVP default. */
+/** Fallback when an entry's classes carry no rule-package affiliations
+ * (shows created before rule packages, or classes not yet linked):
+ * NRHA stays the MVP default. Once classes ARE affiliated, the required
+ * memberships derive from each entry's own entered classes — an entry
+ * in AQHA-affiliated classes requires an AQHA membership, and so on. */
 const DEFAULT_REQUIRED_ASSOCIATIONS = ["NRHA"];
 
 export interface ValidatedEntry {
@@ -224,6 +227,13 @@ export async function loadValidatedEntries(
   const validated = entryRows.map((entry) => {
     const backNumber = backByEntry.get(entry.id) ?? null;
     const enteredClassCount = enteredCounts.get(entry.id) ?? 0;
+    const entryAssociations = [
+      ...new Set(
+        (enteredAffiliationsByEntry.get(entry.id) ?? [])
+          .map((a) => a.associationName)
+          .filter((n): n is string => !!n)
+      ),
+    ];
     const issues = validateEntry({
       showStartDate,
       entryStatus: entry.status,
@@ -234,7 +244,10 @@ export async function loadValidatedEntries(
       riderMemberships: membershipsByPerson.get(entry.rider_person_id) ?? [],
       horseRegistrations: registrationsByHorse.get(entry.horse_id) ?? [],
       horseOwnershipCount: ownershipCounts.get(entry.horse_id) ?? 0,
-      requiredAssociations: DEFAULT_REQUIRED_ASSOCIATIONS,
+      requiredAssociations:
+        entryAssociations.length > 0
+          ? entryAssociations
+          : DEFAULT_REQUIRED_ASSOCIATIONS,
     });
 
     if (entry.status !== "scratched" && rules.length > 0) {

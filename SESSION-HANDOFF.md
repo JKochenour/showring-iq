@@ -5,7 +5,41 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Latest (2026-07-16, 13th session part 6 — RESPONSIVE PASS: phone/tablet/desktop auto-adapt, live-verified)
+## Latest (2026-07-16, 13th session part 7 — AQHA 2026 RULE PACKAGE from the user's official rulebook, live-verified — LAST ROADMAP ITEM DONE)
+
+**Zero migrations — the whole package is data**, proving CLAUDE.md's
+"rules are data, not code" with a second association. Source: the user's
+official AQHA 2026 rulebook PDF (376 pages, pdfjs-dist extraction in the
+session scratchpad; a subagent digest with SHW citations).
+
+- **"Create AQHA <year> starter package"** button on Rule Packages
+  (mirrors the NRHA starter): seeds the AQHA association + a draft
+  package with **52 class codes** (the SHW805 Achievement Awards catalog
+  across Open/Amateur/Select/Youth incl. Level 1 variants; codes are
+  internal mnemonics — align with AQHA results-software codes) and **4
+  eligibility rules citing their SHW numbers** (youth age SHW118.4,
+  amateur age SHW225.1, Select 50+ SHW225.2, youth/amateur ownership
+  SHW220 as a warning since immediate-family is beyond the engine).
+  Source notes carry the operational constants (points chart SHW261,
+  results due 10 business days SHW126.5 + fines, $10/horse fee, rookie
+  and Level 1 point/money caps).
+- **Fixed the hardcoded NRHA membership check**: validate-entries now
+  derives required associations PER ENTRY from the entered classes'
+  affiliations (NRHA only as fallback for unaffiliated classes) —
+  memberships AND horse registrations, since the validation engine is
+  name-generic.
+- **Live-verified**: package created + published; class 4 linked to
+  AQHA REIN-AM; Jamie's real entry then showed EPRHA+NRHA+AQHA
+  membership/registration warnings plus the SHW225.1 amateur rule
+  tagged AQHA; ownership rule correctly silent. All test wiring
+  reverted. **The AQHA 2026 package remains PUBLISHED in the EPRHA org**
+  (harmless, no classes affiliated) — review its codes/rules; not yet
+  encoded: cross-enter prohibitions, Level 1 point caps, the
+  points-per-entries chart. The extracted rulebook text lives only in
+  the session scratchpad (temp) — re-extract from the user's PDF with
+  pdfjs-dist if more rules are wanted later.
+
+## Earlier (2026-07-16, 13th session part 6 — RESPONSIVE PASS: phone/tablet/desktop auto-adapt, live-verified)
 
 No migration. The app now adapts by viewport ("autodetects"):
 - **MobileNav** (src/components/mobile-nav.tsx): <640px the top header

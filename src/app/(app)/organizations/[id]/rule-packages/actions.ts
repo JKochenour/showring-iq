@@ -447,6 +447,200 @@ export async function createNrhaStarterPackage(
   return {};
 }
 
+/**
+ * Seeds a draft "AQHA <year>" starter rule package, transcribed from the
+ * organization's own copy of the official AQHA 2026 Handbook (Show Rules
+ * SHW section) — factual class/division/eligibility data with SHW rule
+ * citations, entered the same way the NRHA payback schedules and
+ * patterns were transcribed from the org's own official PDFs. Class
+ * catalog follows the Achievement Awards table (SHW805) plus the
+ * per-class division rules; SHW416.1 is the canonical division
+ * template. The `code` values are INTERNAL mnemonics — align them with
+ * your AQHA results-software class codes before publishing/submitting.
+ */
+const AQHA_STARTER_CLASSES: {
+  code: string;
+  name: string;
+  discipline: string;
+  division: string;
+  isYouth: boolean;
+  isAmateur: boolean;
+  isOpen: boolean;
+}[] = [
+  // Halter (SHW350/365; youth halter is mares & geldings only, SHW118.1)
+  { code: "HALT-O", name: "Halter", discipline: "Halter", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "PHALT-O", name: "Performance Halter", discipline: "Halter", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "HALT-AM", name: "Amateur Halter", discipline: "Halter", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "HALT-Y", name: "Youth Halter (mares & geldings)", discipline: "Halter", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  // Western Pleasure (SHW402/403; junior/senior/2yo splits per SHW112.3)
+  { code: "WP-O", name: "Western Pleasure", discipline: "Western Pleasure", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "WP-O-L1", name: "Level 1 Western Pleasure", discipline: "Western Pleasure", division: "Open · Level 1 (horse)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "WP-O-2YO", name: "2-Year-Old Western Pleasure", discipline: "Western Pleasure", division: "Open (not before July 1, SHW403)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "WP-AM", name: "Amateur Western Pleasure", discipline: "Western Pleasure", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "WP-SEL", name: "Select Western Pleasure", discipline: "Western Pleasure", division: "Select Amateur (50+)", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "WP-Y", name: "Youth Western Pleasure", discipline: "Western Pleasure", division: "Youth (age splits per SHW118.5)", isYouth: true, isAmateur: false, isOpen: false },
+  // Hunter Under Saddle (SHW601)
+  { code: "HUS-O", name: "Hunter Under Saddle", discipline: "Hunter Under Saddle", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "HUS-AM", name: "Amateur Hunter Under Saddle", discipline: "Hunter Under Saddle", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "HUS-Y", name: "Youth Hunter Under Saddle", discipline: "Hunter Under Saddle", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  // Trail (SHW461; no cross-enter with Ranch Trail, SHW421.1)
+  { code: "TRAIL-O", name: "Trail", discipline: "Trail", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "TRAIL-AM", name: "Amateur Trail", discipline: "Trail", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "TRAIL-Y", name: "Youth Trail", discipline: "Trail", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  // Western Riding (SHW451)
+  { code: "WR-O", name: "Western Riding", discipline: "Western Riding", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "WR-AM", name: "Amateur Western Riding", discipline: "Western Riding", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "WR-Y", name: "Youth Western Riding", discipline: "Western Riding", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  // Ranch classes (SHW416 ranch riding — horses 3+, SHW112.4; SHW421 ranch trail)
+  { code: "RR-O", name: "Ranch Riding", discipline: "Ranch Riding", division: "Open (horses 3+)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "RR-O-L1", name: "Level 1 Ranch Riding", discipline: "Ranch Riding", division: "Open · Level 1 (horse)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "RR-AM", name: "Amateur Ranch Riding", discipline: "Ranch Riding", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "RR-SEL", name: "Select Ranch Riding", discipline: "Ranch Riding", division: "Select Amateur (50+)", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "RR-Y", name: "Youth Ranch Riding", discipline: "Ranch Riding", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "RTRAIL-O", name: "Ranch Trail", discipline: "Ranch Trail", division: "Open (horses 3+)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "RTRAIL-AM", name: "Amateur Ranch Trail", discipline: "Ranch Trail", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  // Reining (SHW480; no cross-enter with VRH reining, SHW481.1)
+  { code: "REIN-O", name: "Reining", discipline: "Reining", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "REIN-O-L1", name: "Level 1 Reining", discipline: "Reining", division: "Open · Level 1 (horse)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "REIN-AM", name: "Amateur Reining", discipline: "Reining", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "REIN-SEL", name: "Select Reining", discipline: "Reining", division: "Select Amateur (50+)", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "REIN-Y", name: "Youth Reining", discipline: "Reining", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  // Cow work (SHW505/509 WCH; SHW519 boxing = amateur/select/youth only)
+  { code: "WCH-O", name: "Working Cow Horse", discipline: "Working Cow Horse", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "WCH-AM", name: "Amateur Working Cow Horse", discipline: "Working Cow Horse", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "BOX-AM", name: "Amateur Boxing", discipline: "Working Cow Horse", division: "Amateur (eligibility SHW519.1)", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "BOX-Y", name: "Youth Boxing", discipline: "Working Cow Horse", division: "Youth (eligibility SHW519.1)", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "CUT-O", name: "Cutting", discipline: "Cutting", division: "Open (NCHA rules, SHW500)", isYouth: false, isAmateur: false, isOpen: true },
+  // Equitation classes — amateur/youth only (SHW371/431/616/645)
+  { code: "SHOW-AM", name: "Amateur Showmanship at Halter", discipline: "Showmanship", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "SHOW-Y", name: "Youth Showmanship at Halter", discipline: "Showmanship", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "HMS-AM", name: "Amateur Western Horsemanship", discipline: "Horsemanship", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "HMS-Y", name: "Youth Western Horsemanship", discipline: "Horsemanship", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "HSE-AM", name: "Amateur Hunt Seat Equitation", discipline: "Hunt Seat Equitation", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+  { code: "HSE-Y", name: "Youth Hunt Seat Equitation", discipline: "Hunt Seat Equitation", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  // Speed events (SHW700/703; stake race youth/amateur/select only, SHW710)
+  { code: "BARREL-O", name: "Barrel Racing", discipline: "Speed Events", division: "Open (all-age)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "BARREL-Y", name: "Youth Barrel Racing", discipline: "Speed Events", division: "Youth", isYouth: true, isAmateur: false, isOpen: false },
+  { code: "POLE-O", name: "Pole Bending", discipline: "Speed Events", division: "Open (all-age)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "STAKE-Y", name: "Youth Stake Race", discipline: "Speed Events", division: "Youth (youth/amateur/select only, SHW710)", isYouth: true, isAmateur: false, isOpen: false },
+  // Cattle team events (SHW540/547 — all-age, SHW112.5)
+  { code: "PEN-O", name: "Team Penning", discipline: "Team Penning", division: "Open (all-age)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "SORT-O", name: "Ranch Sorting", discipline: "Ranch Sorting", division: "Open (all-age)", isYouth: false, isAmateur: false, isOpen: true },
+  // Over fences (SHW625/636/656)
+  { code: "WH-O", name: "Working Hunter", discipline: "Over Fences", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "HH-O", name: "Hunter Hack", discipline: "Over Fences", division: "Open", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "JMP-O", name: "Jumping", discipline: "Over Fences", division: "Open (all-age, SHW656)", isYouth: false, isAmateur: false, isOpen: true },
+  { code: "EOF-AM", name: "Amateur Equitation Over Fences", discipline: "Over Fences", division: "Amateur", isYouth: false, isAmateur: true, isOpen: false },
+];
+
+export async function createAqhaStarterPackage(
+  organizationId: string,
+  year: number
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  let { data: assoc } = await supabase
+    .from("associations")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .eq("name", "AQHA")
+    .maybeSingle();
+
+  if (!assoc) {
+    const { data: created, error } = await supabase
+      .from("associations")
+      .insert({ organization_id: organizationId, name: "AQHA" })
+      .select("id")
+      .maybeSingle();
+    if (error || !created) {
+      return { error: error?.message ?? "Could not create the AQHA association." };
+    }
+    assoc = created;
+  }
+
+  const { data: pkg, error: pkgError } = await supabase
+    .from("association_rule_packages")
+    .insert({
+      association_id: assoc.id,
+      organization_id: organizationId,
+      year,
+      version: "1",
+      source_notes:
+        "Starter package transcribed from the organization's own copy of the official AQHA 2026 Handbook, Show Rules (SHW) section. Class catalog follows the Achievement Awards categories (SHW805) and per-class division rules; eligibility rules cite their SHW numbers. Codes are internal mnemonics — align with your AQHA results-software class codes before publishing. Key operational data points: points chart SHW261 (no points under 3 shown); results due within 10 business days of closing, min $50/day fine after (SHW126.5); $10/horse/show-number processing fee (SHW120.2); error fines SHW126.6; rookie caps 10 pts (exhibitor) / 50 pts (horse) / $5,000 (SHW252.1); open Level 1 horse caps 25 pts / $2,500 per class (e.g. SHW401.3, SHW655.2).",
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (pkgError || !pkg) {
+    if (pkgError?.message.includes("association_rule_packages_association_id_year_version_key")) {
+      return { error: `An AQHA ${year} v1 rule package already exists.` };
+    }
+    return { error: pkgError?.message ?? "Could not create the rule package." };
+  }
+
+  const { error: codesError } = await supabase.from("association_class_codes").insert(
+    AQHA_STARTER_CLASSES.map((c) => ({
+      rule_package_id: pkg.id,
+      code: c.code,
+      name: c.name,
+      discipline: c.discipline,
+      division: c.division,
+      is_youth: c.isYouth,
+      is_amateur: c.isAmateur,
+      is_open: c.isOpen,
+      is_non_pro: false,
+    }))
+  );
+  if (codesError) return { error: codesError.message };
+
+  // Eligibility rules expressed in the engine's current vocabulary
+  // (rider.age, ownership). Where AQHA's rule is broader than the engine
+  // can check (immediate-family ownership, age as of Jan 1), the rule is
+  // a WARNING with the SHW citation so the office verifies by hand.
+  const { error: rulesError } = await supabase.from("association_eligibility_rules").insert([
+    {
+      rule_package_id: pkg.id,
+      rule_key: "aqha_youth_age",
+      applies_to: ["youth"],
+      conditions: [{ field: "rider.age", operator: "less_than", value: "19" }],
+      severity: "warning",
+      message:
+        "AQHA youth exhibitors may compete through the calendar year in which they turn 19 (SHW118.4, age as of January 1) — verify this rider's AQHYA eligibility.",
+    },
+    {
+      rule_package_id: pkg.id,
+      rule_key: "aqha_youth_amateur_ownership",
+      applies_to: ["youth", "amateur"],
+      conditions: [{ field: "horse.ownedByRider", operator: "equals", value: "true" }],
+      severity: "warning",
+      message:
+        "AQHA youth/amateur classes require the horse to be solely owned by the exhibitor or their immediate family (SHW220) — the rider isn't a listed owner, so verify the family/lease relationship (leases must be AQHA-recorded, SHW240). Rookie and Level 1 amateur/youth are exempt (SHW252.2, SHW245.7).",
+    },
+    {
+      rule_package_id: pkg.id,
+      rule_key: "aqha_amateur_age",
+      applies_to: ["amateur"],
+      conditions: [{ field: "rider.age", operator: "greater_than", value: "18" }],
+      severity: "warning",
+      message:
+        "AQHA amateurs must be 19 on or before January 1 of the current year and no longer youth-eligible (SHW225.1).",
+    },
+    {
+      rule_package_id: pkg.id,
+      rule_key: "aqha_select_age",
+      applies_to: ["WP-SEL", "RR-SEL", "REIN-SEL"],
+      conditions: [{ field: "rider.age", operator: "greater_than", value: "49" }],
+      severity: "warning",
+      message:
+        "Select amateur classes are for exhibitors aged 50 and over (SHW225.2).",
+    },
+  ]);
+  if (rulesError) return { error: rulesError.message };
+
+  revalidatePath(`/organizations/${organizationId}/rule-packages`);
+  return {};
+}
+
 export async function createEligibilityRule(
   input: CreateEligibilityRuleInput
 ): Promise<ActionResult> {
