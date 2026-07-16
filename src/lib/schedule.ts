@@ -15,6 +15,9 @@ export interface ScheduleClassRow {
 
 export interface ScheduleDay {
   date: string;
+  /** Free-text arena label; each (date, arena) runs in parallel from
+   * the day's start time. Null when the day's classes have no arena. */
+  arena: string | null;
   classes: ScheduleClassRow[];
 }
 
@@ -29,6 +32,7 @@ interface RawClass {
   name: string;
   status: string;
   scheduled_date: string | null;
+  arena: string | null;
   avg_run_minutes: number;
   drag_every_n: number | null;
 }
@@ -69,7 +73,7 @@ export async function loadShowSchedule(
         .maybeSingle(),
       supabase
         .from("classes")
-        .select("id, class_number, name, status, scheduled_date, avg_run_minutes, drag_every_n")
+        .select("id, class_number, name, status, scheduled_date, arena, avg_run_minutes, drag_every_n")
         .eq("show_id", showId)
         .order("display_order"),
       supabase.from("entry_classes").select("class_id, status").eq("show_id", showId),
@@ -86,7 +90,9 @@ export async function loadShowSchedule(
   const dragMinutes = (show?.schedule_drag_minutes as number) ?? 5;
 
   const allClasses = (classes as RawClass[]) ?? [];
-  const byDate = new Map<string, RawClass[]>();
+  // Keyed by date + arena: each arena runs in PARALLEL, so every
+  // (date, arena) section gets its own rolling cursor from day start.
+  const byDateArena = new Map<string, { date: string; arena: string | null; classes: RawClass[] }>();
   const unscheduled: ScheduleClassRow[] = [];
 
   for (const cls of allClasses) {
@@ -105,14 +111,23 @@ export async function loadShowSchedule(
       });
       continue;
     }
-    const list = byDate.get(cls.scheduled_date) ?? [];
-    list.push(cls);
-    byDate.set(cls.scheduled_date, list);
+    const key = `${cls.scheduled_date}|${cls.arena ?? ""}`;
+    const bucket = byDateArena.get(key) ?? {
+      date: cls.scheduled_date,
+      arena: cls.arena,
+      classes: [],
+    };
+    bucket.classes.push(cls);
+    byDateArena.set(key, bucket);
   }
 
-  const days: ScheduleDay[] = [...byDate.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, dayClasses]) => {
+  const days: ScheduleDay[] = [...byDateArena.values()]
+    .sort((a, b) =>
+      a.date === b.date
+        ? (a.arena ?? "").localeCompare(b.arena ?? "")
+        : a.date.localeCompare(b.date)
+    )
+    .map(({ date, arena, classes: dayClasses }) => {
       let cursor = startMinutes;
       const rows = dayClasses.map((cls) => {
         const entryCount = entryCountByClass.get(cls.id) ?? 0;
@@ -132,7 +147,7 @@ export async function loadShowSchedule(
           estimatedStart,
         };
       });
-      return { date, classes: rows };
+      return { date, arena, classes: rows };
     });
 
   unscheduled.sort((a, b) => a.classNumber - b.classNumber);

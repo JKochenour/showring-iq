@@ -277,11 +277,12 @@ export default async function PublicShowPage({
 }
 
 /** The schedule, grouped the way the printed show bill reads: one
- * section per scheduled day, one chip per RUN. A concurrent group shows
- * only its LEAD class (first by display_order — e.g. "Open", not
- * "Open + Int Open + Ltd Open + Rookie Pro"); the siblings appear in
- * the detail area once the run is selected. Classes with no scheduled
- * day land in a trailing "Not yet scheduled" group. */
+ * section per scheduled day + arena ("Thursday, July 16 — INDOOR"),
+ * one chip per RUN. A concurrent group shows only its LEAD class
+ * (first by display_order — e.g. "Open", not "Open + Int Open + Ltd
+ * Open + Rookie Pro"); the siblings appear in the detail area once the
+ * run is selected. Classes with no scheduled day land in a trailing
+ * "Not yet scheduled" group. */
 function ScheduleByDay({
   classes,
   orgSlug,
@@ -293,24 +294,41 @@ function ScheduleByDay({
   showSlug: string;
   selectedId: string | null;
 }) {
-  // classes arrive in display_order; Maps preserve that order.
-  const days = new Map<string, Map<string, PublicClass[]>>();
+  // classes arrive in display_order; Maps preserve that order. Sections
+  // key on day + arena so "Thursday INDOOR" and "Thursday COVERED" split
+  // (an unscheduled day always collapses arena — one trailing bucket).
+  const sections = new Map<
+    string,
+    { day: string; arena: string | null; runs: Map<string, PublicClass[]> }
+  >();
   for (const cls of classes) {
     const day = cls.scheduled_date ?? "";
-    if (!days.has(day)) days.set(day, new Map());
-    const runs = days.get(day)!;
+    const arena = day ? cls.arena : null;
+    const key = `${day}|${arena ?? ""}`;
+    if (!sections.has(key)) {
+      sections.set(key, { day, arena, runs: new Map() });
+    }
+    const { runs } = sections.get(key)!;
     const runKey = cls.concurrent_group_id ?? `solo-${cls.id}`;
     if (!runs.has(runKey)) runs.set(runKey, []);
     runs.get(runKey)!.push(cls);
   }
-  const schedule = [...days.entries()]
-    .sort(([a], [b]) => (a === "" ? 1 : b === "" ? -1 : a.localeCompare(b)))
-    .map(([day, runs]) => ({ day, runs: [...runs.values()] }));
+  const schedule = [...sections.values()]
+    .sort((a, b) =>
+      a.day === b.day
+        ? (a.arena ?? "").localeCompare(b.arena ?? "")
+        : a.day === ""
+          ? 1
+          : b.day === ""
+            ? -1
+            : a.day.localeCompare(b.day)
+    )
+    .map(({ day, arena, runs }) => ({ day, arena, runs: [...runs.values()] }));
 
   return (
     <div className="space-y-5">
-      {schedule.map(({ day, runs }) => (
-        <div key={day || "unscheduled"}>
+      {schedule.map(({ day, arena, runs }) => (
+        <div key={`${day || "unscheduled"}|${arena ?? ""}`}>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
             {day
               ? new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", {
@@ -319,7 +337,7 @@ function ScheduleByDay({
                   month: "long",
                   day: "numeric",
                   year: "numeric",
-                })
+                }) + (arena ? ` — ${arena}` : "")
               : "Not yet scheduled"}
           </h3>
           <div className="flex flex-col gap-1.5">

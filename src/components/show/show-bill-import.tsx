@@ -20,6 +20,7 @@ interface PreviewRow {
   entryFee: string;
   addedMoney: string;
   scheduledDate: string;
+  arena: string;
   patternNumber: string;
   isYouth: boolean;
   notes: string;
@@ -31,10 +32,8 @@ interface PreviewSession {
 }
 
 function sessionNote(s: ParsedSession): string {
-  const parts: string[] = [];
-  if (s.arena) parts.push(s.arena);
-  if (s.startTime) parts.push(`${s.startTime} session`);
-  return parts.join(", ");
+  // Arena is a real class field now (00048), not just a note.
+  return s.startTime ? `${s.startTime} session` : "";
 }
 
 function toPreview(sessions: ParsedSession[]): PreviewSession[] {
@@ -59,6 +58,7 @@ function toPreview(sessions: ParsedSession[]): PreviewSession[] {
             ? centsToInput(c.addedMoneyCents)
             : "",
         scheduledDate: s.date ?? "",
+        arena: s.arena ?? "",
         patternNumber: c.patternNumber !== null ? String(c.patternNumber) : "",
         isYouth: looksLikeYouthClass(c.name),
         notes: noteParts.join(" · "),
@@ -132,6 +132,7 @@ export function ShowBillImport({
           entryFee: r.entryFee,
           addedMoney: r.addedMoney,
           scheduledDate: r.scheduledDate,
+          arena: r.arena,
           patternNumber: r.patternNumber ? parseInt(r.patternNumber, 10) : null,
           isYouth: r.isYouth,
           notes: r.notes,
@@ -199,6 +200,7 @@ export function ShowBillImport({
                     <th className="py-2 pr-2">Entry fee ($)</th>
                     <th className="py-2 pr-2">Added ($)</th>
                     <th className="py-2 pr-2">Date</th>
+                    <th className="py-2 pr-2">Arena</th>
                     <th className="py-2 pr-2">Pattern</th>
                     <th className="py-2 pr-2">Youth</th>
                     <th className="py-2">Notes</th>
@@ -250,6 +252,13 @@ export function ShowBillImport({
                           onChange={(e) =>
                             updateRow(si, ri, { scheduledDate: e.target.value })
                           }
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <Input
+                          className="w-28"
+                          value={r.arena}
+                          onChange={(e) => updateRow(si, ri, { arena: e.target.value })}
                         />
                       </td>
                       <td className="py-2 pr-2">

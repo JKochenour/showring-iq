@@ -181,6 +181,8 @@ export interface ShowClass {
   judge_fee_cents: number;
   status: ClassStatus;
   scheduled_date: string | null;
+  /** Free-text arena label from the show bill (e.g. INDOOR, COVERED). */
+  arena: string | null;
   drag_every_n: number | null;
   avg_run_minutes: number;
   is_youth: boolean;

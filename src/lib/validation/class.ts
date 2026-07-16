@@ -77,6 +77,7 @@ const classFields = {
   judgeFee: money,
   addedMoney: money,
   scheduledDate: z.iso.date("Enter a valid date").or(z.literal("")).optional(),
+  arena: z.string().trim().max(80).optional(),
   nrhaClassCode: z.string().trim().max(20).optional(),
   classCodeId: z.uuid().or(z.literal("")).optional(),
   notes: z.string().trim().max(1000).optional(),
@@ -116,6 +117,7 @@ export const importBillClassRowSchema = z.object({
     .or(z.literal(""))
     .optional(),
   scheduledDate: z.iso.date().or(z.literal("")).optional(),
+  arena: z.string().trim().max(80).optional(),
   patternNumber: z.coerce.number().int().min(1).max(999).nullable().optional(),
   isYouth: z.boolean(),
   notes: z.string().trim().max(1000).optional(),

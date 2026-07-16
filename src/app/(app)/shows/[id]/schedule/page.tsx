@@ -42,13 +42,18 @@ export default async function SchedulePage({
       ) : (
         <>
           {schedule.days.map((day) => (
-            <Card key={day.date}>
+            <Card key={`${day.date}|${day.arena ?? ""}`}>
               <h3 className="mb-3 text-base font-semibold">
                 {new Date(`${day.date}T00:00:00`).toLocaleDateString(undefined, {
                   weekday: "long",
                   month: "long",
                   day: "numeric",
                 })}
+                {day.arena && (
+                  <span className="ml-2 text-sm font-medium text-stone-500 dark:text-stone-400">
+                    — {day.arena}
+                  </span>
+                )}
               </h3>
               <ScheduleTable showId={id} rows={day.classes} />
             </Card>

@@ -22,6 +22,7 @@ export interface PublicClass {
   status: string;
   scheduled_date: string | null;
   concurrent_group_id: string | null;
+  arena: string | null;
 }
 
 export interface PublicDrawRow {

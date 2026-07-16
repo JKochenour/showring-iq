@@ -62,6 +62,7 @@ export function CreateClassForm({
       judgeFee: "",
       addedMoney: "",
       scheduledDate: "",
+      arena: "",
       nrhaClassCode: "",
       classCodeId: "",
       notes: "",
@@ -123,6 +124,7 @@ export function EditClassForm({
       addedMoney: centsToInput(showClass.added_money_cents),
       status: showClass.status,
       scheduledDate: showClass.scheduled_date ?? "",
+      arena: showClass.arena ?? "",
       nrhaClassCode: showClass.nrha_class_code ?? "",
       classCodeId: showClass.class_code_id ?? "",
       notes: showClass.notes ?? "",
@@ -308,6 +310,14 @@ function ClassFields({ register, errors, control, classCodeOptions }: { register
           <Label htmlFor="scheduledDate">Scheduled day (optional)</Label>
           <Input id="scheduledDate" type="date" {...register("scheduledDate")} />
           <FieldError message={errors.scheduledDate?.message} />
+        </div>
+        <div>
+          <Label htmlFor="arena">Arena (optional)</Label>
+          <Input id="arena" placeholder="e.g. INDOOR" {...register("arena")} />
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+            Schedules split each day by arena — arenas run in parallel.
+          </p>
+          <FieldError message={errors.arena?.message} />
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
