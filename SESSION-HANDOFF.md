@@ -1,4 +1,4 @@
-# ShowRing IQ — Session Handoff (updated 2026-07-16, end of 14th session)
+# ShowRing IQ — Session Handoff (updated 2026-07-16, 15th session)
 
 This is a plain-text snapshot of where this project stands. Claude's
 persistent memory has the same content and loads automatically in a
@@ -7,9 +7,9 @@ yourself.
 
 ## CURRENT STATE (read this first in a new window)
 
-- **Branch `main`, working tree clean, HEAD `3f0bec1`** (merge of the
-  14th session's entity-decode branch; that worktree + branch are
-  deleted). The old `feature/show-weekends` branch was merged at
+- **Branch `main`, HEAD `a12dc3d`** (15th session's APHA starter
+  package; before that `3f0bec1`, the merge of the 14th session's
+  entity-decode branch — that worktree + branch are deleted). The old `feature/show-weekends` branch was merged at
   `b29c335` and everything since lands directly on main. No git remote
   configured (Vercel deploy deferred — user has no domain yet; steps
   are in part 3's notes).
@@ -26,9 +26,12 @@ yourself.
   tablet/arena mode for gate+scoring, (6) phone/tablet/desktop
   responsive pass, (7) AQHA 2026 rule package (zero migrations) +
   per-entry association derivation.
-- **Open review item for the user:** the AQHA 2026 package sits
+- **Open review items for the user:** the AQHA 2026 package sits
   PUBLISHED in the EPRHA org with mnemonic codes (REIN-AM etc.) —
   review and align codes with AQHA results software before real use.
+  The APHA 2026 package (15th session) sits in DRAFT — review its 62
+  codes + 5 rules, align codes with APHA Performance Department
+  results-format codes, then publish when ready.
 - **Known dev gotchas** (details in the session parts below): the PWA
   service worker serves stale CSS/JS during dev — unregister SWs +
   clear caches when edits seem ignored; `npm test`/eslint must not
@@ -44,7 +47,47 @@ yourself.
   tablets, real arena values on the Summer Slide classes, GitHub +
   Vercel when a domain exists.
 
-## Latest (2026-07-16, 14th session — HTML-ENTITY DECODE IN IMPORTS + DATA CLEANUP, live-verified, merged `3f0bec1`)
+## Latest (2026-07-16, 15th session — APHA 2026 STARTER RULE PACKAGE, zero migrations, live-verified, committed `a12dc3d`)
+
+The user dropped five rulebook PDFs into `C:\Users\jkoch\Documents\Rulebooks\`
+(APHA 2026, USEF 2026 full book, USEF Chapter DR Dressage, USDF Dressage
+Protocol, NCHA 2026 — all cataloged in memory) and asked to start the APHA
+package. Same playbook as AQHA: pdfjs-dist extraction of all 423 pages →
+subagent digest with exact citations → starter button seeding pure data.
+
+- **"Create APHA <year> starter package"** button on Rule Packages
+  (`apha-starter-button.tsx` + `createAphaStarterPackage` in actions.ts):
+  **62 class codes** (SC-190.A approved events + SC-175.M halter slate)
+  across Open / Amateur / **Masters (45+ — APHA's Select-equivalent,
+  AM-080.A.2.b)** / Novice Amateur / Youth 18&U / Youth 13&U (the two
+  youth divisions OVERLAP — not 13&U/14-18) / Novice Youth / Walk-Trot /
+  Green (horse-eligibility, SC-246.D). Leadline seeded no-points
+  (YP-105.D). SPB competes with Regular Registry since 2025 (SC-325.A.1).
+- **5 cited eligibility rules** (all warnings — family-ownership checks are
+  beyond the engine): youth age YP-010.A, amateur age AM-010.A.1, Masters
+  45+ (scoped to WP-MAS), amateur ownership AM-020.A (required AT ENTRY),
+  youth ownership YP-015.A (points-only).
+- **Source notes** carry the operational constants: results postmarked in
+  10 CALENDAR days / $29-day late fee (SC-125.A); $3/entry/judge
+  processing fee (SC-125.B); 90-day show approval (SC-090.C-D); the
+  SC-060.A.1 point chart is entries-dependent so it deliberately does NOT
+  fill the flat points_schedule; placings through 7th (SC-155.A);
+  exhibitor AND owner memberships inspected at show (SC-160.A).
+- **Two findings:** (1) the ">5% error-rate" policy CLAUDE.md attributes
+  to APHA is **NOT in the 2026 rulebook** — it's Performance Department
+  practice; never cite it to a rule number. (2) APHA publishes class
+  NAMES only — no codes in the rulebook; all codes are internal
+  mnemonics to align with the Performance Department's results format.
+- **Live-verified** in the EPRHA org: package created, all 62 codes
+  rendered (LEAD-Y correctly shows Money without Points), all 5 rules +
+  full source notes. **Left in DRAFT for the user's review** (the AQHA
+  package sits published; this one intentionally doesn't).
+- Build + lint clean, 15/15 tests green. Not encoded (future): cross-entry
+  limits (SC-185.D), horses-per-exhibitor caps, Novice point caps with the
+  cross-breed revaluation table, judge-conflict rules (JU-000.D), class
+  date windows.
+
+## Earlier (2026-07-16, 14th session — HTML-ENTITY DECODE IN IMPORTS + DATA CLEANUP, live-verified, merged `3f0bec1`)
 
 Closed the item flagged in passing at the end of 13th-session part 1:
 some imported names carried literal HTML entities (e.g.
