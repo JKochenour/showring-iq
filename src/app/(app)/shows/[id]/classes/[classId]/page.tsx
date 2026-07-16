@@ -238,31 +238,33 @@ export default async function ClassDetailPage({
         editable={canEdit && showEditable}
       />
 
-      {(canDelete || canEdit) && showEditable && showClass.status !== "cancelled" && (
-        <Card className="max-w-2xl border-red-200 dark:border-red-900">
-          <h3 className="mb-1 text-sm font-semibold">Danger zone</h3>
-          <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
-            Deleting a class removes it from the schedule. Once entries exist
-            for it (including after a draw or scores, when the status above
-            is no longer editable), cancel the class instead — that works at
-            any stage.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {canEdit && (
-              <CancelClassButton
-                classId={showClass.id}
-                label={`Class ${showClass.class_number} — ${showClass.name}`}
-              />
-            )}
-            {canDelete && (
-              <DeleteClassButton
-                classId={showClass.id}
-                label={`Class ${showClass.class_number} — ${showClass.name}`}
-              />
-            )}
-          </div>
-        </Card>
-      )}
+      {(canDelete || (canEdit && showClass.status !== "cancelled")) &&
+        showEditable && (
+          <Card className="max-w-2xl border-red-200 dark:border-red-900">
+            <h3 className="mb-1 text-sm font-semibold">Danger zone</h3>
+            <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
+              Deleting a class removes it from the schedule. Once entries exist
+              for it (including after a draw or scores, when the status above
+              is no longer editable), cancel the class instead — that works at
+              any stage. A cancelled class can still be deleted once its
+              entries are gone (e.g. a test class that never really ran).
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {canEdit && showClass.status !== "cancelled" && (
+                <CancelClassButton
+                  classId={showClass.id}
+                  label={`Class ${showClass.class_number} — ${showClass.name}`}
+                />
+              )}
+              {canDelete && (
+                <DeleteClassButton
+                  classId={showClass.id}
+                  label={`Class ${showClass.class_number} — ${showClass.name}`}
+                />
+              )}
+            </div>
+          </Card>
+        )}
     </div>
   );
 }

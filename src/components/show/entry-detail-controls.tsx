@@ -7,6 +7,7 @@ import {
   reinstateEntry,
   reinstateEntryClass,
   releaseBackNumber,
+  removeEntryClass,
   scratchEntry,
   scratchEntryClass,
   setEntryBillToTrainer,
@@ -361,6 +362,54 @@ export function ScratchClassButton({
           : status === "entered"
             ? "Scratch"
             : "Reinstate"}
+      </Button>
+      {error && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
+      )}
+    </div>
+  );
+}
+
+/** Removes a class from an entry entirely — for data-entry mistakes,
+ * before anything ran. Scratching is the normal path (scratched classes
+ * must stay for results/exports); the server action refuses scratched
+ * rows and anything else RLS won't allow. */
+export function RemoveClassButton({
+  entryClassId,
+  canEdit,
+  className,
+}: {
+  entryClassId: string;
+  canEdit: boolean;
+  className: string;
+}) {
+  const [error, setError] = useState<string>();
+  const [isPending, startTransition] = useTransition();
+  const confirm = useConfirmDialog();
+
+  if (!canEdit) return null;
+
+  return (
+    <div>
+      <Button
+        variant="secondary"
+        disabled={isPending}
+        onClick={async () => {
+          const result = await confirm({
+            title: "Remove class from entry",
+            message: `Remove ${className} from this entry entirely? Use this only for data-entry mistakes — scratch instead if the horse was really entered.`,
+            tone: "danger",
+            confirmLabel: "Remove",
+          });
+          if (!result) return;
+          setError(undefined);
+          startTransition(async () => {
+            const removeResult = await removeEntryClass(entryClassId);
+            if (removeResult?.error) setError(removeResult.error);
+          });
+        }}
+      >
+        {isPending ? "Removing…" : "Remove"}
       </Button>
       {error && (
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>

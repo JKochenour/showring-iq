@@ -8,6 +8,7 @@ import {
   BillToTrainerToggle,
   EntryScratchControls,
   PayeeControl,
+  RemoveClassButton,
   ScratchClassButton,
 } from "@/components/show/entry-detail-controls";
 import { RemoveButton } from "@/components/remove-button";
@@ -239,6 +240,17 @@ export default async function EntryDetailPage({
                       canScratch={canScratch}
                       canReinstate={canReinstate}
                     />
+                    {ec.status === "entered" && (
+                      <RemoveClassButton
+                        entryClassId={ec.id}
+                        canEdit={canEdit}
+                        className={
+                          ec.class
+                            ? `class ${ec.class.class_number} — ${ec.class.name}`
+                            : "this class"
+                        }
+                      />
+                    )}
                   </div>
                 )}
               </li>
