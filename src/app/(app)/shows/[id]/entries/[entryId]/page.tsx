@@ -7,6 +7,7 @@ import {
   BackNumberControl,
   BillToTrainerToggle,
   EntryScratchControls,
+  PayeeControl,
   ScratchClassButton,
 } from "@/components/show/entry-detail-controls";
 import { RemoveButton } from "@/components/remove-button";
@@ -38,12 +39,19 @@ export default async function EntryDetailPage({
   if (!entry) notFound();
   const e = entry as Entry;
 
+  // The effective payee (explicit, else owner of record, else rider) —
+  // whose verified W-9 is what matters for winning checks.
+  const effectivePayeeId =
+    e.payee_person_id ?? e.owner_person_id ?? e.rider_person_id;
+
   const [
     { data: show },
     { data: entryClasses },
     { data: backNumber },
     { data: allClasses },
     { entries: validatedEntries },
+    { data: orgPeople },
+    { data: payeeW9 },
     canEdit,
     canScratch,
     canReinstate,
@@ -68,6 +76,18 @@ export default async function EntryDetailPage({
       .not("status", "in", "(cancelled,archived)")
       .order("display_order"),
     loadValidatedEntries(supabase, id),
+    supabase
+      .from("people")
+      .select("id, first_name, last_name")
+      .eq("organization_id", e.organization_id)
+      .order("last_name"),
+    supabase
+      .from("documents")
+      .select("id")
+      .eq("person_id", effectivePayeeId)
+      .eq("document_type", "w9")
+      .eq("status", "verified")
+      .limit(1),
     hasOrgPermission(e.organization_id, "entry.edit"),
     hasOrgPermission(e.organization_id, "entry.scratch"),
     hasOrgPermission(e.organization_id, "entry.reinstate"),
@@ -141,17 +161,29 @@ export default async function EntryDetailPage({
         />
       </Card>
 
-      {e.trainer_name && (
-        <Card>
-          <h3 className="mb-3 text-base font-semibold">Billing</h3>
+      <Card>
+        <h3 className="mb-3 text-base font-semibold">Billing &amp; payee</h3>
+        <div className="space-y-3">
           <BillToTrainerToggle
             entryId={entryId}
             trainerName={e.trainer_name}
             billToTrainer={e.bill_to_trainer}
             canEdit={canEdit && showEditable}
           />
-        </Card>
-      )}
+          <PayeeControl
+            entryId={entryId}
+            payeePersonId={e.payee_person_id}
+            payeeName={e.payee_name}
+            defaultPayeeName={e.owner_name ?? e.rider_name}
+            hasVerifiedW9={(payeeW9?.length ?? 0) > 0}
+            people={(orgPeople ?? []).map((p) => ({
+              id: p.id as string,
+              label: `${p.last_name}, ${p.first_name}`,
+            }))}
+            canEdit={canEdit && showEditable}
+          />
+        </div>
+      </Card>
 
       <Card>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

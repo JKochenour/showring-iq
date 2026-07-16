@@ -13,10 +13,12 @@ export interface PayeeReportRow {
   showCount: number;
 }
 
-/** Year-end payout totals per payee (owner of record, falling back to
- * rider — matches the "owners of record" convention CLAUDE.md already
- * documents for NRHA Top Ten awards), across every show in the org for
- * a calendar year. A prep aid for 1099-NEC, not a filer. */
+/** Year-end payout totals per payee, across every show in the org for
+ * a calendar year. The payee is the entry's explicit payee_person_id
+ * (the "party to receive winning checks" from the entry form, 00044)
+ * when set; otherwise the default — owner of record, falling back to
+ * rider (the "owners of record" convention CLAUDE.md documents for
+ * NRHA Top Ten awards). A prep aid for 1099-NEC, not a filer. */
 export async function loadPayeeReport(
   supabase: SupabaseClient,
   organizationId: string,
@@ -51,7 +53,9 @@ export async function loadPayeeReport(
 
   const { data: entries } = await supabase
     .from("entries")
-    .select("id, owner_person_id, rider_person_id, owner_name, rider_name")
+    .select(
+      "id, payee_person_id, owner_person_id, rider_person_id, payee_name, owner_name, rider_name"
+    )
     .in("id", [...new Set([...entryIdByEntryClass.values()])]);
   const entryById = new Map((entries ?? []).map((e) => [e.id as string, e]));
 
@@ -65,11 +69,16 @@ export async function loadPayeeReport(
     const entry = entryId ? entryById.get(entryId) : null;
     if (!entry) continue;
 
-    const personId = (entry.owner_person_id as string | null) ?? (entry.rider_person_id as string);
+    const personId =
+      (entry.payee_person_id as string | null) ??
+      (entry.owner_person_id as string | null) ??
+      (entry.rider_person_id as string);
     const name =
-      (entry.owner_person_id
-        ? (entry.owner_name as string | null)
-        : (entry.rider_name as string)) ?? "Unknown";
+      (entry.payee_person_id
+        ? (entry.payee_name as string | null)
+        : entry.owner_person_id
+          ? (entry.owner_name as string | null)
+          : (entry.rider_name as string)) ?? "Unknown";
 
     const bucket = buckets.get(personId) ?? {
       name,

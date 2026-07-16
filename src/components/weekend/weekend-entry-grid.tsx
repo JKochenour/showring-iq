@@ -33,6 +33,7 @@ export function WeekendEntryGrid({
   organizationId,
   riders,
   owners,
+  payees,
   horses,
   slates,
 }: {
@@ -40,6 +41,8 @@ export function WeekendEntryGrid({
   organizationId: string;
   riders: PersonOption[];
   owners: PersonOption[];
+  /** Anyone in the org can receive winning checks (owner/exhibitor/other). */
+  payees: PersonOption[];
   horses: { id: string; label: string }[];
   slates: Slate[];
 }) {
@@ -47,6 +50,8 @@ export function WeekendEntryGrid({
   const [riderId, setRiderId] = useState("");
   const [billTo, setBillTo] = useState<"rider" | "owner">("rider");
   const [ownerId, setOwnerId] = useState("");
+  const [payeeMode, setPayeeMode] = useState<"default" | "other">("default");
+  const [payeeId, setPayeeId] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string>();
   const [saved, setSaved] = useState<string>();
@@ -114,6 +119,8 @@ export function WeekendEntryGrid({
     if (!horseId) return setError("Choose a horse.");
     if (!riderId) return setError("Choose a rider.");
     if (billTo === "owner" && !ownerId) return setError("Choose the owner to bill.");
+    if (payeeMode === "other" && !payeeId)
+      return setError("Choose who receives winning checks.");
     if (runCount === 0) return setError("Check at least one class in a slate.");
 
     const payload = {
@@ -122,6 +129,7 @@ export function WeekendEntryGrid({
       riderPersonId: riderId,
       billTo,
       ownerPersonId: billTo === "owner" ? ownerId : "",
+      payeePersonId: payeeMode === "other" ? payeeId : "",
       slates: slates.map((slate) => ({
         showId: slate.showId,
         classIds: slate.classes
@@ -144,6 +152,8 @@ export function WeekendEntryGrid({
       setHorseId("");
       setRiderId("");
       setOwnerId("");
+      setPayeeMode("default");
+      setPayeeId("");
       setSelected(new Set());
     });
   };
@@ -222,6 +232,44 @@ export function WeekendEntryGrid({
           The horse&apos;s once-per-weekend office/stall/drug lands on whoever
           signs it up here; each run&apos;s class/video/photo bills the same
           way.
+        </p>
+      </div>
+
+      <div>
+        <Label>Winning checks to</Label>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              className="accent-brand-700"
+              checked={payeeMode === "default"}
+              onChange={() => setPayeeMode("default")}
+            />
+            Default (owner, then rider)
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              className="accent-brand-700"
+              checked={payeeMode === "other"}
+              onChange={() => setPayeeMode("other")}
+            />
+            Someone else
+          </label>
+          {payeeMode === "other" && (
+            <div className="min-w-56">
+              <Combobox
+                options={payees}
+                value={payeeId}
+                onChange={setPayeeId}
+                placeholder="Choose the payee…"
+              />
+            </div>
+          )}
+        </div>
+        <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+          Separate from who pays the bill — the payee needs a verified W-9 on
+          file before winning checks are written.
         </p>
       </div>
 

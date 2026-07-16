@@ -32,6 +32,8 @@ export const createWeekendEntrySchema = z
     riderPersonId: z.uuid(),
     billTo: z.enum(["rider", "owner"]),
     ownerPersonId: z.uuid().or(z.literal("")).optional(),
+    /** Party to receive winning checks; empty = default (owner → rider). */
+    payeePersonId: z.uuid().or(z.literal("")).optional(),
     slates: z
       .array(
         z.object({

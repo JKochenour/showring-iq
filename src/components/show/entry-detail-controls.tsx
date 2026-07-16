@@ -10,8 +10,10 @@ import {
   scratchEntry,
   scratchEntryClass,
   setEntryBillToTrainer,
+  setEntryPayee,
 } from "@/app/(app)/shows/[id]/entries/actions";
 import { Alert, Button, Input, Select } from "@/components/ui";
+import { Combobox } from "@/components/combobox";
 import { useConfirmDialog } from "@/components/confirm-dialog";
 
 export function BillToTrainerToggle({
@@ -51,6 +53,121 @@ export function BillToTrainerToggle({
         Bill entry fees and charges to trainer ({trainerName}) instead of
         owner/rider
       </label>
+      {error && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
+      )}
+    </div>
+  );
+}
+
+/** Who receives winning checks — separate from who pays the bill (the
+ * EPRHA paper form's "party to receive winning checks"). No explicit
+ * payee = default: owner of record, falling back to rider. */
+export function PayeeControl({
+  entryId,
+  payeePersonId,
+  payeeName,
+  defaultPayeeName,
+  hasVerifiedW9,
+  people,
+  canEdit,
+}: {
+  entryId: string;
+  payeePersonId: string | null;
+  payeeName: string | null;
+  /** Resolved default (owner → rider) shown when no explicit payee. */
+  defaultPayeeName: string;
+  /** Whether the EFFECTIVE payee has a verified W-9 document. */
+  hasVerifiedW9: boolean;
+  people: { id: string; label: string }[];
+  canEdit: boolean;
+}) {
+  const [error, setError] = useState<string>();
+  const [editing, setEditing] = useState(false);
+  const [selected, setSelected] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  const apply = (personId: string | null) => {
+    setError(undefined);
+    startTransition(async () => {
+      const result = await setEntryPayee(entryId, personId);
+      if (result?.error) setError(result.error);
+      else {
+        setEditing(false);
+        setSelected("");
+      }
+    });
+  };
+
+  return (
+    <div>
+      <p className="text-sm">
+        Winning checks to:{" "}
+        <b>{payeePersonId ? payeeName : defaultPayeeName}</b>
+        {!payeePersonId && (
+          <span className="text-stone-500 dark:text-stone-400">
+            {" "}
+            (default — owner, then rider)
+          </span>
+        )}{" "}
+        {hasVerifiedW9 ? (
+          <span className="rounded bg-brand-100 px-1.5 py-0.5 text-xs font-medium text-brand-800 dark:bg-brand-950 dark:text-brand-300">
+            W-9 on file
+          </span>
+        ) : (
+          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+            no verified W-9 — needed before winning checks
+          </span>
+        )}
+      </p>
+      {canEdit && !editing && (
+        <button
+          type="button"
+          className="mt-1 text-xs text-brand-700 hover:underline dark:text-brand-400"
+          onClick={() => setEditing(true)}
+        >
+          Change payee
+        </button>
+      )}
+      {canEdit && editing && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="min-w-64">
+            <Combobox
+              options={people}
+              value={selected}
+              onChange={setSelected}
+              placeholder="Choose the payee…"
+            />
+          </div>
+          <Button
+            variant="secondary"
+            disabled={isPending || !selected}
+            onClick={() => apply(selected)}
+          >
+            {isPending ? "Saving…" : "Set payee"}
+          </Button>
+          {payeePersonId && (
+            <Button
+              variant="secondary"
+              disabled={isPending}
+              onClick={() => apply(null)}
+            >
+              Use default
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            disabled={isPending}
+            onClick={() => {
+              setEditing(false);
+              setSelected("");
+              setError(undefined);
+            }}
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
       {error && (
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
       )}

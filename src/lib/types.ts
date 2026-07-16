@@ -337,6 +337,9 @@ export interface Entry {
   owner_name: string | null;
   trainer_name: string | null;
   bill_to_trainer: boolean;
+  /** Party to receive winning checks; null = default (owner → rider). */
+  payee_person_id: string | null;
+  payee_name: string | null;
   status: "active" | "scratched";
   notes: string | null;
   checked_in_at: string | null;

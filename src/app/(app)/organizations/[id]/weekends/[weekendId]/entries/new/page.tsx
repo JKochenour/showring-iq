@@ -113,6 +113,10 @@ export default async function NewWeekendEntryPage({
           organizationId={id}
           riders={byRole("rider")}
           owners={byRole("owner")}
+          payees={peopleRows.map((p) => ({
+            id: p.id,
+            label: `${p.last_name}, ${p.first_name}`,
+          }))}
           horses={horseOptions}
           slates={slates}
         />

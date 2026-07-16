@@ -1,11 +1,56 @@
-# ShowRing IQ — Session Handoff (updated 2026-07-15)
+# ShowRing IQ — Session Handoff (updated 2026-07-16)
 
 This is a plain-text snapshot of where this project stands. Claude's
 persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Latest (2026-07-15, 12th session — SHOW WEEKENDS live-verified, then RUN-LEVEL FEES + EPRHA-STYLE STATEMENT + YOUTH $0 built)
+## Latest (2026-07-16, 13th session — PAYEE / WINNING CHECKS + CLOSE-OUT FEE FIX, both live-verified)
+
+The two open items from the 12th session, both on `feature/show-weekends`,
+migrations **00044 + 00045 applied**, live-verified with a throwaway QA
+show (deleted after). Build/lint/9 tests green.
+
+**1. Payee / winning-checks (00044).** The paper form's "party to receive
+winning checks" — separate from the bill-payer. `entries.payee_person_id`
++ `payee_name`; NULL = default (owner of record → rider, the convention
+the payee report always used), so existing entries are untouched. Captured
+on the office entry form and the weekend entry grid ("Winning checks to",
+any org person); editable on the entry detail **"Billing & payee"** card
+(entry.edit-gated `setEntryPayee`, audited `entry.payee_set`/`_cleared`
+with old/new). **Live W-9 badge** beside the effective payee (verified
+`w9` documents, no stored flag per 00039). Copy-entry carries the payee;
+exhibitor self-service defaults. `loadPayeeReport` resolves explicit
+payee → owner → rider. Verified: create-with-payee, clear ("Use default"),
+re-set via the control, audit rows exact.
+
+**2. Close-out fee — the "timing" open item was a REAL BUG (00045).** The
+$50-after-deadline fee existed since 00036, but its `apply_close_out_fee`
+RPC summed only MATERIALIZED rows (class fees + misc − payments) — since
+00042 the judge/video/photo run fees are computed live and never
+materialized, so someone owing only run fees looked settled and was
+SKIPPED. Debtor detection now happens app-side in `applyCloseOutFee`
+using `loadShowBillingRoster` (the exact math staff see), charging each
+debtor via `add_misc_charge` (audited, idempotent via the 'Close-out fee'
+category check); **00045 drops the stale RPC.** Plus the deadline is now
+actually surfaced: a **Close-out card on Financials** (deadline label,
+amber once passed with open balances, bulk apply). Verified: a person
+with $0 entry fees + $60 judge-only run fee GOT the $50 (old RPC would
+have missed them, balance $110 exact; Jamie $225 exact); re-apply →
+"Applied to 0 bills".
+
+**Timezone gotcha (fixed):** `close_out_deadline` is stored from a naive
+datetime-local string — the office's wall clock sits in the UTC fields.
+`closeOutDeadlineInfo` formats the label with timeZone:"UTC" (shows what
+was typed) and computes "passed" by interpreting that wall clock in
+`shows.timezone`. Any future formatting of 00036-style naive timestamps
+must do the same.
+
+**NOT yet committed as of this writing** (working tree has 00044/00045 +
+all app changes). Also noted in passing, not fixed: some imported horse
+names carry a literal "&apos;" from the show-bill import.
+
+## Previous (2026-07-15, 12th session — SHOW WEEKENDS live-verified, then RUN-LEVEL FEES + EPRHA-STYLE STATEMENT + YOUTH $0 built)
 
 Three things this session, all on branch `feature/show-weekends`, all
 live-verified to the penny and committed. The user drove the direction by

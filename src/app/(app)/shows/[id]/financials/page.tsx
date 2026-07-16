@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadShowBillingRoster } from "@/lib/billing";
 import { BillingRoster } from "@/components/show/billing-roster";
+import { CloseOutCard } from "@/components/show/close-out-card";
 import { PayoutDeadlineCard } from "@/components/show/payout-deadline-card";
-import { payoutDeadlineInfo } from "@/lib/results-timing";
+import { closeOutDeadlineInfo, payoutDeadlineInfo } from "@/lib/results-timing";
 import { Alert, ButtonLink, PageHeader } from "@/components/ui";
 import type { Show } from "@/lib/types";
 
@@ -19,13 +20,21 @@ export default async function FinancialsPage({
 
   const { data: show } = await supabase
     .from("shows")
-    .select("id, organization_id, end_date, payouts_distributed_at")
+    .select(
+      "id, organization_id, end_date, timezone, payouts_distributed_at, close_out_fee_cents, close_out_deadline"
+    )
     .eq("id", id)
     .maybeSingle();
   if (!show) notFound();
   const s = show as Pick<
     Show,
-    "id" | "organization_id" | "end_date" | "payouts_distributed_at"
+    | "id"
+    | "organization_id"
+    | "end_date"
+    | "timezone"
+    | "payouts_distributed_at"
+    | "close_out_fee_cents"
+    | "close_out_deadline"
   >;
 
   const canView = await hasOrgPermission(s.organization_id, "invoice.view");
@@ -35,9 +44,11 @@ export default async function FinancialsPage({
     );
   }
 
-  const [rows, canApprovePayouts, { data: moneyRows }] = await Promise.all([
+  const [rows, canApprovePayouts, canEditInvoices, { data: moneyRows }] =
+    await Promise.all([
     loadShowBillingRoster(supabase, id),
     hasOrgPermission(s.organization_id, "payout.approve"),
+    hasOrgPermission(s.organization_id, "invoice.edit"),
     supabase
       .from("results")
       .select("money_won_cents")
@@ -48,6 +59,11 @@ export default async function FinancialsPage({
     (sum, r) => sum + ((r.money_won_cents as number) ?? 0),
     0
   );
+
+  const closeOutInfo = s.close_out_deadline
+    ? closeOutDeadlineInfo(s.close_out_deadline, s.timezone)
+    : null;
+  const openBalanceCount = rows.filter((r) => r.balanceCents > 0).length;
 
   return (
     <div className="space-y-6">
@@ -67,6 +83,16 @@ export default async function FinancialsPage({
         totalMoneyWonCents={totalMoneyWonCents}
         canMark={canApprovePayouts}
       />
+      {(s.close_out_fee_cents ?? 0) > 0 && (
+        <CloseOutCard
+          showId={id}
+          feeCents={s.close_out_fee_cents}
+          deadlineLabel={closeOutInfo?.deadlineLabel ?? null}
+          deadlinePassed={closeOutInfo?.passed ?? false}
+          openBalanceCount={openBalanceCount}
+          canApply={canEditInvoices}
+        />
+      )}
       <BillingRoster showId={id} rows={rows} />
     </div>
   );

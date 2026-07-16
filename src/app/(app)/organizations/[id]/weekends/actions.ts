@@ -117,9 +117,11 @@ export async function createWeekendEntry(
 
   // Resolve display-name snapshots and validate the picked classes.
   const wantedClassIds = [...new Set(d.slates.flatMap((s) => s.classIds))];
-  const peopleIds = [d.riderPersonId, d.ownerPersonId || null].filter(
-    Boolean
-  ) as string[];
+  const peopleIds = [
+    d.riderPersonId,
+    d.ownerPersonId || null,
+    d.payeePersonId || null,
+  ].filter(Boolean) as string[];
 
   const [{ data: people }, { data: horse }, { data: classes }] =
     await Promise.all([
@@ -143,6 +145,9 @@ export async function createWeekendEntry(
   if (!riderName) return { error: "Rider not found." };
   const ownerPersonId = d.billTo === "owner" ? d.ownerPersonId || null : null;
   const ownerName = nameOf(ownerPersonId);
+  const payeePersonId = d.payeePersonId || null;
+  const payeeName = nameOf(payeePersonId);
+  if (payeePersonId && !payeeName) return { error: "Payee not found." };
 
   const classById = new Map(
     (classes ?? []).map((c) => [
@@ -195,6 +200,8 @@ export async function createWeekendEntry(
           rider_name: riderName,
           horse_name: horse.registered_name,
           owner_name: ownerName,
+          payee_person_id: payeePersonId,
+          payee_name: payeeName,
         })
         .select("id")
         .maybeSingle();
@@ -248,6 +255,7 @@ export async function createWeekendEntry(
         .filter((s) => s.classIds.length > 0)
         .map((s) => ({ show_id: s.showId, classes: s.classIds.length })),
       bill_to: d.billTo,
+      payee: payeeName,
     },
   });
 
