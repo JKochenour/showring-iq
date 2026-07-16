@@ -5,6 +5,7 @@ import { useMemo, useState, useTransition } from "react";
 import { parseCsv } from "@/lib/import/csv";
 import { parseXlsx } from "@/lib/import/xlsx";
 import { guessMapping, type ImportFieldConfig } from "@/lib/import/field-config";
+import { decodeHtmlEntities } from "@/lib/import/normalize";
 import { Alert, Button, ButtonLink, Card, Select } from "@/components/ui";
 
 type ImportRowResult = {
@@ -85,10 +86,16 @@ export function SpreadsheetImport({
       setParseError("No data rows found below the header.");
       return;
     }
+    // Spreadsheets exported from web-based systems (HSW reports, HTML
+    // copy-paste) can carry literal entities like "&apos;" in names —
+    // decode them here so the preview and the import both see clean text.
+    const cleanHeaders = parsed.headers.map(decodeHtmlEntities);
+    const cleanRows = parsed.rows.map((row) => row.map(decodeHtmlEntities));
+
     setFileName(file.name);
-    setHeaders(parsed.headers);
-    setRows(parsed.rows.slice(0, MAX_ROWS));
-    setMapping(guessMapping(parsed.headers, fields));
+    setHeaders(cleanHeaders);
+    setRows(cleanRows.slice(0, MAX_ROWS));
+    setMapping(guessMapping(cleanHeaders, fields));
   }
 
   function mappedRows(): Record<string, string>[] {
