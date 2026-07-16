@@ -275,6 +275,21 @@ export interface Person {
   user_id: string | null;
 }
 
+/** A self-serve exhibitor access request (00049). */
+export interface ExhibitorJoinRequest {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  requester_name: string;
+  requester_email: string;
+  message: string | null;
+  status: "pending" | "approved" | "declined";
+  resolved_by: string | null;
+  resolved_at: string | null;
+  decline_reason: string | null;
+  created_at: string;
+}
+
 export interface PersonMembership {
   id: string;
   person_id: string;

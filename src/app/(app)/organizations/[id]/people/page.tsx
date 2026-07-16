@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { PERSON_ROLES } from "@/lib/validation/person";
 import { ButtonLink, EmptyState, PageHeader } from "@/components/ui";
+import { JoinRequestsCard } from "@/components/org/join-requests";
 import { PeopleTable, type PersonRow } from "@/components/org/people-table";
-import type { Person, PersonMembership } from "@/lib/types";
+import type { ExhibitorJoinRequest, Person, PersonMembership } from "@/lib/types";
 
 export const metadata = { title: "People — ShowRing IQ" };
 
@@ -15,22 +16,36 @@ export default async function PeoplePage({
   const { id } = await params;
   const { supabase } = await requireUser();
 
-  const [{ data: org }, { data: people }, { data: memberships }, canCreate, canDelete] =
-    await Promise.all([
-      supabase.from("organizations").select("id").eq("id", id).maybeSingle(),
-      supabase
-        .from("people")
-        .select("*")
-        .eq("organization_id", id)
-        .order("last_name")
-        .order("first_name"),
-      supabase
-        .from("person_memberships")
-        .select("person_id, association, membership_number")
-        .eq("organization_id", id),
-      hasOrgPermission(id, "person.create"),
-      hasOrgPermission(id, "person.edit"),
-    ]);
+  const [
+    { data: org },
+    { data: people },
+    { data: memberships },
+    { data: joinRequests },
+    canCreate,
+    canDelete,
+    canInvite,
+  ] = await Promise.all([
+    supabase.from("organizations").select("id").eq("id", id).maybeSingle(),
+    supabase
+      .from("people")
+      .select("*")
+      .eq("organization_id", id)
+      .order("last_name")
+      .order("first_name"),
+    supabase
+      .from("person_memberships")
+      .select("person_id, association, membership_number")
+      .eq("organization_id", id),
+    supabase
+      .from("exhibitor_join_requests")
+      .select("*")
+      .eq("organization_id", id)
+      .eq("status", "pending")
+      .order("created_at"),
+    hasOrgPermission(id, "person.create"),
+    hasOrgPermission(id, "person.edit"),
+    hasOrgPermission(id, "org.members.invite"),
+  ]);
 
   if (!org) notFound();
 
@@ -57,6 +72,10 @@ export default async function PeoplePage({
     contact: person.email ?? person.phone ?? "—",
   }));
 
+  const unlinkedPeople = peopleRows
+    .filter((p) => !p.user_id)
+    .map((p) => ({ id: p.id, label: `${p.last_name}, ${p.first_name}` }));
+
   return (
     <div>
       <PageHeader
@@ -75,6 +94,14 @@ export default async function PeoplePage({
           ) : undefined
         }
       />
+
+      {canInvite && (
+        <JoinRequestsCard
+          organizationId={id}
+          requests={(joinRequests as ExhibitorJoinRequest[]) ?? []}
+          unlinkedPeople={unlinkedPeople}
+        />
+      )}
 
       {rows.length === 0 ? (
         <EmptyState

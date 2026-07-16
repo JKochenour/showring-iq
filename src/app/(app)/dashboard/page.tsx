@@ -75,9 +75,15 @@ export default async function DashboardPage() {
                   every published show
                 </Link>{" "}
                 — schedules, draws, live scores, and results are open to
-                everyone, no account needed. To enter shows online, ask the
-                show office to send you an exhibitor invite; it will appear
-                here once they do.
+                everyone, no account needed. To enter shows online,{" "}
+                <Link
+                  href="/exhibitor"
+                  className="font-medium text-brand-700 hover:underline dark:text-brand-400"
+                >
+                  request exhibitor access
+                </Link>{" "}
+                from the show organization — their office reviews and
+                approves it.
               </p>
             </Card>
           </div>

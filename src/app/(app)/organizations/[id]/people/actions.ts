@@ -43,6 +43,46 @@ export async function updateTaxName(
   return {};
 }
 
+/** Approves a self-serve join request (00049): links an existing
+ * unclaimed person record (personId set) or creates a new one
+ * (first/last set), then grants exhibitor membership. Permission
+ * (org.members.invite) is enforced inside the RPC. */
+export async function approveJoinRequest(input: {
+  requestId: string;
+  organizationId: string;
+  personId?: string;
+  firstName?: string;
+  lastName?: string;
+}): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("approve_join_request", {
+    p_request: input.requestId,
+    p_person: input.personId || null,
+    p_first_name: input.firstName || null,
+    p_last_name: input.lastName || null,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/organizations/${input.organizationId}/people`);
+  return {};
+}
+
+export async function declineJoinRequest(input: {
+  requestId: string;
+  organizationId: string;
+  reason: string;
+}): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("decline_join_request", {
+    p_request: input.requestId,
+    p_reason: input.reason,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/organizations/${input.organizationId}/people`);
+  return {};
+}
+
 const MAX_IMPORT_ROWS = 1000;
 
 export type ImportRowResult = {

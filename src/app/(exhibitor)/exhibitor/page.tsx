@@ -1,18 +1,31 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/authz";
+import { RequestAccess } from "@/components/exhibitor/request-access";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Card, EmptyState } from "@/components/ui";
+import type { ExhibitorJoinRequest } from "@/lib/types";
 
 export const metadata = { title: "Exhibitor — ShowRing IQ" };
 
 export default async function ExhibitorPickOrgPage() {
   const { supabase, user } = await requireUser();
 
-  const { data: people } = await supabase
-    .from("people")
-    .select("organization_id, first_name, last_name, organization:organizations(name)")
-    .eq("user_id", user.id);
+  const [{ data: people }, { data: orgsDir }, { data: requests }] =
+    await Promise.all([
+      supabase
+        .from("people")
+        .select(
+          "organization_id, first_name, last_name, organization:organizations(name)"
+        )
+        .eq("user_id", user.id),
+      supabase.rpc("public_orgs_directory"),
+      supabase
+        .from("exhibitor_join_requests")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+    ]);
 
   const rows =
     (people as unknown as {
@@ -22,9 +35,20 @@ export default async function ExhibitorPickOrgPage() {
       organization: { name: string } | null;
     }[]) ?? [];
 
-  if (rows.length === 1) {
+  const myRequests = (requests as ExhibitorJoinRequest[]) ?? [];
+
+  // With exactly one linked org and nothing pending to check on, go
+  // straight in — the picker is only useful with choices to make.
+  if (rows.length === 1 && myRequests.length === 0) {
     redirect(`/exhibitor/${rows[0].organization_id}/dashboard`);
   }
+
+  const directoryOrgs = ((orgsDir as { id: string; name: string }[] | null) ?? []);
+  const linkedOrgIds = new Set(rows.map((r) => r.organization_id));
+  const requestableOrgs = directoryOrgs
+    .filter((o) => !linkedOrgIds.has(o.id))
+    .map((o) => ({ id: o.id, label: o.name }));
+  const orgNames = Object.fromEntries(directoryOrgs.map((o) => [o.id, o.name]));
 
   return (
     <div className="mx-auto min-h-screen max-w-2xl px-4 py-10 sm:px-8">
@@ -35,7 +59,7 @@ export default async function ExhibitorPickOrgPage() {
       {rows.length === 0 ? (
         <EmptyState
           title="No exhibitor access yet"
-          description="Ask the show office to send you an exhibitor invite for their organization. Until then, every published show's schedule, draws, live scores, and results are open to everyone."
+          description="Request access from a show organization below, or ask their show office to send you an exhibitor invite. Until then, every published show's schedule, draws, live scores, and results are open to everyone."
           action={
             <Link
               href="/shows"
@@ -64,6 +88,14 @@ export default async function ExhibitorPickOrgPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {(requestableOrgs.length > 0 || myRequests.length > 0) && (
+        <RequestAccess
+          orgs={requestableOrgs}
+          orgNames={orgNames}
+          myRequests={myRequests}
+        />
       )}
     </div>
   );
