@@ -1,9 +1,42 @@
-# ShowRing IQ — Session Handoff (updated 2026-07-16)
+# ShowRing IQ — Session Handoff (updated 2026-07-16, end of 13th session)
 
 This is a plain-text snapshot of where this project stands. Claude's
 persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
+
+## CURRENT STATE (read this first in a new window)
+
+- **Branch `main`, working tree clean, HEAD `ba9cb83`.** The old
+  `feature/show-weekends` branch was merged at `b29c335` and everything
+  since lands directly on main. No git remote configured (Vercel deploy
+  deferred — user has no domain yet; steps are in part 3's notes).
+- **Migrations 00041–00049 all applied live.** DB matches main.
+- **THE ENTIRE AGREED ROADMAP IS DONE** (live results → payments → SMS →
+  scheduling → offline → second association ✅ AQHA). The 13th session
+  shipped, in order, each live-verified: (1) payee/winning-checks +
+  close-out-fee run-fee bugfix [00044/00045], (2) public discovery:
+  /shows directory + /[org] pages + show-bill-style public schedule +
+  full order of go [00046/00047], (3) per-class arena support
+  [00048], (4) self-serve exhibitor join requests [00049], (5)
+  tablet/arena mode for gate+scoring, (6) phone/tablet/desktop
+  responsive pass, (7) AQHA 2026 rule package (zero migrations) +
+  per-entry association derivation.
+- **Open review item for the user:** the AQHA 2026 package sits
+  PUBLISHED in the EPRHA org with mnemonic codes (REIN-AM etc.) —
+  review and align codes with AQHA results software before real use.
+- **Known dev gotchas** (details in the session parts below): the PWA
+  service worker serves stale CSS/JS during dev — unregister SWs +
+  clear caches when edits seem ignored; `npm test`/eslint must not
+  scan `.claude/worktrees` (vitest.config.ts + `npx eslint src`
+  handle this); browser-pane viewport emulation misreports
+  window.innerWidth — trust element clientWidth.
+- **Natural next candidates:** encode more AQHA rules (cross-enter
+  prohibitions, Level 1 point caps, SHW261 points chart as the
+  standings schedule), public estimated start times (day-sheet math is
+  ready + arena-aware), SW "update available" banner for arena
+  tablets, real arena values on the Summer Slide classes, GitHub +
+  Vercel when a domain exists.
 
 ## Latest (2026-07-16, 13th session part 7 — AQHA 2026 RULE PACKAGE from the user's official rulebook, live-verified — LAST ROADMAP ITEM DONE)
 
