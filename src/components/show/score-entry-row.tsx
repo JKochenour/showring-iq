@@ -105,6 +105,7 @@ export function ScoreEntryRow({
           {status === "pending" && canEnter && (
             <Button
               variant="secondary"
+              size="lg"
               disabled={isPending}
               onClick={async () => {
                 const result = await confirm({
@@ -181,8 +182,11 @@ export function ScoreEntryRow({
           when the connection returns.
         </Alert>
       )}
-      <div className="grid gap-2 sm:grid-cols-[1fr_110px_110px_1fr]">
+      {/* Score/penalty are large, numeric-keypad inputs — this row gets
+          used on a judge's tablet at the arena rail. */}
+      <div className="grid gap-2 sm:grid-cols-[1fr_130px_130px_1fr]">
         <Select
+          className="min-h-11"
           value={resultStatus}
           onChange={(e) => setResultStatus(e.target.value as ResultStatus)}
         >
@@ -194,16 +198,21 @@ export function ScoreEntryRow({
         </Select>
         <Input
           placeholder="Score"
+          inputMode="decimal"
+          className="min-h-11 font-mono text-lg"
           disabled={resultStatus !== "shown"}
           value={resultStatus === "shown" ? totalScore : ""}
           onChange={(e) => setTotalScore(e.target.value)}
         />
         <Input
           placeholder="Penalty"
+          inputMode="decimal"
+          className="min-h-11 font-mono text-lg"
           value={penaltyPoints}
           onChange={(e) => setPenaltyPoints(e.target.value)}
         />
         <Select
+          className="min-h-11"
           value={judgeStaffId}
           onChange={(e) => setJudgeStaffId(e.target.value)}
         >
@@ -286,11 +295,12 @@ export function ScoreEntryRow({
               );
             }
           }}
+          size="lg"
         >
           {isPending ? "Saving…" : isCorrection ? "Save correction" : "Save"}
         </Button>
         {isCorrection && (
-          <Button variant="secondary" onClick={() => setEditing(false)}>
+          <Button variant="secondary" size="lg" onClick={() => setEditing(false)}>
             Cancel
           </Button>
         )}

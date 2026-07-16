@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadClassDraw } from "@/lib/load-draw";
+import { AutoRefresh } from "@/components/auto-refresh";
+import { KioskToggle } from "@/components/kiosk-toggle";
 import { ClassScoringActions } from "@/components/show/class-scoring-actions";
 import { ClassPatternCard } from "@/components/show/class-pattern-editor";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
@@ -158,7 +160,9 @@ export default async function ClassScoringPage({
 
   return (
     <div className="space-y-6">
-      <div>
+      <AutoRefresh seconds={15} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
         <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href={`/shows/${id}/scoring`} className="hover:underline">
             Scoring
@@ -183,6 +187,8 @@ export default async function ClassScoringPage({
         >
           Print scribe score sheet →
         </Link>
+        </div>
+        <KioskToggle />
       </div>
 
       <ClassScoringActions
@@ -209,12 +215,19 @@ export default async function ClassScoringPage({
         ) : (
           <ul className="divide-y divide-stone-200 dark:divide-stone-800">
             {drawRows.map((row) => (
-              <li key={row.id} className="py-4">
+              <li
+                key={row.id}
+                className={`py-4 ${
+                  row.run_status === "in_arena"
+                    ? "-mx-3 rounded-lg border-l-4 border-brand-600 bg-brand-50 px-3 dark:bg-brand-950/40"
+                    : ""
+                }`}
+              >
                 <div className="mb-2 flex items-center gap-4">
                   <span className="w-8 text-right font-mono text-sm text-stone-400">
                     {row.position}
                   </span>
-                  <span className="font-mono text-lg font-bold">
+                  <span className="font-mono text-xl font-bold">
                     {row.backNumber ? `#${row.backNumber}` : "—"}
                   </span>
                   <div>
@@ -223,6 +236,11 @@ export default async function ClassScoringPage({
                       {row.horseName}
                     </p>
                   </div>
+                  {row.run_status === "in_arena" && (
+                    <span className="rounded-full bg-brand-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-white">
+                      In arena
+                    </span>
+                  )}
                 </div>
                 {row.entryClassStatus === "scratched" ? (
                   <p className="ml-12 text-sm text-red-600 dark:text-red-400">

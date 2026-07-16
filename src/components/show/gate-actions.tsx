@@ -70,7 +70,7 @@ export function GateActionButtons({
           <button
             key={action.status}
             disabled={isPending}
-            className={`rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${TONE_STYLES[action.tone]}`}
+            className={`min-h-11 touch-manipulation rounded-md border px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${TONE_STYLES[action.tone]}`}
             onClick={async () => {
               if (action.confirm || action.promptReason) {
                 const result = await confirm({
@@ -95,7 +95,7 @@ export function GateActionButtons({
         {isFinal && (
           <button
             disabled={isPending}
-            className={`rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${TONE_STYLES.neutral}`}
+            className={`min-h-11 touch-manipulation rounded-md border px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${TONE_STYLES.neutral}`}
             onClick={() => run("pending")}
           >
             Reset

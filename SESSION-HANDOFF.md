@@ -5,7 +5,51 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Latest (2026-07-16, 13th session part 4 — SELF-SERVE EXHIBITOR JOIN REQUESTS, committed 0bb35b1, LIVE-VERIFIED)
+## Latest (2026-07-16, 13th session part 6 — RESPONSIVE PASS: phone/tablet/desktop auto-adapt, live-verified)
+
+No migration. The app now adapts by viewport ("autodetects"):
+- **MobileNav** (src/components/mobile-nav.tsx): <640px the top header
+  gains a hamburger that slides the FULL sidebar nav tree (orgs → shows
+  → all show tabs, user + sign out) over the page; any link tap closes
+  it. Header is sticky. ≥640px the real sidebar shows as before.
+- **ShowTabs** (src/components/show/show-tabs.tsx): the 18-tab show nav
+  was plain `flex` with no wrap/scroll — it forced WHOLE-PAGE horizontal
+  scroll on phones. Now one horizontally-scrollable row (`.scrollbar-thin`
+  utility in globals.css) with an ACTIVE-tab highlight (never existed
+  before) that scrolls itself into view.
+- main padding tightens on phones (py-5 px-4).
+- Wide tables were already in overflow-x-auto wrappers; the remaining
+  unwrapped ones are narrow 3-4-column money tables whose text wraps —
+  deliberately left alone.
+
+Live-verified: 375px (drawer open/navigate/auto-close; no page overflow
+on show dashboard, entries, financials roster, person bill,
+reconciliation, 64-row classes list, public show page; entries table
+scrolls inside its wrapper), 768px (sidebar back, hamburger gone),
+desktop (active tab highlight). Not yet committed as of this writing
+(includes the tablet/arena-mode changes from part 5 below).
+
+## Earlier (2026-07-16, 13th session part 5 — TABLET / ARENA MODE for gate + scoring, live-verified)
+
+No migration. "Tablet mode" (KioskToggle) on the gate and scoring class
+pages: html.kiosk + Fullscreen API hides the sidebar/chrome (globals.css
+mirrors the print-CSS pattern; unmount cleanup restores chrome).
+Button/ButtonLink gained size="lg" (44px) and touch-manipulation; gate
+one-tap buttons upsized to 44px, class pills bigger, Now-card back
+number text-5xl. Scoring class page: AutoRefresh(15) + the in-arena run
+highlights with an "In arena" chip (the judge's tablet follows the
+gate); score/penalty inputs are 44px font-mono inputMode="decimal"
+(numeric keypad), Save/Submit lg; multi-judge inputs same.
+
+Live-verified at 768×1024: kiosk toggle on/off/unmount; a real gate
+"In arena" tap (44px measured) showed up highlighted on the scoring
+page; run restored to pending; inputs measured 44px/decimal via a
+throwaway class-4 entry (deleted after). **Dev-verification gotcha
+discovered: the PWA service worker serves STALE CSS/chunks — if edits
+seem ignored, unregister SWs + clear caches in the tab.** Not yet
+committed as of this writing.
+
+## Earlier (2026-07-16, 13th session part 4 — SELF-SERVE EXHIBITOR JOIN REQUESTS, committed 0bb35b1, LIVE-VERIFIED)
 
 Migration **00049 applied**: `exhibitor_join_requests` (one pending per
 user+org; requester sees own, office sees org's via org.members.invite)

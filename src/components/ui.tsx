@@ -14,17 +14,29 @@ const buttonStyles = {
     "border border-red-300 bg-white text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-stone-900 dark:text-red-400 dark:hover:bg-red-950",
 } as const;
 
+/** touch-manipulation removes the 300ms double-tap-zoom delay — matters
+ * for gate/scoring tablets where staff tap the same button repeatedly. */
 const buttonBase =
-  "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950";
+  "inline-flex touch-manipulation items-center justify-center gap-2 rounded-lg font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950";
+
+/** lg = finger-sized (≥44px tall) for arena tablet screens. */
+const buttonSizes = {
+  md: "px-4 py-2 text-sm",
+  lg: "min-h-11 px-6 py-2.5 text-base",
+} as const;
 
 export function Button({
   variant = "primary",
+  size = "md",
   className,
   ...props
-}: ComponentProps<"button"> & { variant?: keyof typeof buttonStyles }) {
+}: ComponentProps<"button"> & {
+  variant?: keyof typeof buttonStyles;
+  size?: keyof typeof buttonSizes;
+}) {
   return (
     <button
-      className={cx(buttonBase, buttonStyles[variant], className)}
+      className={cx(buttonBase, buttonSizes[size], buttonStyles[variant], className)}
       {...props}
     />
   );
@@ -32,11 +44,18 @@ export function Button({
 
 export function ButtonLink({
   variant = "primary",
+  size = "md",
   className,
   ...props
-}: ComponentProps<typeof Link> & { variant?: keyof typeof buttonStyles }) {
+}: ComponentProps<typeof Link> & {
+  variant?: keyof typeof buttonStyles;
+  size?: keyof typeof buttonSizes;
+}) {
   return (
-    <Link className={cx(buttonBase, buttonStyles[variant], className)} {...props} />
+    <Link
+      className={cx(buttonBase, buttonSizes[size], buttonStyles[variant], className)}
+      {...props}
+    />
   );
 }
 

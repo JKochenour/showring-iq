@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/authz";
+import { ShowTabs } from "@/components/show/show-tabs";
 import { StatusBadge } from "@/components/show/show-status-actions";
 import type { Show } from "@/lib/types";
 
@@ -66,17 +67,7 @@ export default async function ShowLayout({
           <h1 className="text-2xl font-semibold tracking-tight">{show.name}</h1>
           <StatusBadge status={show.status as Show["status"]} />
         </div>
-        <nav className="mt-4 flex gap-1 border-b border-stone-200 dark:border-stone-800">
-          {tabs.map((tab) => (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className="rounded-t-md px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </nav>
+        <ShowTabs tabs={tabs} />
       </div>
       {children}
     </div>

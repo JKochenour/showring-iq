@@ -76,8 +76,9 @@ export function MultiJudgeScoreEntry({
             <div key={j.id} className="flex items-center gap-2">
               <span className="w-32 shrink-0 truncate text-sm">{j.name}</span>
               <Input
-                className="w-24"
+                className="min-h-11 w-28 font-mono text-lg"
                 placeholder="70.0"
+                inputMode="decimal"
                 value={values[j.id] ?? ""}
                 disabled={!canEnter}
                 onChange={(e) =>

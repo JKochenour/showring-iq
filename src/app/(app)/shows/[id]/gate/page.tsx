@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadClassDraw, type DrawRunRow } from "@/lib/load-draw";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { KioskToggle } from "@/components/kiosk-toggle";
 import { GateActionButtons } from "@/components/show/gate-actions";
 import { RunStatusBadge } from "@/components/show/run-status-badge";
 import { Card, EmptyState, PageHeader } from "@/components/ui";
@@ -76,6 +77,7 @@ export default async function GatePage({
       <PageHeader
         title="Gate"
         description="One-tap run tracking. The screen refreshes automatically every 10 seconds."
+        action={<KioskToggle />}
       />
 
       {classList.length === 0 ? (
@@ -90,7 +92,7 @@ export default async function GatePage({
               <Link
                 key={cls.id}
                 href={`/shows/${id}/gate?class=${cls.id}`}
-                className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`touch-manipulation rounded-full border px-4 py-2 text-sm font-medium transition-colors sm:text-base ${
                   selected?.id === cls.id
                     ? "border-brand-700 bg-brand-700 text-white"
                     : "border-stone-300 text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800"
@@ -126,12 +128,16 @@ export default async function GatePage({
                     </p>
                     {slot.row ? (
                       <>
-                        <p className="mt-1 font-mono text-2xl font-bold">
+                        <p
+                          className={`mt-1 font-mono font-bold ${
+                            slot.label === "Now" ? "text-5xl" : "text-3xl"
+                          }`}
+                        >
                           {slot.row.backNumber
                             ? `#${slot.row.backNumber}`
                             : `Draw ${slot.row.position}`}
                         </p>
-                        <p className="mt-1 truncate text-sm font-medium">
+                        <p className="mt-1 truncate text-base font-medium">
                           {slot.row.riderName}
                         </p>
                         <p className="truncate text-sm text-stone-500 dark:text-stone-400">

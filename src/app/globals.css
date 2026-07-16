@@ -112,6 +112,34 @@ body {
 .score-sheet-page:last-child {
   page-break-after: auto;
 }
+
+/* Slim, unobtrusive scrollbar for horizontally-scrolling tab rows. */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(168 162 158 / 0.4);
+  border-radius: 3px;
+}
+
+/* Tablet ("arena") mode for the gate and scoring screens: the same
+   chrome-hiding idea as the print rules above, toggled at runtime by
+   KioskToggle (html.kiosk + best-effort Fullscreen API). Content gets
+   the whole screen; the toggle itself opts out via .kiosk-keep. */
+html.kiosk aside,
+html.kiosk header:not(.kiosk-keep),
+html.kiosk .kiosk-hide {
+  display: none !important;
+}
+html.kiosk main {
+  max-width: none !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+  padding-top: 1rem !important;
+}
 .score-sheet-table {
   border: 1px solid #000;
 }
