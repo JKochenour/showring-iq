@@ -5,7 +5,25 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Latest (2026-07-16, 13th session part 2 — PUBLIC DISCOVERY: find-shows directory, org pages, show-bill-style public schedule, full order of go)
+## Latest (2026-07-16, 13th session part 3 — ARENA SUPPORT, committed 6f30c05)
+
+Migration **00048 applied**: `classes.arena` (free text, e.g. INDOOR/
+COVERED) + public_show_classes recreated to expose it. Class create/edit
+forms gained an Arena field; the show-bill importer's preview now has an
+editable **Arena column** (the parser always extracted arena from
+session headers like "Friday, July 17th INDOOR - 7:30 AM Start" but
+threw it away). The public schedule splits sections by **day + arena**
+("Thursday, July 16, 2026 — INDOOR"); the internal day-sheet gives each
+(day, arena) its own parallel time cursor from the day's start.
+Live-verified: Thursday split base/COVERED/INDOOR publicly; both arena
+sections estimated from 8:00 AM in parallel; importer auto-filled
+INDOOR/COVERED from pasted text. Test arenas reverted (real Summer
+Slide classes have no arena set yet — set from the real bill when
+known). NOTE: no git remote exists yet — the user wants the repo on
+Vercel; next step is create a GitHub repo, push, import to Vercel with
+NEXT_PUBLIC_SUPABASE_URL/ANON_KEY env vars.
+
+## Earlier (2026-07-16, 13th session part 2 — PUBLIC DISCOVERY: find-shows directory, org pages, show-bill-style public schedule, full order of go)
 
 Guest experience built out (after payee/close-out below, same session).
 Migrations **00046 + 00047 applied**, everything live-verified including
