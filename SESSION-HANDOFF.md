@@ -5,7 +5,30 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Latest (2026-07-16, 13th session part 3 — ARENA SUPPORT, committed 6f30c05)
+## Latest (2026-07-16, 13th session part 4 — SELF-SERVE EXHIBITOR JOIN REQUESTS, committed 0bb35b1, LIVE-VERIFIED)
+
+Migration **00049 applied**: `exhibitor_join_requests` (one pending per
+user+org; requester sees own, office sees org's via org.members.invite)
++ RPCs `request_exhibitor_access` / `approve_join_request` (link an
+existing unclaimed person OR create new, then exhibitor membership —
+accept_invite without the email round-trip) / `decline_join_request`
+(reason required, shown to requester) / `public_orgs_directory`.
+Requester UI on /exhibitor (org picker + message + "Your requests"
+status list); office queue on the org People page (link-existing
+combobox of unclaimed people, or create-new with names pre-split from
+the request). Dashboard new-user card points at the flow.
+
+**Live-verified end-to-end with the owner's own login** (staff but not
+exhibitor-linked, so it can legitimately request): request w/ message →
+office queue → decline w/ reason → requester sees "Declined + reason" →
+re-request → approve as new person ("Kochenour, Jason" created,
+Rider/Owner, email carried; member insert correctly SKIPPED since
+already an org member) → /exhibitor showed the live account. All four
+audit rows exact (access_requested ×2, request_declined w/ reason,
+request_approved w/ person_id + linked_existing:false). QA person
+record deleted after; the request rows stay as history.
+
+## Earlier (2026-07-16, 13th session part 3 — ARENA SUPPORT, committed 6f30c05)
 
 Migration **00048 applied**: `classes.arena` (free text, e.g. INDOOR/
 COVERED) + public_show_classes recreated to expose it. Class create/edit
