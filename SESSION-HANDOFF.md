@@ -1,4 +1,4 @@
-# ShowRing IQ — Session Handoff (updated 2026-07-16, end of 13th session)
+# ShowRing IQ — Session Handoff (updated 2026-07-16, end of 14th session)
 
 This is a plain-text snapshot of where this project stands. Claude's
 persistent memory has the same content and loads automatically in a
@@ -7,11 +7,15 @@ yourself.
 
 ## CURRENT STATE (read this first in a new window)
 
-- **Branch `main`, working tree clean, HEAD `ba9cb83`.** The old
-  `feature/show-weekends` branch was merged at `b29c335` and everything
-  since lands directly on main. No git remote configured (Vercel deploy
-  deferred — user has no domain yet; steps are in part 3's notes).
-- **Migrations 00041–00049 all applied live.** DB matches main.
+- **Branch `main`, working tree clean, HEAD `3f0bec1`** (merge of the
+  14th session's entity-decode branch; that worktree + branch are
+  deleted). The old `feature/show-weekends` branch was merged at
+  `b29c335` and everything since lands directly on main. No git remote
+  configured (Vercel deploy deferred — user has no domain yet; steps
+  are in part 3's notes).
+- **Migrations 00041–00050 all applied live.** DB matches main.
+  (00050 is a one-off data cleanup — already run, both verification
+  queries came back empty; it never needs to run again.)
 - **THE ENTIRE AGREED ROADMAP IS DONE** (live results → payments → SMS →
   scheduling → offline → second association ✅ AQHA). The 13th session
   shipped, in order, each live-verified: (1) payee/winning-checks +
@@ -30,7 +34,9 @@ yourself.
   clear caches when edits seem ignored; `npm test`/eslint must not
   scan `.claude/worktrees` (vitest.config.ts + `npx eslint src`
   handle this); browser-pane viewport emulation misreports
-  window.innerWidth — trust element clientWidth.
+  window.innerWidth — trust element clientWidth; agent worktrees
+  don't inherit the gitignored `.env.local` — copy it from the main
+  checkout before running the dev server in one.
 - **Natural next candidates:** encode more AQHA rules (cross-enter
   prohibitions, Level 1 point caps, SHW261 points chart as the
   standings schedule), public estimated start times (day-sheet math is
@@ -38,7 +44,48 @@ yourself.
   tablets, real arena values on the Summer Slide classes, GitHub +
   Vercel when a domain exists.
 
-## Latest (2026-07-16, 13th session part 7 — AQHA 2026 RULE PACKAGE from the user's official rulebook, live-verified — LAST ROADMAP ITEM DONE)
+## Latest (2026-07-16, 14th session — HTML-ENTITY DECODE IN IMPORTS + DATA CLEANUP, live-verified, merged `3f0bec1`)
+
+Closed the item flagged in passing at the end of 13th-session part 1:
+some imported names carried literal HTML entities (e.g.
+horses.registered_name = "3Jets&apos; Winterhawk", visible in the
+entry-form horse combobox). Ran as a background-task session in a
+worktree (branch `claude/clever-kepler-598007`, since merged + deleted).
+
+- **Root cause:** NOT the show-bill PDF parser — the spreadsheet
+  import parsers (src/lib/import/csv.ts, xlsx.ts) pass cell text
+  through verbatim, so a CSV/XLSX exported from a web system (HSW
+  reports / HTML copy-paste) with a literal `&apos;` went into the DB
+  as-is. No decode step existed anywhere.
+- **Fix (`a43b416`):** `decodeHtmlEntities()` in
+  src/lib/import/normalize.ts — single-pass decode of named
+  (&amp; &apos; &quot; &lt; &gt; &nbsp;) and numeric/hex (&#39;
+  &#x27;) entities; plain ampersands ("Youth 13 & U") and unknown
+  sequences untouched; double-encoded input decodes one level per
+  pass. Applied in spreadsheet-import.tsx right after parse (headers +
+  cells — covers the people/horses/class-code imports AND the preview)
+  and on parseShowBill's input. 6 vitest tests.
+- **Data cleanup (migration 00050, renamed from 00046 since
+  00046-00049 were already taken on main):** one-off SQL-editor script
+  — pg_temp decode fn, updates horses (registered_name, barn_name,
+  sire, dam, notes) / people (first/last/preferred name, notes) /
+  classes.name, touching only rows with entity sequences; ends with
+  verification SELECTs that must return zero rows. **User ran it;
+  both verification queries came back EMPTY — live DB is clean.**
+  Idempotent if ever re-run.
+- **Live-verified** in the horses-import preview: a CSV with all four
+  entity forms rendered fully decoded (didn't click Import — same
+  decoded rows feed the insert; avoided QA data in the real org).
+- **vitest.config.ts now does two jobs** (add/add merge conflict,
+  combined): the 13th session's `.claude/**` test exclusion + this
+  session's `@/*` path alias mirror of tsconfig — before the alias,
+  tests could only import alias-free modules (why billing.test.ts was
+  the only test). 15/15 tests + build green on main post-merge.
+- **New dev gotcha:** agent worktrees don't inherit the gitignored
+  `.env.local` — copy it from the main checkout before starting the
+  dev server in one.
+
+## Earlier (2026-07-16, 13th session part 7 — AQHA 2026 RULE PACKAGE from the user's official rulebook, live-verified — LAST ROADMAP ITEM DONE)
 
 **Zero migrations — the whole package is data**, proving CLAUDE.md's
 "rules are data, not code" with a second association. Source: the user's
@@ -242,7 +289,9 @@ must do the same.
 was merged to `main` as `b29c335`** (weekends/circuits, run-level fees,
 EPRHA statement, payee, close-out fix — migrations 00041-00045). Also
 noted in passing: some imported horse names carry a literal "&apos;"
-from the show-bill import — spun off as a background task session.
+from the show-bill import — spun off as a background task session
+(**resolved in the 14th session**, see the Latest section at the top;
+root cause was the spreadsheet import, not the show-bill parser).
 
 ## Previous (2026-07-15, 12th session — SHOW WEEKENDS live-verified, then RUN-LEVEL FEES + EPRHA-STYLE STATEMENT + YOUTH $0 built)
 
