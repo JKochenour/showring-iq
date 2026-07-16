@@ -35,7 +35,15 @@ export default async function ExhibitorPickOrgPage() {
       {rows.length === 0 ? (
         <EmptyState
           title="No exhibitor access yet"
-          description="Ask the show office to send you an exhibitor invite for their organization."
+          description="Ask the show office to send you an exhibitor invite for their organization. Until then, every published show's schedule, draws, live scores, and results are open to everyone."
+          action={
+            <Link
+              href="/shows"
+              className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-400"
+            >
+              Find shows →
+            </Link>
+          }
         />
       ) : (
         <div className="space-y-3">

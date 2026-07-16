@@ -54,15 +54,33 @@ export default async function DashboardPage() {
           )}
         </div>
         {orgs.length === 0 ? (
-          <EmptyState
-            title="No organizations yet"
-            description="Create your organization (e.g. EPRHA) to start setting up shows, staff, and roles."
-            action={
-              <ButtonLink href="/organizations/new">
-                Create organization
-              </ButtonLink>
-            }
-          />
+          <div className="space-y-4">
+            <EmptyState
+              title="No organizations yet"
+              description="Run shows? Create your organization (e.g. EPRHA) to start setting up shows, staff, and roles."
+              action={
+                <ButtonLink href="/organizations/new">
+                  Create organization
+                </ButtonLink>
+              }
+            />
+            <Card>
+              <h3 className="font-semibold">Here to show, not to run shows?</h3>
+              <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
+                Browse{" "}
+                <Link
+                  href="/shows"
+                  className="font-medium text-brand-700 hover:underline dark:text-brand-400"
+                >
+                  every published show
+                </Link>{" "}
+                — schedules, draws, live scores, and results are open to
+                everyone, no account needed. To enter shows online, ask the
+                show office to send you an exhibitor invite; it will appear
+                here once they do.
+              </p>
+            </Card>
+          </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {orgs.map(({ org, role, membershipId }) => (

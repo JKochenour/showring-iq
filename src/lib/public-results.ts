@@ -20,6 +20,8 @@ export interface PublicClass {
   name: string;
   display_order: number;
   status: string;
+  scheduled_date: string | null;
+  concurrent_group_id: string | null;
 }
 
 export interface PublicDrawRow {
@@ -49,6 +51,66 @@ export interface PublicResultRow {
   horse_name: string;
   total_score_tenths: number | null;
   money_won_cents: number;
+}
+
+/** One row of the cross-org find-shows directory (00046). */
+export interface PublicDirectoryShow {
+  name: string;
+  slug: string;
+  start_date: string;
+  end_date: string;
+  venue_name: string | null;
+  city: string | null;
+  state: string | null;
+  organization_name: string;
+  organization_slug: string;
+}
+
+export interface PublicOrg {
+  name: string;
+  slug: string;
+  city: string | null;
+  state: string | null;
+  website: string | null;
+}
+
+/** An org's published show on its /[org] landing page (00046). */
+export interface PublicOrgShow {
+  name: string;
+  slug: string;
+  start_date: string;
+  end_date: string;
+  venue_name: string | null;
+  city: string | null;
+  state: string | null;
+}
+
+export async function loadPublicShowsDirectory(
+  supabase: SupabaseClient
+): Promise<PublicDirectoryShow[]> {
+  const { data } = await supabase.rpc("public_shows_directory");
+  return (data as PublicDirectoryShow[]) ?? [];
+}
+
+/** Returns null unless the org exists AND has at least one published show. */
+export async function loadPublicOrg(
+  supabase: SupabaseClient,
+  orgSlug: string
+): Promise<PublicOrg | null> {
+  const { data } = await supabase
+    .rpc("public_org", { p_org_slug: orgSlug })
+    .maybeSingle();
+  return (data as PublicOrg) ?? null;
+}
+
+export async function loadPublicOrgShows(
+  supabase: SupabaseClient,
+  orgSlug: string
+): Promise<PublicOrgShow[]> {
+  const { data } = await supabase.rpc("public_org_shows", {
+    p_org_slug: orgSlug,
+  });
+  return (data as PublicOrgShow[]) ?? [];
 }
 
 /** Published-show gate is enforced inside each RPC; returns null if not found/published. */

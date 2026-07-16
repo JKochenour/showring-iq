@@ -1,7 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/organizations", "/shows"];
+// "/shows" (exact) is the PUBLIC find-shows directory; the staff-side
+// show pages all live under "/shows/<id>/..." — hence the trailing slash.
+const PROTECTED_PREFIXES = ["/dashboard", "/organizations", "/shows/"];
 const AUTH_PAGES = ["/login", "/signup"];
 
 export default async function proxy(request: NextRequest) {

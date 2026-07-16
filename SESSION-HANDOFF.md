@@ -5,7 +5,43 @@ persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
 
-## Latest (2026-07-16, 13th session — PAYEE / WINNING CHECKS + CLOSE-OUT FEE FIX, both live-verified)
+## Latest (2026-07-16, 13th session part 2 — PUBLIC DISCOVERY: find-shows directory, org pages, show-bill-style public schedule, full order of go)
+
+Guest experience built out (after payee/close-out below, same session).
+Migrations **00046 + 00047 applied**, everything live-verified including
+bare-anon-key RPC tests. Scope decisions (user: "go with your
+recommendations"): exhibitor linking stays INVITE-ONLY (funnel improved
+only — self-serve join requests are a possible future item); both the
+cross-org directory AND org landing pages built.
+
+- **00046**: anon RPCs `public_shows_directory` / `public_org` /
+  `public_org_shows` (00021 style — explicit columns, published only,
+  org row only returned if it has a published show, no contact_email).
+- **`/shows`** public find-shows directory (search, Live badge,
+  upcoming/past). **proxy.ts change:** PROTECTED_PREFIXES "/shows" →
+  "/shows/" so the exact index is public, staff pages stay gated.
+- **`/[org]`** public org landing page (/eprha works now).
+- **Public show page**: full **Order of go** card (whole draw; scratches
+  struck through, in-arena highlighted, completed dimmed) in both
+  not-started-with-draw and running states. And the flat 65-chip class
+  cloud (user: "extremely clustered... like our show bill") replaced by
+  **ScheduleByDay**: day headers ("Thursday, July 16, 2026") with ONE
+  CHIP per RUN — a concurrent group lists only its lead class (user:
+  "for 1100 Open you only need to show Open"); the siblings appear as an
+  "Also in this go:" row in the detail area once the run is selected.
+  Powered by **00047** (public_show_classes dropped+recreated to add
+  scheduled_date + concurrent_group_id).
+  Arena ("Thu Indoor") is NOT modeled on classes — flagged as follow-up.
+- Funnel: "Find shows" on marketing nav + public header + exhibitor
+  picker; dashboard zero-org state explains the exhibitor-invite path.
+- `vitest.config.ts` added excluding `.claude/**` (background-task
+  worktrees made `npm test` flaky — same class as the eslint gotcha).
+- Real-data notes: set class 2's scheduled_date=2026-07-16 on Summer
+  Slide (correct; concurrent with class 1, left in place). Leftover
+  "99 — QA Multi-Judge Test" class still on the real show — consider
+  deleting. **This batch NOT yet committed as of this writing.**
+
+## Earlier (2026-07-16, 13th session — PAYEE / WINNING CHECKS + CLOSE-OUT FEE FIX, both live-verified)
 
 The two open items from the 12th session, both on `feature/show-weekends`,
 migrations **00044 + 00045 applied**, live-verified with a throwaway QA
@@ -46,9 +82,11 @@ was typed) and computes "passed" by interpreting that wall clock in
 `shows.timezone`. Any future formatting of 00036-style naive timestamps
 must do the same.
 
-**NOT yet committed as of this writing** (working tree has 00044/00045 +
-all app changes). Also noted in passing, not fixed: some imported horse
-names carry a literal "&apos;" from the show-bill import.
+**Committed as `788c328`, then the whole `feature/show-weekends` branch
+was merged to `main` as `b29c335`** (weekends/circuits, run-level fees,
+EPRHA statement, payee, close-out fix — migrations 00041-00045). Also
+noted in passing: some imported horse names carry a literal "&apos;"
+from the show-bill import — spun off as a background task session.
 
 ## Previous (2026-07-15, 12th session — SHOW WEEKENDS live-verified, then RUN-LEVEL FEES + EPRHA-STYLE STATEMENT + YOUTH $0 built)
 
