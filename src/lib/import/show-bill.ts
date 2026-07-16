@@ -21,6 +21,8 @@
  * rows simply don't parse and the office edits the preview by hand.
  */
 
+import { decodeHtmlEntities } from "@/lib/import/normalize";
+
 export interface ParsedClassDraft {
   name: string;
   /** null = not stated ("-"); 0 with jackpot/points label = no fixed purse */
@@ -159,7 +161,10 @@ export function parseShowBill(text: string, defaultYear: number): ParsedSession[
   const sessions: ParsedSession[] = [];
   let current: ParsedSession | null = null;
 
-  for (const rawLine of text.split(/\r?\n/)) {
+  // Bills pasted from a web page (or extracted from an HTML-derived PDF)
+  // can carry literal entities like "&amp;" in class names — decode before
+  // parsing so class names go into the DB clean.
+  for (const rawLine of decodeHtmlEntities(text).split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line || HEADER_ROW.test(line)) continue;
 

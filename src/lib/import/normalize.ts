@@ -1,6 +1,42 @@
 import { PERSON_ROLES, MEMBERSHIP_STATUS_OPTIONS } from "@/lib/validation/person";
 import { HORSE_SEXES } from "@/lib/validation/horse";
 
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  apos: "'",
+  quot: '"',
+  lt: "<",
+  gt: ">",
+  nbsp: " ",
+};
+
+/**
+ * Decodes literal HTML entities that leak into spreadsheets exported from
+ * web-based systems (HSW's web reports, copy-paste from HTML), e.g.
+ * "3Jets&apos; Winterhawk" -> "3Jets' Winterhawk". Single-pass, so a
+ * double-encoded "&amp;apos;" decodes one level to "&apos;" rather than
+ * jumping straight to "'". Plain ampersands ("Youth 13 & U") are untouched.
+ */
+export function decodeHtmlEntities(raw: string): string {
+  if (!raw.includes("&")) return raw;
+  return raw.replace(
+    /&(#\d+|#x[0-9a-fA-F]+|[a-zA-Z]+);/g,
+    (match, body: string) => {
+      if (body[0] === "#") {
+        const code =
+          body[1] === "x" || body[1] === "X"
+            ? parseInt(body.slice(2), 16)
+            : parseInt(body.slice(1), 10);
+        // Only decode printable-range codepoints; leave anything odd alone.
+        return Number.isFinite(code) && code >= 32 && code <= 0x10ffff
+          ? String.fromCodePoint(code)
+          : match;
+      }
+      return NAMED_ENTITIES[body.toLowerCase()] ?? match;
+    }
+  );
+}
+
 /** Splits a free-text roles cell ("Rider, Owner") into canonical role values. */
 export function normalizeRoles(raw: string | undefined): {
   roles: string[];
