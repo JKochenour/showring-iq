@@ -107,6 +107,7 @@ export default async function ShowSettingsPage({
               label: c.label,
               amount: centsToInput(c.amount_cents),
               perRun: c.per_run ?? false,
+              youthExempt: c.youth_exempt ?? false,
             }))}
             canEdit={editable}
           />

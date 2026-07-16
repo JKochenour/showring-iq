@@ -62,6 +62,7 @@ export async function createClass(
       class_code_id: d.classCodeId || null,
       entry_fee_cents: dollarsToCents(d.entryFee ?? ""),
       added_money_cents: dollarsToCents(d.addedMoney ?? ""),
+      judge_fee_cents: dollarsToCents(d.judgeFee ?? ""),
       scheduled_date: d.scheduledDate || null,
       notes: d.notes || null,
     })
@@ -212,7 +213,7 @@ export async function updateClass(
   const { data: before, error: beforeError } = await supabase
     .from("classes")
     .select(
-      "show_id, organization_id, class_number, name, discipline, division, pattern_number, entry_fee_cents, added_money_cents, status, scheduled_date, notes"
+      "show_id, organization_id, class_number, name, discipline, division, pattern_number, entry_fee_cents, added_money_cents, judge_fee_cents, status, scheduled_date, notes"
     )
     .eq("id", d.classId)
     .maybeSingle();
@@ -232,6 +233,7 @@ export async function updateClass(
     class_code_id: d.classCodeId || null,
     entry_fee_cents: dollarsToCents(d.entryFee ?? ""),
     added_money_cents: dollarsToCents(d.addedMoney ?? ""),
+    judge_fee_cents: dollarsToCents(d.judgeFee ?? ""),
     status: d.status,
     scheduled_date: d.scheduledDate || null,
     notes: d.notes || null,

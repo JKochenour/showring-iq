@@ -64,7 +64,12 @@ export interface Show {
   description: string | null;
   nrha_show_number: string | null;
   medication_fee_cents: number;
-  standard_entry_charges: { label: string; amount_cents: number; per_run?: boolean }[];
+  standard_entry_charges: {
+    label: string;
+    amount_cents: number;
+    per_run?: boolean;
+    youth_exempt?: boolean;
+  }[];
   schedule_start_time: string;
   schedule_break_minutes: number;
   schedule_drag_minutes: number;
@@ -80,6 +85,14 @@ export interface Show {
     unitPriceCents: number;
     slotOptions: string[];
   }[];
+  weekend_id: string | null;
+  created_at: string;
+}
+
+export interface ShowWeekend {
+  id: string;
+  organization_id: string;
+  name: string;
   created_at: string;
 }
 
@@ -165,6 +178,7 @@ export interface ShowClass {
   go_number: number;
   entry_fee_cents: number;
   added_money_cents: number;
+  judge_fee_cents: number;
   status: ClassStatus;
   scheduled_date: string | null;
   drag_every_n: number | null;
@@ -323,6 +337,9 @@ export interface Entry {
   owner_name: string | null;
   trainer_name: string | null;
   bill_to_trainer: boolean;
+  /** Party to receive winning checks; null = default (owner → rider). */
+  payee_person_id: string | null;
+  payee_name: string | null;
   status: "active" | "scratched";
   notes: string | null;
   checked_in_at: string | null;

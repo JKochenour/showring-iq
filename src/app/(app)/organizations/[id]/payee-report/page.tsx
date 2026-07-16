@@ -42,7 +42,7 @@ export default async function PayeeReportPage({
     <div className="space-y-6">
       <PageHeader
         title="Payee report"
-        description="Year-end purse-money totals per payee (owner of record, falling back to rider), across every show this year — a prep aid for 1099-NEC, not a filer."
+        description="Year-end purse-money totals per payee (the entry's designated winning-checks payee when one is set, otherwise owner of record, falling back to rider), across every show this year — a prep aid for 1099-NEC, not a filer."
       />
 
       <Alert tone="info">

@@ -3,7 +3,11 @@
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addMiscCharge, removeMiscCharge } from "@/app/(app)/shows/[id]/financials/actions";
+import {
+  addMiscCharge,
+  removeMiscCharge,
+  updateMiscChargeAmount,
+} from "@/app/(app)/shows/[id]/financials/actions";
 import {
   addMiscChargeSchema,
   CHARGE_CATEGORY_SUGGESTIONS,
@@ -11,7 +15,7 @@ import {
 } from "@/lib/validation/billing";
 import { Alert, Button, FieldError, Input, Label } from "@/components/ui";
 import { useConfirmDialog } from "@/components/confirm-dialog";
-import { formatCents } from "@/lib/money";
+import { centsToInput, formatCents } from "@/lib/money";
 import type { PersonBillCharge } from "@/lib/billing";
 
 export function MiscChargeManager({
@@ -66,6 +70,35 @@ export function MiscChargeManager({
     });
   };
 
+  const editPrice = async (charge: PersonBillCharge) => {
+    const result = await confirm({
+      title: `Edit price — ${charge.description}`,
+      message: "Set a new price. $0 keeps the line (so it still counts) but charges nothing.",
+      confirmLabel: "Save price",
+      fields: [
+        {
+          name: "amount",
+          label: "New price ($)",
+          type: "text",
+          defaultValue: centsToInput(charge.amountCents),
+          required: true,
+        },
+        { name: "reason", label: "Reason (required)", type: "textarea", required: true },
+      ],
+    });
+    if (!result) return;
+    startTransition(async () => {
+      const res = await updateMiscChargeAmount(
+        charge.id,
+        result.amount,
+        result.reason,
+        showId,
+        personId
+      );
+      if (res?.error) setServerError(res.error);
+    });
+  };
+
   return (
     <div className="space-y-4">
       {serverError && <Alert>{serverError}</Alert>}
@@ -81,14 +114,24 @@ export function MiscChargeManager({
               <div className="flex items-center gap-3">
                 <span className="text-sm font-semibold">{formatCents(c.amountCents)}</span>
                 {canEdit && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={isPending}
-                    onClick={() => remove(c)}
-                  >
-                    Remove
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={isPending}
+                      onClick={() => editPrice(c)}
+                    >
+                      Edit price
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={isPending}
+                      onClick={() => remove(c)}
+                    >
+                      Remove
+                    </Button>
+                  </>
                 )}
               </div>
             </li>

@@ -59,6 +59,7 @@ export function CreateClassForm({
       isYouth: false,
       isSinglePurse: false,
       entryFee: "",
+      judgeFee: "",
       addedMoney: "",
       scheduledDate: "",
       nrhaClassCode: "",
@@ -118,6 +119,7 @@ export function EditClassForm({
       isYouth: showClass.is_youth,
       isSinglePurse: showClass.is_single_purse,
       entryFee: centsToInput(showClass.entry_fee_cents),
+      judgeFee: centsToInput(showClass.judge_fee_cents),
       addedMoney: centsToInput(showClass.added_money_cents),
       status: showClass.status,
       scheduledDate: showClass.scheduled_date ?? "",
@@ -278,6 +280,19 @@ function ClassFields({ register, errors, control, classCodeOptions }: { register
             {...register("entryFee")}
           />
           <FieldError message={errors.entryFee?.message} />
+        </div>
+        <div>
+          <Label htmlFor="judgeFee">Judge fee ($)</Label>
+          <Input
+            id="judgeFee"
+            inputMode="decimal"
+            placeholder="0.00"
+            {...register("judgeFee")}
+          />
+          <FieldError message={errors.judgeFee?.message} />
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+            Billed once per run — the highest among classes that run concurrent.
+          </p>
         </div>
         <div>
           <Label htmlFor="addedMoney">Added money ($)</Label>

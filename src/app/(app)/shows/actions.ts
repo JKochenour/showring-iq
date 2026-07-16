@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { loadShowBillingRoster } from "@/lib/billing";
 import { dollarsToCents } from "@/lib/money";
 import {
   addStaffSchema,
@@ -149,6 +150,7 @@ export async function updateStandardCharges(
       label: c.label.trim(),
       amount_cents: dollarsToCents(c.amount),
       per_run: c.perRun,
+      youth_exempt: c.youthExempt,
     }));
 
   const { data: updated, error } = await supabase
@@ -235,17 +237,69 @@ export async function updateConditionalFees(
   return {};
 }
 
+/** Charges the show's close-out fee to every billed person with an
+ * outstanding balance who hasn't already been charged one.
+ *
+ * Debtor detection happens HERE, from the same billing roster staff see
+ * on the Financials page — not in SQL. The old apply_close_out_fee RPC
+ * (00036, dropped in 00045) summed materialized rows only, so it missed
+ * the judge/video/photo run fees that 00042 computes live and never
+ * materializes. Each charge goes through add_misc_charge (invoice.edit
+ * gated, audit-logged), same as a manual charge. */
 export async function applyCloseOutFee(
   showId: string
 ): Promise<ActionResult & { applied?: number }> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("apply_close_out_fee", {
-    p_show: showId,
-  });
-  if (error) return { error: error.message };
+
+  const { data: show } = await supabase
+    .from("shows")
+    .select("id, close_out_fee_cents")
+    .eq("id", showId)
+    .maybeSingle();
+  if (!show) return { error: "Show not found." };
+  const feeCents = (show.close_out_fee_cents as number) ?? 0;
+  if (feeCents <= 0) {
+    return { error: "This show has no close-out fee configured." };
+  }
+
+  const [roster, { data: priorCharges }] = await Promise.all([
+    loadShowBillingRoster(supabase, showId),
+    supabase
+      .from("misc_charges")
+      .select("person_id")
+      .eq("show_id", showId)
+      .eq("category", "Close-out fee"),
+  ]);
+  const alreadyCharged = new Set(
+    (priorCharges ?? []).map((c) => c.person_id as string)
+  );
+
+  const debtors = roster.filter(
+    (row) => row.balanceCents > 0 && !alreadyCharged.has(row.personId)
+  );
+
+  let applied = 0;
+  for (const row of debtors) {
+    const { error } = await supabase.rpc("add_misc_charge", {
+      p_show: showId,
+      p_person: row.personId,
+      p_description: "Close-out fee",
+      p_category: "Close-out fee",
+      p_amount_cents: feeCents,
+    });
+    if (error) {
+      revalidatePath(`/shows/${showId}/financials`);
+      return {
+        error: `Applied to ${applied} of ${debtors.length} bills, then failed on ${row.name}: ${error.message}`,
+        applied,
+      };
+    }
+    applied += 1;
+  }
 
   revalidatePath(`/shows/${showId}/financials`);
-  return { applied: data as number };
+  revalidatePath(`/shows/${showId}/settings`);
+  return { applied };
 }
 
 export async function updateEventClassification(

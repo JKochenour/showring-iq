@@ -13,8 +13,11 @@ import {
 export type ActionResult = { error?: string };
 
 function friendlyBackNumberError(message: string): string {
-  if (message.includes("back_numbers_show_id_number_key")) {
-    return "That back number is already in use at this show.";
+  if (
+    message.includes("weekend_back_numbers_weekend_id_number_key") ||
+    message.includes("already used by another horse")
+  ) {
+    return "That back number is already used by another horse this weekend.";
   }
   return message;
 }
@@ -35,6 +38,7 @@ export async function createEntry(
     d.riderPersonId,
     d.ownerPersonId || null,
     d.trainerPersonId || null,
+    d.payeePersonId || null,
   ].filter(Boolean) as string[];
 
   const [{ data: show }, { data: people }, { data: horse }, { data: classes }] =
@@ -95,6 +99,8 @@ export async function createEntry(
       horse_name: horse.registered_name,
       owner_name: nameOf(d.ownerPersonId),
       trainer_name: nameOf(d.trainerPersonId),
+      payee_person_id: d.payeePersonId || null,
+      payee_name: nameOf(d.payeePersonId),
       notes: d.notes || null,
     })
     .select("id, entry_number")
@@ -125,11 +131,8 @@ export async function createEntry(
     return { error: classesError.message };
   }
 
-  // Per-run standard charges (e.g. a per-run video fee) apply once per
-  // class entered — see 00036_conditional_fees.sql.
-  for (const ec of createdClasses ?? []) {
-    await supabase.rpc("apply_per_run_charges", { p_entry_class: ec.id });
-  }
+  // Run fees (judge/video/photo) are computed live per run in billing.ts
+  // (00042), not materialized per class — nothing to apply here.
 
   if (d.lateEntry) {
     await supabase.rpc("apply_late_entry_fee", { p_entry: entry.id });
@@ -208,6 +211,7 @@ export interface CopyableEntry {
   riderPersonId: string;
   ownerPersonId: string;
   trainerPersonId: string;
+  payeePersonId: string;
   horseId: string;
   notes: string;
   /** Class ids in the TARGET show whose name matches a class the
@@ -226,7 +230,7 @@ export async function getEntryForCopy(
     await Promise.all([
       supabase
         .from("entries")
-        .select("rider_person_id, owner_person_id, trainer_person_id, horse_id, notes")
+        .select("rider_person_id, owner_person_id, trainer_person_id, payee_person_id, horse_id, notes")
         .eq("id", sourceEntryId)
         .maybeSingle(),
       supabase
@@ -252,6 +256,7 @@ export async function getEntryForCopy(
     riderPersonId: entry.rider_person_id as string,
     ownerPersonId: (entry.owner_person_id as string | null) ?? "",
     trainerPersonId: (entry.trainer_person_id as string | null) ?? "",
+    payeePersonId: (entry.payee_person_id as string | null) ?? "",
     horseId: entry.horse_id as string,
     notes: (entry.notes as string | null) ?? "",
     matchedClassIds,
@@ -325,10 +330,8 @@ export async function addEntryClass(
     p_show: entry.show_id,
   });
 
-  // Per-run standard charges (e.g. a per-run video fee) apply once per
-  // class entered — see 00036_conditional_fees.sql. Best-effort: a
-  // charge failure here shouldn't undo the class that was just added.
-  await supabase.rpc("apply_per_run_charges", { p_entry_class: created.id });
+  // Run fees are computed live per run in billing.ts (00042) — adding this
+  // class simply changes the run structure the bill reads from.
 
   revalidatePath(`/shows/${entry.show_id}/entries/${d.entryId}`);
   revalidatePath(`/shows/${entry.show_id}/financials`);
@@ -487,6 +490,64 @@ export async function setEntryBillToTrainer(
 
   revalidatePath(`/shows/${entry.show_id}/entries/${entryId}`);
   revalidatePath(`/shows/${entry.show_id}/financials`);
+  return {};
+}
+
+/** Sets (or clears) the entry's payee — the party who receives winning
+ * checks, separate from who pays the bill. Null reverts to the default
+ * (owner of record, falling back to rider). Plain column update like
+ * bill_to_trainer: entries.payee_person_id has an entry.edit-gated
+ * update grant (00044). */
+export async function setEntryPayee(
+  entryId: string,
+  payeePersonId: string | null
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: entry } = await supabase
+    .from("entries")
+    .select("show_id, organization_id, payee_name")
+    .eq("id", entryId)
+    .maybeSingle();
+  if (!entry) return { error: "Entry not found." };
+
+  let payeeName: string | null = null;
+  if (payeePersonId) {
+    const { data: person } = await supabase
+      .from("people")
+      .select("first_name, last_name, organization_id")
+      .eq("id", payeePersonId)
+      .maybeSingle();
+    if (!person || person.organization_id !== entry.organization_id) {
+      return { error: "Payee not found in this organization." };
+    }
+    payeeName = `${person.first_name} ${person.last_name}`;
+  }
+
+  const { data: updated, error } = await supabase
+    .from("entries")
+    .update({ payee_person_id: payeePersonId, payee_name: payeeName })
+    .eq("id", entryId)
+    .select("id");
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error: "Update was not applied. You may lack the entry.edit permission, or the show is locked/archived.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: entry.organization_id,
+    p_action: payeePersonId ? "entry.payee_set" : "entry.payee_cleared",
+    p_entity_type: "entry",
+    p_entity_id: entryId,
+    p_old: { payee_name: entry.payee_name },
+    p_new: { payee_name: payeeName },
+    p_show: entry.show_id,
+  });
+
+  revalidatePath(`/shows/${entry.show_id}/entries/${entryId}`);
+  revalidatePath(`/organizations/${entry.organization_id}/payee-report`);
   return {};
 }
 

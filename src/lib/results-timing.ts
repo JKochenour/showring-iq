@@ -30,6 +30,65 @@ export function payoutDeadlineInfo(endDate: string): {
   };
 }
 
+/**
+ * Close-out deadline (e.g. EPRHA's "bills must be closed out before noon
+ * Sunday, $50 fee after"). Computed server-side so client components
+ * stay pure.
+ */
+/**
+ * shows.close_out_deadline is saved from a naive datetime-local string
+ * (00036), so Postgres stores the office's WALL CLOCK in the UTC
+ * fields. Format those fields as-is (timeZone: "UTC") so the label
+ * matches what was typed, and derive the real instant by interpreting
+ * that wall clock in the show's timezone.
+ */
+export function closeOutDeadlineInfo(
+  deadlineIso: string,
+  showTimezone: string
+): {
+  deadlineLabel: string;
+  passed: boolean;
+} {
+  const wallClock = new Date(deadlineIso);
+  const deadlineLabel = wallClock.toLocaleString("en-US", {
+    timeZone: "UTC",
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  // The instant at which this wall clock occurs in the show's timezone:
+  // shift by that zone's UTC offset (DST-correct for the deadline date).
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: showTimezone,
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(wallClock)
+      .map((p) => [p.type, p.value])
+  );
+  const zoneAsUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour) % 24,
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  const offsetMs = zoneAsUtc - wallClock.getTime();
+  const instantMs = wallClock.getTime() - offsetMs;
+
+  return { deadlineLabel, passed: Date.now() >= instantMs };
+}
+
 export function scoreSheetsOverdue(
   cls: Pick<ShowClass, "id" | "status">,
   enteredCount: number,

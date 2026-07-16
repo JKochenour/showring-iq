@@ -44,6 +44,7 @@ export function CreateEntryForm({
   riders,
   owners,
   trainers,
+  payees,
   horses,
   classes,
   lateEntryFeeCents,
@@ -53,6 +54,8 @@ export function CreateEntryForm({
   riders: PersonOption[];
   owners: PersonOption[];
   trainers: PersonOption[];
+  /** Anyone in the org can receive winning checks (owner/exhibitor/other). */
+  payees: PersonOption[];
   horses: { id: string; label: string }[];
   classes: ClassOption[];
   lateEntryFeeCents?: number;
@@ -74,6 +77,7 @@ export function CreateEntryForm({
       horseId: "",
       ownerPersonId: "",
       trainerPersonId: "",
+      payeePersonId: "",
       classIds: [],
       backNumberMode: "auto",
       backNumber: "",
@@ -136,6 +140,7 @@ export function CreateEntryForm({
       setValue("riderPersonId", result.riderPersonId);
       setValue("ownerPersonId", result.ownerPersonId);
       setValue("trainerPersonId", result.trainerPersonId);
+      setValue("payeePersonId", result.payeePersonId);
       setValue("horseId", result.horseId);
       setValue("notes", result.notes);
       setValue("classIds", result.matchedClassIds);
@@ -250,6 +255,21 @@ export function CreateEntryForm({
               placeholder="—"
               clearable
             />
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="payee">Winning checks to (optional)</Label>
+            <FormCombobox
+              id="payee"
+              control={control}
+              name="payeePersonId"
+              options={payees}
+              placeholder="Default — owner, then rider"
+              clearable
+            />
+            <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+              Who receives winning checks — separate from who pays the bill.
+              The payee needs a verified W-9 on file.
+            </p>
           </div>
         </div>
 

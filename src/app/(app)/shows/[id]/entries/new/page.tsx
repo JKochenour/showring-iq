@@ -91,6 +91,10 @@ export default async function NewEntryPage({
           riders={byRole("rider")}
           owners={byRole("owner")}
           trainers={byRole("trainer")}
+          payees={peopleRows.map((p) => ({
+            id: p.id,
+            label: `${p.last_name}, ${p.first_name}`,
+          }))}
           horses={horseOptions}
           classes={classOptions}
           lateEntryFeeCents={show.late_entry_fee_cents ?? 0}

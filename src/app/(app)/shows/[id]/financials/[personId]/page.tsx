@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadPersonBill } from "@/lib/billing";
 import { MiscChargeManager } from "@/components/show/misc-charge-manager";
+import { RunFeeManager } from "@/components/show/run-fee-manager";
 import { PaymentManager } from "@/components/show/payment-manager";
 import { Alert, Badge, ButtonLink, Card, PageHeader } from "@/components/ui";
 import { formatCents } from "@/lib/money";
@@ -112,6 +113,24 @@ export default async function PersonBillPage({
         )}
         <p className="mt-3 text-right text-sm font-semibold">
           Subtotal: {formatCents(bill.entryFeeCents)}
+        </p>
+      </Card>
+
+      <Card>
+        <h3 className="mb-1 text-base font-semibold">Run fees</h3>
+        <p className="mb-3 text-xs text-stone-500 dark:text-stone-400">
+          Judge, video, and photo — computed once per run (a set of classes that
+          run concurrent). Edit a price to override it; $0 comps it.
+        </p>
+        <RunFeeManager
+          showId={id}
+          personId={personId}
+          runFees={bill.runFees}
+          showBackNumber={bill.backNumbers.length > 1}
+          canEdit={canEdit}
+        />
+        <p className="mt-3 text-right text-sm font-semibold">
+          Subtotal: {formatCents(bill.runFeeCents)}
         </p>
       </Card>
 

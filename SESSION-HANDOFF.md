@@ -1,9 +1,140 @@
-# ShowRing IQ — Session Handoff (updated 2026-07-12)
+# ShowRing IQ — Session Handoff (updated 2026-07-16)
 
 This is a plain-text snapshot of where this project stands. Claude's
 persistent memory has the same content and loads automatically in a
 fresh conversation — this file is just a visible copy you can open
 yourself.
+
+## Latest (2026-07-16, 13th session — PAYEE / WINNING CHECKS + CLOSE-OUT FEE FIX, both live-verified)
+
+The two open items from the 12th session, both on `feature/show-weekends`,
+migrations **00044 + 00045 applied**, live-verified with a throwaway QA
+show (deleted after). Build/lint/9 tests green.
+
+**1. Payee / winning-checks (00044).** The paper form's "party to receive
+winning checks" — separate from the bill-payer. `entries.payee_person_id`
++ `payee_name`; NULL = default (owner of record → rider, the convention
+the payee report always used), so existing entries are untouched. Captured
+on the office entry form and the weekend entry grid ("Winning checks to",
+any org person); editable on the entry detail **"Billing & payee"** card
+(entry.edit-gated `setEntryPayee`, audited `entry.payee_set`/`_cleared`
+with old/new). **Live W-9 badge** beside the effective payee (verified
+`w9` documents, no stored flag per 00039). Copy-entry carries the payee;
+exhibitor self-service defaults. `loadPayeeReport` resolves explicit
+payee → owner → rider. Verified: create-with-payee, clear ("Use default"),
+re-set via the control, audit rows exact.
+
+**2. Close-out fee — the "timing" open item was a REAL BUG (00045).** The
+$50-after-deadline fee existed since 00036, but its `apply_close_out_fee`
+RPC summed only MATERIALIZED rows (class fees + misc − payments) — since
+00042 the judge/video/photo run fees are computed live and never
+materialized, so someone owing only run fees looked settled and was
+SKIPPED. Debtor detection now happens app-side in `applyCloseOutFee`
+using `loadShowBillingRoster` (the exact math staff see), charging each
+debtor via `add_misc_charge` (audited, idempotent via the 'Close-out fee'
+category check); **00045 drops the stale RPC.** Plus the deadline is now
+actually surfaced: a **Close-out card on Financials** (deadline label,
+amber once passed with open balances, bulk apply). Verified: a person
+with $0 entry fees + $60 judge-only run fee GOT the $50 (old RPC would
+have missed them, balance $110 exact; Jamie $225 exact); re-apply →
+"Applied to 0 bills".
+
+**Timezone gotcha (fixed):** `close_out_deadline` is stored from a naive
+datetime-local string — the office's wall clock sits in the UTC fields.
+`closeOutDeadlineInfo` formats the label with timeZone:"UTC" (shows what
+was typed) and computes "passed" by interpreting that wall clock in
+`shows.timezone`. Any future formatting of 00036-style naive timestamps
+must do the same.
+
+**NOT yet committed as of this writing** (working tree has 00044/00045 +
+all app changes). Also noted in passing, not fixed: some imported horse
+names carry a literal "&apos;" from the show-bill import.
+
+## Previous (2026-07-15, 12th session — SHOW WEEKENDS live-verified, then RUN-LEVEL FEES + EPRHA-STYLE STATEMENT + YOUTH $0 built)
+
+Three things this session, all on branch `feature/show-weekends`, all
+live-verified to the penny and committed. The user drove the direction by
+sharing real EPRHA reference material: a Horse Show for Windows (HSW) entry
+walkthrough video, the paper entry form, and — critically — a **real live
+statement** (Matt Murphy, $3,898) that the run-fee model was validated
+against exactly.
+
+**1. Show weekends — finally LIVE-VERIFIED (commit `118b02a`, migration 00041,
+from the 11th session).** Grouped the two pre-staged QA slates into a weekend,
+entered ONE horse under TWO riders across BOTH slates via the class×day grid,
+and confirmed to the penny: ONE shared back number on the horse; Office $25
+charged ONCE (to the first signer); Video $17 + class $50 per run (4 runs);
+the 2nd rider added per-run fees but NOT another Office. Consolidated weekend
+bill: Jamie $159 / QAJudge One $134. Each slate still exports its own NRHA
+readiness independently. No product bugs. QA slates + weekend deleted after.
+
+**2. Run-level fees (commit `d45c7c9`, migration 00042, applied + verified).**
+Reworked how judge/video/photo bill. The rule (confirmed against the live
+statement): **entry fee per class; judge/video/photo once per RUN** (a set of
+classes that run concurrent — the app's existing `concurrent_group_id`), where
+the judge fee is the **highest** among the run's classes; office/stall/drug
+stay once per horse per weekend. Previously per-run charges were materialized
+once per CLASS (over-charging) and there was no judge-fee concept.
+- Migration 00042: `classes.judge_fee_cents`; `entry_run_fee_overrides` +
+  `set/clear_run_fee_override` RPCs; `update_misc_charge_amount` (edit a
+  charge to $0 while keeping the row); `misc_charges.amount_cents >= 0`;
+  `apply_per_run_charges` retired to a no-op + its stale rows cleaned up.
+- Run fees are **computed live** in `src/lib/billing.ts` (`computeEntryRunFees`,
+  unit-tested), self-correcting when a class is scratched/regrouped — not
+  materialized. Judge fee $ field on the class form. Bill page: Run fees card
+  with per-line **Edit price / Reset** (override a run fee, $0 comps it while
+  the line stays); misc charges gained **Edit price** beside Remove (the
+  camper case: keep the line for the head count, comp the price).
+- **Vitest added** (`npm test`) — 9 tests on the run-fee math.
+- Live-verified: 1100(J$75)+1200(J$55, concurrent)+1400(J$55, separate) + Video
+  $17 + Office $25, one horse in all three → entry $250, judge $130, video ×2
+  $34, office $25 = **$439**. Override video→$0 = $405 (line kept), reset =
+  $439, edit office→$0 = $414, scratch 1400 → auto-recompute = $267. All exact.
+
+**3. EPRHA-style itemized statement + youth office $0 line (commit `1bb3762`,
+migration 00043, applied + verified).**
+- **Statement** rebuilt to match how EPRHA hands bills to exhibitors: grouped
+  by **Back # (horse) → slate → itemized rows** (Qty · Description ·
+  [Exhibitor] · Amount), per-horse subtotals, **Total Fees / Total amount due**
+  footer. Shared `StatementDocument` component; `loadPersonStatement` /
+  `loadWeekendPersonStatement`; new **weekend statement** route linked from the
+  weekend bill. To itemize office/stall/drug under the right horse, added a
+  nullable **`misc_charges.entry_id`** (set by `assign_back_number`;
+  legacy/manual charges stay null → shown under an "Other charges" block).
+- **Youth office fee** is now a kept **$0 line** ("Office fee - youth entry
+  only"), not an omission. `assign_back_number` charges stall/drug to
+  youth-only horses and zeroes any charge flagged **youth_exempt**; per-charge
+  flag + a **"Youth $0"** settings checkbox; starter-set + a backfill pre-flag
+  the office fee. **Behavior change:** youth-only horses now pay stall/drug
+  (this matches the live bill; previously the app skipped ALL standard charges
+  for youth-only).
+- Live-verified: Jamie billed for two horses — Chex (QA Open + QA Int Open
+  concurrent → entry $175, judge $75, video $17, office+stall+drug $220 = $487)
+  + A Little Chrome (youth-only QA Youth → entry $0, video $17, stall $185 +
+  drug $10 + **office $0 "youth entry only"** = $212) = **$699**. The itemized
+  statement grouped both horses correctly to the penny.
+
+**Both migrations 00042 + 00043 are applied live.** Build, lint, and 9 tests
+green throughout. STILL OPEN (noted, not built): the **payee / winning-checks**
+concept (separate from bill-payer, needs a W-9 — both are on the paper entry
+form) and the **$50 Sunday close-out** timing.
+
+## Latest (2026-07-13, 11th session — Horse Show for Windows deep dive → SHOW WEEKENDS / CIRCUITS): Did a full feature audit of the legacy competitor HSW (read its entire 131-page manual + changelog) against ShowRing IQ. Published a gap-analysis artifact. The user confirmed EPRHA **never runs multi-go classes and never prints checks** (dropping the two scariest gaps), but **runs every class as two "slates" per weekend** — the same class list offered as two separately-placed, separately-paid, separately-submitted NRHA shows, where a horse makes **two separate runs (one per slate)**. Terminology confirmed by the user: **"a circuit is an event weekend," and one circuit holds multiple slates** — which is exactly the model built here (I labeled it "Weekend" in the UI; rename to "Circuit" is trivial if wanted).
+
+**What "two separate runs" means for the architecture:** two separate shows is the CORRECT model, not a workaround — scoring/results/payouts/NRHA-export are already right per slate and are UNTOUCHED. What was missing is the "circuit" layer that ties the slates so the office enters things once.
+
+**Built (branch `feature/show-weekends`, commit `118b02a`, build+lint clean):**
+- **Migration 00041**: `show_weekends` grouping (every show belongs to one; auto weekend-of-one on insert via a before-insert trigger, backfilled for existing shows). **Back number belongs to the HORSE for the whole weekend** — `weekend_back_numbers(weekend_id,horse_id)→number` is the source of truth; the per-entry `back_numbers` table stays a read PROJECTION (26 read sites unchanged) kept in sync by `assign_back_number`. Dropped `unique(show_id,number)` because one horse shown by 3 riders in a class is 3 entries carrying ONE number. **Office/stall/drug charged once per horse per weekend** (when the horse first gets its number, to whoever signs it up); **class/video/photo per run**. RPCs: `group_shows_into_weekend`, `add_show_to_weekend`, `rename_weekend`; `assign_back_number`/`release_back_number` redefined horse-per-weekend.
+- **App**: Org "Weekends" tab → list, create (group entry-free shows), hub, and the **class × day entry grid** (pick horse + rider + who's billed [Owner or Rider], check classes per slate; shared back number auto-applies; "add a day later" reuses the same flow). **Consolidated per-person weekend bill** (billing.ts loaders now take a slate SET; read-only total, payments/charge edits stay on each slate and roll up).
+
+**MIGRATION STATUS — IMPORTANT:** 00041 was applied in TWO parts. The user first ran only the SCHEMA half (tables/trigger/backfill) that was pasted, so the RPC half was missing and `group_shows_into_weekend` errored "not found in schema cache" mid-dogfood. The user then ran the **RPC half** (assign_back_number/release_back_number/group/add/rename) — as of end of session, **both halves are applied.**
+
+**LIVE VERIFICATION — NOT YET COMPLETE (picks up next session):** Two entry-free QA slates were created and configured, ready to finish the dogfood:
+- `QA Weekend Slate 1` = show id `eac82807-6d4e-4c1f-9354-232501b94918`
+- `QA Weekend Slate 2` = show id `d470dd2a-e086-4ce2-9ff2-5e6ab55220ee`
+- Each has class **"Green Reiner Level 1" #1, $50 entry fee**, and standard charges **Office fee $25 (per_run OFF) + Video $17 (per_run ON)** — a deliberately minimal, identical set so the once-per-weekend-vs-per-run math is clean. (Med fee $0.)
+- **Remaining steps:** group the two slates into a weekend (now unblocked); enter ONE horse under TWO different riders across BOTH slates via the class×day grid; verify to the penny — ONE shared back number on the horse, Office $25 charged ONCE (to the first signer), Video $17 + class $50 per run (so 4 runs = 4× each, and the 2nd rider adds per-run fees but NOT another Office); check the consolidated bill; confirm each slate still exports its own NRHA file; then **delete the two QA slate shows** (and any QA people/horses) to clean up.
+- **Dogfood gotchas learned:** driving the StandardChargesEditor and GroupShowsForm via synthetic JS events was flaky (native value-setter + a too-broad `region` selector that grabbed "0.00" inputs from the medication-fee and late-fee cards, mis-targeting amounts). Fixes: scope amount inputs per-row (`labelInput.closest('div')`), and use **real clicks (computer tool) for checkboxes/buttons**. No confirmed product bug in either component — the earlier "vanishing row" scares were automation/selector artifacts. The create-weekend button "not submitting" was purely the missing RPC, not a form bug.
 
 ## Latest (2026-07-12, 10th session): live-verified the entire gap-closure batch (all 11 features, migrations 00034-00040 applied by the user) using the same "record → interact → check DB → clean up" discipline as every earlier feature. All 11 confirmed working, several with exact math: per-run charges (QA Video Fee $17 fired once when a class was added), trainer/barn billing (class fee dynamically follows `bill_to_trainer` — moved off the rider's bill onto the trainer's live; misc charges from before the toggle correctly stay put, since they're one-time snapshots, not recomputed), multi-judge scoring ((140.0+150.0)/2 = 145.0 averaged correctly), dual-show entry copy (rider/horse/both same-named target classes matched correctly), reservations (request → confirm → $15 charge, exact). Standings/payee-report/reports-center/gate-sheet verified via correct empty-state + real-data rendering; announcements verified by code review only (did not trigger a live send — that's a "message on someone's behalf" action requiring explicit user go-ahead, not something to fire during unattended QA). One real bug from the debugging session **turned out not to be a bug**: the "4th row vanishes" symptom in Standard Charges was a browser-automation artifact (clicking Remove then Save in the same synchronous script, before React committed the removal) — the component code itself was already correct. **One genuine gap found and fixed**: once a class has a draw, its status becomes workflow-locked and the manual status dropdown disappears — but `deleteClass`'s own error message still said "cancel the class instead," which was no longer reachable from the UI. Added a dedicated `cancelClass` action + "Cancel class" button in the class detail page's Danger Zone, working at any workflow stage (build+lint clean, verified live — class dropped out of the Draws list once cancelled). Not yet committed as of this writing.
 

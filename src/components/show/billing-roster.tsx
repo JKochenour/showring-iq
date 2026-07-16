@@ -9,10 +9,15 @@ import type { BillingRosterRow } from "@/lib/billing";
 export function BillingRoster({
   showId,
   rows,
+  linkBase,
 }: {
   showId: string;
   rows: BillingRosterRow[];
+  /** Base path for a person's bill link; defaults to the show's
+   * financials. Weekends pass their consolidated-bill base. */
+  linkBase?: string;
 }) {
+  const base = linkBase ?? `/shows/${showId}/financials`;
   const [query, setQuery] = useState("");
 
   const q = query.trim().toLowerCase();
@@ -57,7 +62,7 @@ export function BillingRoster({
                 <tr key={r.personId}>
                   <td className="py-2 pr-4">
                     <Link
-                      href={`/shows/${showId}/financials/${r.personId}`}
+                      href={`${base}/${r.personId}`}
                       className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                     >
                       {r.name}

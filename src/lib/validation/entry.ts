@@ -15,6 +15,7 @@ export const createEntrySchema = z
     horseId: z.uuid("Choose a horse"),
     ownerPersonId: uuidOrEmpty,
     trainerPersonId: uuidOrEmpty,
+    payeePersonId: uuidOrEmpty,
     classIds: classIdsField,
     backNumberMode: z.enum(["auto", "manual", "none"]),
     backNumber: z.preprocess(
