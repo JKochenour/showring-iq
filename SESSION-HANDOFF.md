@@ -37,9 +37,13 @@ cross-org directory AND org landing pages built.
 - `vitest.config.ts` added excluding `.claude/**` (background-task
   worktrees made `npm test` flaky — same class as the eslint gotcha).
 - Real-data notes: set class 2's scheduled_date=2026-07-16 on Summer
-  Slide (correct; concurrent with class 1, left in place). Leftover
-  "99 — QA Multi-Judge Test" class still on the real show — consider
-  deleting. **This batch NOT yet committed as of this writing.**
+  Slide (correct; concurrent with class 1, left in place). The leftover
+  "99 — QA Multi-Judge Test" class was DELETED from the real show.
+- **Committed to main**: `1fdc97e` (discovery batch) + `267fccb` — two
+  dead ends fixed while deleting class 99: cancelled classes couldn't
+  be deleted (Danger zone hid entirely), and removeEntryClass had no UI
+  (entry rows now have Remove beside Scratch for entered rows; the
+  cleanup sequence is reinstate → Remove → delete).
 
 ## Earlier (2026-07-16, 13th session — PAYEE / WINNING CHECKS + CLOSE-OUT FEE FIX, both live-verified)
 
