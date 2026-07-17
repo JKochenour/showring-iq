@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PageHeader, Card } from "@/components/ui";
 
 export const metadata = { title: "Help & Support — ShowRing IQ" };
@@ -108,6 +109,27 @@ export default function HelpPage() {
         title="Help & Support"
         description="Guides, video tutorials, and answers to common questions. Use the chat bubble in the corner for a quick question anytime."
       />
+
+      <Link
+        href="/guide"
+        className="group flex items-center justify-between gap-4 rounded-xl border border-brand-200 bg-brand-50 p-5 transition-colors hover:border-brand-300 dark:border-brand-900 dark:bg-brand-950/40 dark:hover:border-brand-800"
+      >
+        <div>
+          <h2 className="font-semibold text-brand-900 dark:text-brand-200">
+            Interactive walkthrough: run a show start to finish
+          </h2>
+          <p className="mt-1 text-sm text-brand-800/80 dark:text-brand-300/80">
+            Eleven guided steps from creating your organization to the final NRHA
+            submission package.
+          </p>
+        </div>
+        <span
+          aria-hidden
+          className="text-xl text-brand-700 transition-transform group-hover:translate-x-0.5 dark:text-brand-400"
+        >
+          →
+        </span>
+      </Link>
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Getting started by role</h2>

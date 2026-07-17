@@ -185,6 +185,7 @@ export default function HomePage() {
             ShowRing <span className="text-brand-400">IQ</span>
           </span>
           <nav className="flex items-center gap-8 text-sm">
+            <NavLink href="/guide">Guide</NavLink>
             <NavLink href="/shows">Find shows</NavLink>
             <NavLink href="/login">Sign in</NavLink>
             <Link
@@ -275,6 +276,37 @@ export default function HomePage() {
       </div>
 
       <main className="flex-1">
+        {/* ---------------------------------------------- cinematic band */}
+        {/* NOTE: /homepage-hero.mp4 is an AI-generated placeholder clip.
+            Review it and swap in real footage when available. */}
+        <section className="mx-auto w-full max-w-[87.5rem] px-6 pt-24 sm:px-10 lg:pt-32">
+          <div className="relative overflow-hidden rounded-2xl border border-white/10">
+            <video
+              className="aspect-video w-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-hidden
+            >
+              <source src="/homepage-hero.mp4" type="video/mp4" />
+            </video>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#17120F] via-[#17120F]/10 to-transparent"
+            />
+            <div className="absolute bottom-0 left-0 p-6 sm:p-10">
+              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-brand-400">
+                The ring
+              </p>
+              <p className="font-grotesk mt-2 max-w-md text-2xl font-semibold text-white sm:text-3xl">
+                Built for the western performance show
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* ------------------------------------------------ the weekend, bento */}
         <section className="mx-auto w-full max-w-[87.5rem] px-6 py-24 sm:px-10 lg:py-32">
           <h2 className="font-grotesk max-w-2xl text-4xl font-semibold leading-[1.1] tracking-[-0.02em] text-white sm:text-5xl">
@@ -376,14 +408,37 @@ export default function HomePage() {
       </main>
 
       <footer className="border-t border-white/10 px-6 py-10 sm:px-10">
-        <div className="mx-auto flex w-full max-w-[87.5rem] flex-col items-center gap-4 text-center">
+        <div className="mx-auto flex w-full max-w-[87.5rem] flex-col items-center gap-5 text-center">
           <span className="font-grotesk text-sm font-semibold tracking-tight text-stone-300">
             ShowRing <span className="text-brand-400">IQ</span>
           </span>
+          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+            {[
+              ["/guide", "Guide"],
+              ["/shows", "Find shows"],
+              ["/legal", "Legal"],
+              ["/login", "Sign in"],
+            ].map(([href, label]) => (
+              <Link
+                key={href}
+                href={href}
+                className="text-stone-400 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-400"
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
           <p className="max-w-xl text-xs leading-relaxed text-stone-500">
             Validation assistance based on configured rule package. Final
             responsibility remains with show management and the applicable
             association.
+          </p>
+          <p className="text-xs text-stone-600">
+            © 2026 ShowRing IQ. See{" "}
+            <Link href="/legal" className="underline decoration-stone-700 underline-offset-2 hover:text-stone-400">
+              Terms &amp; Privacy
+            </Link>
+            .
           </p>
         </div>
       </footer>
