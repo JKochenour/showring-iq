@@ -7,6 +7,33 @@ const PROTECTED_PREFIXES = ["/dashboard", "/organizations", "/shows/"];
 const AUTH_PAGES = ["/login", "/signup"];
 
 export default async function proxy(request: NextRequest) {
+  // Pre-launch site gate. When SITE_GATE_PASSWORD is set (production, while
+  // the app isn't public yet) every route sits behind one shared HTTP Basic
+  // Auth password. Unset (local dev) = no gate. Remove the env var — or this
+  // block — at public launch. Runs before anything else so bots never even
+  // reach Supabase. Any username is accepted; only the password is checked.
+  const gate = process.env.SITE_GATE_PASSWORD;
+  if (gate) {
+    const header = request.headers.get("authorization") ?? "";
+    let ok = false;
+    if (header.startsWith("Basic ")) {
+      try {
+        const decoded = atob(header.slice(6));
+        ok = decoded.slice(decoded.indexOf(":") + 1) === gate;
+      } catch {
+        ok = false;
+      }
+    }
+    if (!ok) {
+      return new NextResponse("Private preview — authentication required.", {
+        status: 401,
+        headers: {
+          "WWW-Authenticate": 'Basic realm="ShowRing IQ private preview"',
+        },
+      });
+    }
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
