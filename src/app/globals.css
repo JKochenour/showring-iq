@@ -1,37 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fbfaf7;
-  --foreground: #201c16;
+  --background: #f6f2ea;
+  --foreground: #1f1a15;
 
-  /* Brand — deep hunter/pine green. Primary actions, links, focus states. */
-  --color-brand-50: #f2f7f3;
-  --color-brand-100: #e0ede2;
-  --color-brand-200: #c2dbc8;
-  --color-brand-300: #98c1a4;
-  --color-brand-400: #6da180;
-  --color-brand-500: #4c8264;
-  --color-brand-600: #37684d;
-  --color-brand-700: #2b5140;
-  --color-brand-800: #244133;
-  --color-brand-900: #1f362b;
-  --color-brand-950: #0f1e17;
+  /* Brand — weathered turquoise (silver-mounted tack, concho stone).
+     Primary actions, links, focus states. */
+  --color-brand-50: #e9f6f3;
+  --color-brand-100: #cbe9e3;
+  --color-brand-200: #a3d8ce;
+  --color-brand-300: #6fc3b8;
+  --color-brand-400: #43a79c;
+  --color-brand-500: #2e8b81;
+  --color-brand-600: #256e66;
+  --color-brand-700: #1f5a54;
+  --color-brand-800: #1b4843;
+  --color-brand-900: #173b37;
+  --color-brand-950: #0c211f;
 
-  /* Accent — brass/gold. Used sparingly: ribbons, badges, marketing highlights. */
-  --color-accent-50: #fbf6ea;
-  --color-accent-100: #f5e9c8;
-  --color-accent-200: #eccf8e;
-  --color-accent-300: #e2b45f;
-  --color-accent-400: #d29f3f;
-  --color-accent-500: #b6812a;
-  --color-accent-600: #96681f;
-  --color-accent-700: #78521a;
-  --color-accent-800: #5f4217;
-  --color-accent-900: #4f3714;
-  --color-accent-950: #2c1e0b;
+  /* Accent — aged silver / pewter (trophy buckle, concho). Trim, borders,
+     understated marketing highlights. Used sparingly. */
+  --color-accent-50: #f2f4f5;
+  --color-accent-100: #e2e6e8;
+  --color-accent-200: #ccd3d6;
+  --color-accent-300: #aeb8bd;
+  --color-accent-400: #8c99a0;
+  --color-accent-500: #6f7d84;
+  --color-accent-600: #59666c;
+  --color-accent-700: #495358;
+  --color-accent-800: #3a4245;
+  --color-accent-900: #313739;
+  --color-accent-950: #1b1f20;
 
-  --color-paper: #fbfaf7;
-  --color-paper-dark: #16140f;
+  --color-paper: #f6f2ea;
+  --color-paper-dark: #1a1512;
 }
 
 @theme inline {
@@ -69,8 +71,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #16140f;
-    --foreground: #ede9e0;
+    --background: #1a1512;
+    --foreground: #ece4d8;
     --color-paper: var(--color-paper-dark);
   }
 }

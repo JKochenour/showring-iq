@@ -45,7 +45,7 @@ export function SignupForm() {
 
   return (
     <Card>
-      <h1 className="font-display mb-6 text-2xl font-semibold text-stone-900 dark:text-stone-50">
+      <h1 className="font-grotesk mb-6 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
         Create your account
       </h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>

@@ -7,24 +7,24 @@ export default function PublicLayout({
 }) {
   return (
     <div className="min-h-screen bg-paper">
-      <header className="border-b border-stone-200 dark:border-stone-800">
+      <header className="border-b border-stone-200/80 dark:border-stone-800">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
           <Link
             href="/"
-            className="font-display text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-50"
+            className="font-grotesk text-xl font-semibold tracking-tight text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-600 dark:text-stone-50"
           >
-            ShowRing <span className="text-accent-600 dark:text-accent-400">IQ</span>
+            ShowRing <span className="text-brand-600 dark:text-brand-400">IQ</span>
           </Link>
-          <nav className="flex items-center gap-4 text-sm font-medium">
+          <nav className="flex items-center gap-5 text-sm font-medium">
             <Link
               href="/shows"
-              className="text-stone-600 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-50"
+              className="text-stone-600 transition-colors hover:text-brand-700 dark:text-stone-300 dark:hover:text-brand-400"
             >
               Find shows
             </Link>
             <Link
               href="/login"
-              className="text-stone-600 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-50"
+              className="text-stone-600 transition-colors hover:text-brand-700 dark:text-stone-300 dark:hover:text-brand-400"
             >
               Sign in
             </Link>
