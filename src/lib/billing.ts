@@ -852,12 +852,14 @@ export async function loadReconciliation(
     byCategory.set(c.category, bucket);
   }
   // Fold computed run fees into the category breakdown so the report is whole
-  // even though they aren't materialized as misc_charges.
+  // even though they aren't materialized as misc_charges. Each RunFeeLine
+  // covers ALL of an entry's runs for one fee type, so count runs — the "N×"
+  // shown for Judge fee/Video should be physical runs, not entries.
   for (const lines of runFeesByEntry(raw).values()) {
     for (const l of lines) {
       if (l.effectiveCents === 0) continue;
       const bucket = byCategory.get(l.label) ?? { count: 0, amountCents: 0 };
-      bucket.count += 1;
+      bucket.count += l.runCount;
       bucket.amountCents += l.effectiveCents;
       byCategory.set(l.label, bucket);
     }

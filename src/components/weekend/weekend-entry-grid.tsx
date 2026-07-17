@@ -18,6 +18,8 @@ interface SlateClass {
   name: string;
   feeCents: number;
   showId: string;
+  /** Classes sharing a group run as ONE physical run per slate. */
+  concurrentGroupId: string | null;
 }
 
 interface Slate {
@@ -64,7 +66,10 @@ export function WeekendEntryGrid({
       {
         classNumber: number;
         name: string;
-        perSlate: Map<string, { classId: string; feeCents: number }>;
+        perSlate: Map<
+          string,
+          { classId: string; feeCents: number; concurrentGroupId: string | null }
+        >;
       }
     >();
     for (const slate of slates) {
@@ -75,7 +80,11 @@ export function WeekendEntryGrid({
           row = { classNumber: c.classNumber, name: c.name, perSlate: new Map() };
           byName.set(k, row);
         }
-        row.perSlate.set(slate.showId, { classId: c.id, feeCents: c.feeCents });
+        row.perSlate.set(slate.showId, {
+          classId: c.id,
+          feeCents: c.feeCents,
+          concurrentGroupId: c.concurrentGroupId,
+        });
       }
     }
     return [...byName.values()].sort((a, b) => a.classNumber - b.classNumber);
@@ -99,18 +108,21 @@ export function WeekendEntryGrid({
     setSelected(next);
   };
 
-  const { feeCents, runCount } = useMemo(() => {
+  const { feeCents, classCount, runCount } = useMemo(() => {
     let fee = 0;
-    let runs = 0;
+    let count = 0;
+    // Classes sharing a concurrent group in one slate are ONE physical run.
+    const runs = new Set<string>();
     for (const row of rows) {
       for (const [showId, cell] of row.perSlate) {
         if (selected.has(key(showId, cell.classId))) {
           fee += cell.feeCents;
-          runs += 1;
+          count += 1;
+          runs.add(`${showId}::${cell.concurrentGroupId ?? cell.classId}`);
         }
       }
     }
-    return { feeCents: fee, runCount: runs };
+    return { feeCents: fee, classCount: count, runCount: runs.size };
   }, [rows, selected]);
 
   const submit = () => {
@@ -148,9 +160,12 @@ export function WeekendEntryGrid({
         return;
       }
       // Reset for the next horse — the office enters many in a row.
-      setSaved(`Entered ${horseLabel} · ${riderLabel} in ${runCount} run${runCount === 1 ? "" : "s"}.`);
+      setSaved(
+        `Entered ${horseLabel} · ${riderLabel} in ${classCount} class${classCount === 1 ? "" : "es"} (${runCount} run${runCount === 1 ? "" : "s"}).`
+      );
       setHorseId("");
       setRiderId("");
+      setBillTo("rider");
       setOwnerId("");
       setPayeeMode("default");
       setPayeeId("");
@@ -348,12 +363,13 @@ export function WeekendEntryGrid({
             </tbody>
           </table>
         </div>
-        {runCount > 0 && (
+        {classCount > 0 && (
           <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
-            {runCount} run{runCount === 1 ? "" : "s"} · class fees{" "}
+            {classCount} class{classCount === 1 ? "" : "es"} · {runCount} run
+            {runCount === 1 ? "" : "s"} · class fees{" "}
             <b>{formatCents(feeCents)}</b>{" "}
             <span className="text-stone-500 dark:text-stone-400">
-              (video/photography added per run)
+              (judge/video/photography added per run)
             </span>
           </p>
         )}

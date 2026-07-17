@@ -39,7 +39,7 @@ export default async function NewWeekendEntryPage({
     slateIds.length > 0
       ? supabase
           .from("classes")
-          .select("id, class_number, name, entry_fee_cents, status, show_id, display_order")
+          .select("id, class_number, name, entry_fee_cents, status, show_id, display_order, concurrent_group_id")
           .in("show_id", slateIds)
           .not("status", "in", "(cancelled,archived)")
           .order("display_order")
@@ -77,12 +77,14 @@ export default async function NewWeekendEntryPage({
     name: string;
     entry_fee_cents: number;
     show_id: string;
+    concurrent_group_id: string | null;
   }[]) ?? []).map((c) => ({
     id: c.id,
     classNumber: c.class_number,
     name: c.name,
     feeCents: c.entry_fee_cents,
     showId: c.show_id,
+    concurrentGroupId: c.concurrent_group_id,
   }));
 
   const slates = slateShows.map((s) => ({
