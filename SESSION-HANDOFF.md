@@ -7,8 +7,12 @@ yourself.
 
 ## CURRENT STATE (read this first in a new window)
 
-- **Branch `main`, HEAD `e6ea1c1` (+ this handoff commit), working tree
-  clean.** GitHub remote
+- **Branch `main`, HEAD `f806f9d` (+ this handoff commit), working tree
+  clean.** ⚠️ Gotcha this session: the checkout was in a **detached HEAD**
+  at `b22dc33`; commits landed detached and had to be reconciled with
+  `git branch -f main HEAD` (a clean fast-forward since main was an
+  ancestor). Check `git status` for "HEAD detached" before committing.
+  GitHub remote
   IS configured now: `origin` → `https://github.com/JKochenour/showring-iq`
   (private). **Push to main auto-deploys to Vercel.**
 - **NEW public pages this session (17th):** `/guide` (interactive
@@ -101,6 +105,55 @@ yourself.
   getComputedStyle/DOM checks; PowerShell `git commit -m` mangles
   here-strings with double quotes — use `git commit -F <file>`; the
   local dev server dies intermittently — `preview_list` then restart.
+
+## Latest (2026-07-17, 17th session pt 2 — REAL SHOW CONFIGURED + WEEKEND TESTING + 2 NEW FEATURES)
+
+Same session continued into real-data work on the LIVE DB. Details in memory:
+[[fire-cracker-classic-config]], [[back-number-entry-editor]],
+[[sidebar-improvements-todo]].
+
+**1. Configured the real EPRHA Fire Cracker Classic 2026 as a 2-slate
+weekend.** The prior "Summer Slide 2026" (61 classes) was a mislabeled
+show-bill import; the user provided the authoritative PDFs (NRHA approved
+class list, Slate 1/2 schedules, entry form, color flyer). Discovered the
+real event is **two 30-class slates run as two go's**. Built it right:
+weekend "EPRHA Fire Cracker Classic 2026" with **Slate 1 = Classic I
+(`938c2d4e…`, Thu–Sat)** and **Slate 2 = Classic 2 (`6ea26648…`, Fri–Sun)**,
+60 classes with exact NRHA codes/names/days/patterns/entry+judge fees/added
+money, 3 judges (Naike Bell, Matt Lantz, Herm Sherwin), NJ venue (Dreampark
+of Gloucester County), concurrent-run groups (same pattern + same day = one
+run). **Summer Slide deleted.** All via SQL scripts the USER ran in the
+Supabase SQL editor (Claude has only the RLS-limited anon key locally). PDF
+extraction: pdfjs-dist for text PDFs (run from project dir), `pdf-to-img` +
+`ffmpeg-static` (`transpose=1`) in scratchpad for scanned/image PDFs.
+
+**2. Cross-slate weekend testing — penny-exact.** Entered one horse across
+both slates: ONE shared back number, per-run judge fee via concurrent groups
+(charged once at highest, not per class), consolidated bill $650 exact. QA
+data cleaned up after.
+
+**3. NEW FEATURE — back-number weekend entry editor (commit `5ad0221`).**
+The HSW-parity gap the user flagged: the weekend grid was create-only; editing
+an entered horse meant going in/out of each show. New **"Manage entries by
+back number"** screen (`/organizations/[id]/weekends/[weekendId]/manage`):
+search by back number / horse name / rider name → shows the horse + ALL
+exhibitors → per exhibitor an editable class grid across both slates,
+pre-checked; check to add / uncheck to drop; one Save. New
+`saveWeekendRiderClasses` action reconciles adds/removes, creates a slate's
+entry (+ shared back number) on first sign-up, deletes emptied entries,
+leaves scratched classes. **Live-verified** end to end (add across both slates
+incl. new Slate-2 entry, remove, empty-entry deletion; bill recomputed exact).
+
+**4. NEW FEATURE — run fees named with their classes on bills (commit
+`f806f9d`).** `computeEntryRunFees` now attaches a `detail` to each run-fee
+line ("Open + Intermediate Open · Novice Horse Level 2") shown next to Judge
+fee / Video / Photo on the consolidated bill, per-slate bill, and printable
+statement. Unit test pins it (28 tests green).
+
+**Still open (user: fix NEXT session):** the sidebar — (a) add an
+active-show indicator (can't tell which show you're in), (b) order Slate 1
+above Slate 2 (app layout sorts shows by `start_date` DESC). See
+[[sidebar-improvements-todo]].
 
 ## Latest (2026-07-17, 17th session — AI SUPPORT (already built) + /guide TUTORIAL + /legal + HOMEPAGE VIDEO)
 
