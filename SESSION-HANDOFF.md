@@ -22,11 +22,16 @@ yourself.
   streaming `claude-opus-4-8`. It only needs `ANTHROPIC_API_KEY` set in
   Vercel to run in prod — no code change. **Still not set as of this
   writing.**
-- **User to-dos surfaced this session:** (1) set a real
-  `ANTHROPIC_API_KEY` — it's EMPTY in `.env.local` (chat is off in BOTH
-  local dev and prod); SETUP.md now documents the local + Vercel steps
-  (credential action for the user); (2) fill the 43 `/legal` placeholders
-  + get an attorney review before public launch; (3) homepage video was
+- **AI HELP CHAT IS NOW LIVE (local + prod).** Resolved end of 17th
+  session: the user set a real `ANTHROPIC_API_KEY`, rotated it (the
+  first full key was exposed in a shared Vercel screenshot), added
+  Anthropic credits, fixed the Vercel Key/Value (they'd been swapped),
+  and redeployed. Verified: direct API test SUCCESS, local widget answers
+  correctly, and the user confirmed the PRODUCTION chat on
+  showringiq.com answers a real question. SETUP.md documents the local +
+  Vercel setup. Current key ends `…jQAA` (108 chars).
+- **Remaining user to-dos:** (1) fill the 43 `/legal` placeholders + get
+  an attorney review before public launch; (2) homepage video was
   REVIEWED and kept (good/on-brand; only the rider's head is cropped) —
   a planted-sliding-stop regen is pending Higgsfield credits (workspace
   is out; user held off).
