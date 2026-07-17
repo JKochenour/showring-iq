@@ -7,9 +7,13 @@ yourself.
 
 ## CURRENT STATE (read this first in a new window)
 
-- **Branch `main`, HEAD `a12dc3d`** (15th session's APHA starter
-  package; before that `3f0bec1`, the merge of the 14th session's
-  entity-decode branch — that worktree + branch are deleted). The old `feature/show-weekends` branch was merged at
+- **Branch `main`, HEAD `d628178`** (15th session: APHA starter
+  `a12dc3d`, tie-payout fix `5a5d205` [00051], empty-weekend cleanup
+  `d628178` [00052] — **both migrations applied live**).
+- **User directive: reining only** — no new associations/disciplines
+  until live testing is done. The 15th session RAN that testing
+  (8 phases end-to-end, see Latest below): 2 real bugs found+fixed,
+  3 papercuts logged, all money penny-exact. The old `feature/show-weekends` branch was merged at
   `b29c335` and everything since lands directly on main. No git remote
   configured (Vercel deploy deferred — user has no domain yet; steps
   are in part 3's notes).
@@ -47,7 +51,45 @@ yourself.
   tablets, real arena values on the Summer Slide classes, GitHub +
   Vercel when a domain exists.
 
-## Latest (2026-07-16, 15th session — APHA 2026 STARTER RULE PACKAGE, zero migrations, live-verified, committed `a12dc3d`)
+## Latest (2026-07-16, 15th session part 2 — EXTENSIVE LIVE TESTING OF THE REINING CORE: 2 real bugs found+fixed, migrations 00051+00052 applied)
+
+The user directed: reining only until extensive live testing. An 8-phase
+end-to-end dress rehearsal ran on a throwaway QA weekend (2 slates, 4
+classes each incl. a concurrent pair + youth class), every number
+hand-computed BEFORE the UI produced it. All QA data deleted after.
+
+**Two real bugs found and FIXED (both applied live):**
+1. **💰 Tie payout split — broken since 00011 (migration `00051`,
+   commit `5a5d205`).** calculate_payouts gave each tied entry its own
+   placing's FULL percentage instead of splitting placings p..p+n-1 —
+   a 2-way tie for 1st on 60/40 paid 120% of the pool ($48+$48 on an
+   $80 pool; correct $40+$40, verified live post-fix; non-tied classes
+   unchanged). Never caught: the tie machinery was verified in the 7th
+   session but no one hand-checked a tied dollar amount.
+2. **Orphaned weekends (migration `00052`, commit `d628178`).**
+   Deleting a weekend's shows left the invisible show_weekends row
+   whose weekend_back_numbers blocked horse deletion with a misleading
+   "has show entries" error. AFTER DELETE trigger on shows now drops
+   empty weekends + one-off cleanup ran.
+
+**Papercuts logged, not yet fixed:** weekend-grid reset keeps
+billTo=owner but clears ownerId (next entry errors); grid success
+message counts class-cells as "runs"; reconciliation "N×" counts are
+per-entry not per-line (amounts correct).
+
+**Everything else passed, all money penny-exact on first try:**
+consolidated weekend billing ($943/$351/$514 = hand predictions);
+scratch self-correction ($943→$781); youth $0 office line; validation
+fallback; draws/gate/scores mirroring both directions across
+concurrent classes; corrections w/ audit; co-champions; payouts incl.
+5% retainage + youth exemption; publish → public page; payments;
+close-out (2 debtors exactly, idempotent); reconciliation balances
+($1,382−$1,014=$368); EPRHA weekend statement; **NRHA CSV field-exact
+incl. -1.0 no-score and -2.0 scratch codes**; ZIP package (6 files);
+readiness checklist blockers fired and cleared. Note: a fully-scratched
+class stays Draft and can't export (deliberate-looking; flagged).
+
+## Earlier (2026-07-16, 15th session — APHA 2026 STARTER RULE PACKAGE, zero migrations, live-verified, committed `a12dc3d`)
 
 The user dropped five rulebook PDFs into `C:\Users\jkoch\Documents\Rulebooks\`
 (APHA 2026, USEF 2026 full book, USEF Chapter DR Dressage, USDF Dressage
