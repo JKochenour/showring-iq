@@ -1,3 +1,30 @@
+# ShowRing IQ — Session Handoff (updated 2026-07-17, 18th session)
+
+## Latest (2026-07-17, 18th session — SIDEBAR NAV FIXES, committed + pushed)
+
+Cleared the two sidebar to-dos flagged last session (commit `db00d8d`,
+pushed to main → auto-deployed). Both live-verified on the dev server
+against the real Fire Cracker Classic 2-slate weekend:
+
+1. **Active-show indicator.** `src/components/show/show-sidebar-nav.tsx`:
+   the current show's button now gets a brand background, semibold text,
+   brand chevron, `aria-current="page"`, and a small **"Here"** badge —
+   you can finally tell which show you're in from the desktop sidebar.
+   Also fixed `isActiveShow` to match the bare `/shows/[id]` route, not
+   just `/shows/[id]/*`.
+2. **Slate 1 above Slate 2.** `src/app/(app)/layout.tsx` loaded shows
+   `start_date` DESC, so Slate 2 (later start) sat above Slate 1. Now
+   fetches `start_date` + `weekend_id` and sorts in JS: weekends
+   newest-first (by each weekend's latest slate date) but slates WITHIN a
+   weekend ascending — Classic I sits above Classic 2, recent weekends
+   still on top. No migration; typecheck + lint clean.
+
+Verify gotcha reconfirmed: the running dev server served a stale build on
+first paint (highlight only appeared after a hard reload); browser-pane
+screenshot timed out — verified via getComputedStyle/DOM instead.
+
+---
+
 # ShowRing IQ — Session Handoff (updated 2026-07-17, 17th session)
 
 This is a plain-text snapshot of where this project stands. Claude's
