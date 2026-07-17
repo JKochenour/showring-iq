@@ -86,14 +86,15 @@ body {
   font-feature-settings: "ss01" 1;
 }
 
-/* Marketing hero: results-card load sequence. Rows rise in like results
-   being posted; the readiness seal stamps last. Static under
+/* Marketing page motion. One choreography: hero copy rises first, the
+   results card posts its rows, the readiness seal stamps last. The
+   credibility marquee drifts continuously. Everything is static under
    prefers-reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
   .anim-rise {
     opacity: 0;
-    transform: translateY(10px);
-    animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    transform: translateY(14px);
+    animation: rise 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     animation-delay: var(--rise-delay, 0s);
   }
   .anim-stamp {
@@ -101,6 +102,12 @@ body {
     transform: scale(1.25);
     animation: stamp 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
     animation-delay: var(--rise-delay, 0s);
+  }
+  .marquee-track {
+    animation: marquee 42s linear infinite;
+  }
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
   }
 }
 @keyframes rise {
@@ -113,6 +120,11 @@ body {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
   }
 }
 
