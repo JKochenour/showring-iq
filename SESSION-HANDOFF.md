@@ -1,4 +1,4 @@
-# ShowRing IQ — Session Handoff (updated 2026-07-17, 16th session)
+# ShowRing IQ — Session Handoff (updated 2026-07-17, 17th session)
 
 This is a plain-text snapshot of where this project stands. Claude's
 persistent memory has the same content and loads automatically in a
@@ -7,9 +7,24 @@ yourself.
 
 ## CURRENT STATE (read this first in a new window)
 
-- **Branch `main`, HEAD `6ff6c7d`, working tree clean.** GitHub remote
+- **Branch `main`, HEAD `223e725`, working tree clean.** GitHub remote
   IS configured now: `origin` → `https://github.com/JKochenour/showring-iq`
   (private). **Push to main auto-deploys to Vercel.**
+- **NEW public pages this session (17th):** `/guide` (interactive
+  11-step show-setup walkthrough) and `/legal` (Terms, Privacy,
+  Validation/Liability disclaimer, Data/Security — a DRAFT template with
+  43 bracketed placeholders + a "not yet reviewed by counsel" banner).
+  Plus an AI-generated cinematic reining clip on the homepage
+  (`public/homepage-hero.mp4`). See the 17th-session section below.
+- **AI Help assistant was ALREADY built** (16th session left it in
+  place): chat bubble on every logged-in page, `/api/help-chat`
+  streaming `claude-opus-4-8`. It only needs `ANTHROPIC_API_KEY` set in
+  Vercel to run in prod — no code change. **Still not set as of this
+  writing.**
+- **User to-dos surfaced this session:** (1) set `ANTHROPIC_API_KEY` in
+  Vercel to turn on the AI help chat; (2) fill the 43 `/legal`
+  placeholders + get an attorney review before public launch; (3)
+  review/replace the AI-generated homepage video if the horse looks off.
 - **DEPLOYED AND LIVE (2026-07-17):** the app runs at **showringiq.com**
   (apex redirects to www) on Vercel, GitHub-connected. It talks to the
   SAME live Supabase DB as local dev — production is real, not a
@@ -76,6 +91,74 @@ yourself.
   getComputedStyle/DOM checks; PowerShell `git commit -m` mangles
   here-strings with double quotes — use `git commit -F <file>`; the
   local dev server dies intermittently — `preview_list` then restart.
+
+## Latest (2026-07-17, 17th session — AI SUPPORT (already built) + /guide TUTORIAL + /legal + HOMEPAGE VIDEO)
+
+User asked to "build in the AI support, a tutorial page, custom step-by-step
+show-setup videos, and a legal page with everything needed." Confirmed three
+forks via AskUserQuestion first: tutorial format = **Both** (interactive
+real-app walkthrough + a short AI-generated cinematic clip for marketing);
+legal specifics = **clear bracketed placeholders** + a pending-counsel banner;
+legal scope = **all four** docs. Committed + pushed as `223e725` (auto-deployed).
+
+**1. AI support — was ALREADY fully built; surfaced + documented, no rebuild.**
+`src/lib/ai/help-assistant.ts` (Opus 4.8, low effort, ShowRing-IQ system
+prompt) + `src/app/api/help-chat/route.ts` (auth, rate limits, streaming) +
+`src/components/help/help-chat-widget.tsx` (bottom-right bubble), mounted in
+the (app) layout. Dormant in prod ONLY because `ANTHROPIC_API_KEY` isn't set in
+Vercel — one env var, no code change. Widget is logged-in-only by design (could
+be added to public /guide,/help later if wanted).
+
+**2. `/guide` (public) — interactive 11-step show-setup walkthrough.**
+`src/app/(public)/guide/page.tsx` + `guide-walkthrough.tsx` (client). Left step
+rail (clickable, progress checks) → per-step narrative + key actions + a
+component-accurate UI "frame" for each stage: org → people/horses → show →
+staff → classes → entries → validation/check-in → draw/gate → scoring →
+results/payouts → NRHA export. Prev/Next + progress dots; ends on a Get-started
+CTA. **Design decision worth remembering:** the frames are rendered from the
+app's real design tokens with SAMPLE data — deliberately NOT live screenshots —
+because (a) every real in-app screen shows the live EPRHA org's actual
+people/horses, which must not appear on a PUBLIC page, and (b) the browser-pane
+screenshot capture is too flaky/duplicating to build a clean consistent set.
+Flow, nav paths, and screen shapes are all accurate. Linked from the in-app
+Help page (new turquoise CTA card), marketing footer, and public layout nav.
+
+**3. `/legal` (public) — Terms, Privacy, Disclaimer, Data/Security.**
+`src/app/(public)/legal/page.tsx` renders from `legal-content.tsx` (structured
+data: LEGAL_DOCS[] with per-section ReactNode bodies + exported placeholder
+constants ENTITY/CONTACT_EMAIL/GOVERNING_STATE/EFFECTIVE_DATE). Includes the
+CLAUDE.md-required verbatim disclaimer ("Validation assistance based on the
+configured rule package. Final responsibility remains with show management and
+the applicable association."), a TOC, and a prominent amber "Draft template —
+not yet reviewed by counsel" banner. **43 bracketed placeholders** — search the
+codebase for `[` in legal-content.tsx. Payments language matches reality
+(records payments, never processes cards; Clover terminal). NOT legal advice;
+attorney review required before public launch.
+
+**4. Homepage cinematic clip — AI-generated placeholder.**
+Higgsfield `kling3_0_turbo`, 5s, 16:9, 7.5 credits: a reining sliding-stop in a
+sunlit arena, warm leather + turquoise accent. Saved to
+`public/homepage-hero.mp4` (8.3 MB, 1280×720), embedded as a muted autoplay
+loop in a new "The ring" band on the marketing homepage (`src/app/page.tsx`).
+Verified served (200) and a sampled 2s frame has real tonal range (not
+black/broken) — but I could NOT visually review the footage from here (no
+ffmpeg; browser pane wouldn't load the raw mp4), so **the user should review it
+and I'll regenerate if the horse looks off.** The `/guide` page has a separate
+"overview" video slot (`VIDEO_AVAILABLE=false` placeholder) left for a real
+app-screen-recording the user can drop in later — NOT the cinematic clip.
+
+**5. Footer/nav wiring.** Guide + Legal links added to the marketing homepage
+header + footer (added a © line and a real link row) and the public layout
+(which previously had no footer at all).
+
+Lint (`npx eslint src`) + `tsc --noEmit` clean (only the 2 pre-existing benign
+RHF `watch()` warnings). Verified live on the local dev server: /guide renders,
+11 steps, stepper swaps screens (step 8 → gate board), no console errors;
+/legal renders all four docs + banner + 43 placeholders; homepage video element
+present + file served + non-black frame + nav/footer links correct. Files:
+8 changed, +1666. **Gotcha reconfirmed:** browser-pane screenshots time out /
+duplicate the render and misreport viewport width — trust DOM/clientWidth and
+verify via javascript_tool, not screenshots.
 
 ## Latest (2026-07-17, 16th session — DEPLOYMENT + PASSWORD GATE + DESIGN REBRAND)
 
