@@ -213,7 +213,7 @@ export default async function ClassResultsPage({
                         <span className="text-stone-400">—</span>
                       )}
                       {row.result?.champion_level && (
-                        <p className="text-xs font-normal text-accent-600 dark:text-accent-400">
+                        <p className="text-xs font-normal text-brand-600 dark:text-brand-400">
                           Level {row.result.champion_level} Champion
                         </p>
                       )}

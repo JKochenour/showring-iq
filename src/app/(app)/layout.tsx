@@ -63,9 +63,9 @@ export default async function AppLayout({
       <aside className="hidden w-64 shrink-0 flex-col border-r border-stone-200 bg-white px-4 py-6 dark:border-stone-800 dark:bg-stone-900 sm:flex">
         <Link
           href="/dashboard"
-          className="font-display mb-8 px-2 text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-50"
+          className="font-grotesk mb-8 px-2 text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-50"
         >
-          ShowRing <span className="text-accent-600 dark:text-accent-400">IQ</span>
+          ShowRing <span className="text-brand-600 dark:text-brand-400">IQ</span>
         </Link>
         <nav className="flex flex-1 flex-col gap-1 text-sm">
           <SidebarNavLink href="/dashboard">Dashboard</SidebarNavLink>
@@ -102,8 +102,8 @@ export default async function AppLayout({
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-stone-200 bg-white px-4 py-2 dark:border-stone-800 dark:bg-stone-900 sm:hidden">
-          <Link href="/dashboard" className="font-display text-lg font-semibold tracking-tight">
-            ShowRing <span className="text-accent-600 dark:text-accent-400">IQ</span>
+          <Link href="/dashboard" className="font-grotesk text-lg font-semibold tracking-tight">
+            ShowRing <span className="text-brand-600 dark:text-brand-400">IQ</span>
           </Link>
           <MobileNav>
             <nav className="flex flex-col gap-1 text-sm">
