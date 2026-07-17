@@ -1,4 +1,4 @@
-# ShowRing IQ — Session Handoff (updated 2026-07-16, 15th session)
+# ShowRing IQ — Session Handoff (updated 2026-07-17, 16th session)
 
 This is a plain-text snapshot of where this project stands. Claude's
 persistent memory has the same content and loads automatically in a
@@ -7,19 +7,36 @@ yourself.
 
 ## CURRENT STATE (read this first in a new window)
 
-- **Branch `main`, HEAD `d628178`** (15th session: APHA starter
-  `a12dc3d`, tie-payout fix `5a5d205` [00051], empty-weekend cleanup
-  `d628178` [00052] — **both migrations applied live**).
+- **Branch `main`, HEAD `6ff6c7d`, working tree clean.** GitHub remote
+  IS configured now: `origin` → `https://github.com/JKochenour/showring-iq`
+  (private). **Push to main auto-deploys to Vercel.**
+- **DEPLOYED AND LIVE (2026-07-17):** the app runs at **showringiq.com**
+  (apex redirects to www) on Vercel, GitHub-connected. It talks to the
+  SAME live Supabase DB as local dev — production is real, not a
+  sandbox. See [[deployment-vercel]]. **The whole site is behind a
+  password gate** (HTTP Basic Auth in middleware, active only when the
+  Vercel env var `SITE_GATE_PASSWORD` is set) so the public can't reach
+  it pre-launch — remove that env var (or the middleware block) to open
+  it up. Vercel env vars set: `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Anthropic key NOT set → in-app Help
+  AI chat off in prod, harmless). Supabase Auth URL config points at
+  showringiq.com + localhost.
+- **DESIGN REBRANDED (2026-07-17):** dropped hunter-green + brass (the
+  hunt-seat/country-club cliché, wrong for a reining product) for
+  **"Silver & Turquoise"** — weathered turquoise (silver-mounted tack) is
+  the brand color, aged silver the trim, oiled-leather dark + warm oat
+  the surfaces. Applied GLOBALLY via tokens, so marketing homepage,
+  auth, public pages, AND the whole logged-in app all recolored;
+  interior swept clean. Marketing/auth use Space Grotesk display; app
+  content keeps Fraunces. See [[design-language]]. **Do NOT reintroduce
+  green or gold.**
 - **User directive: reining only** — no new associations/disciplines
   until live testing is done. The 15th session RAN that testing
-  (8 phases end-to-end, see Latest below): 2 real bugs found+fixed,
-  3 papercuts logged, all money penny-exact. The old `feature/show-weekends` branch was merged at
-  `b29c335` and everything since lands directly on main. No git remote
-  configured (Vercel deploy deferred — user has no domain yet; steps
-  are in part 3's notes).
-- **Migrations 00041–00050 all applied live.** DB matches main.
-  (00050 is a one-off data cleanup — already run, both verification
-  queries came back empty; it never needs to run again.)
+  (8 phases end-to-end): 2 real bugs found+fixed, 3 papercuts (now all
+  fixed), all money penny-exact. See [[live-testing-reining-core]].
+- **Migrations 00041–00052 all applied live.** DB matches main.
+  (00050 is a one-off data cleanup — already run; never needs re-running.
+  00051 = tie-payout fix, 00052 = empty-weekend cleanup, both applied.)
 - **THE ENTIRE AGREED ROADMAP IS DONE** (live results → payments → SMS →
   scheduling → offline → second association ✅ AQHA). The 13th session
   shipped, in order, each live-verified: (1) payee/winning-checks +
@@ -44,14 +61,70 @@ yourself.
   window.innerWidth — trust element clientWidth; agent worktrees
   don't inherit the gitignored `.env.local` — copy it from the main
   checkout before running the dev server in one.
-- **Natural next candidates:** encode more AQHA rules (cross-enter
-  prohibitions, Level 1 point caps, SHW261 points chart as the
-  standings schedule), public estimated start times (day-sheet math is
-  ready + arena-aware), SW "update available" banner for arena
-  tablets, real arena values on the Summer Slide classes, GitHub +
-  Vercel when a domain exists.
+- **Natural next candidates:** configure the real EPRHA Summer Slide
+  2026 show (its 64 imported classes are draft — need NRHA codes,
+  judges, payout schedules, concurrent groups); a 2nd live-testing
+  round on the DEPLOYED site (exhibitor self-service entry, offline
+  mode over real Wi-Fi, multi-judge through export, turn on Resend/
+  Twilio keys); encode more AQHA rules; public estimated start times.
+- **Known dev gotchas:** PWA service worker serves stale CSS/JS during
+  dev — unregister SWs + clear caches when edits seem ignored (this
+  also logs you out of the dev server; Claude can't sign back in);
+  the browser-pane screenshot capture times out with infinite CSS
+  animations (marquee) or a flaky renderer — pause via
+  `document.getAnimations().forEach(a=>a.pause())` or verify with
+  getComputedStyle/DOM checks; PowerShell `git commit -m` mangles
+  here-strings with double quotes — use `git commit -F <file>`; the
+  local dev server dies intermittently — `preview_list` then restart.
 
-## Latest (2026-07-16, 15th session part 2 — EXTENSIVE LIVE TESTING OF THE REINING CORE: 2 real bugs found+fixed, migrations 00051+00052 applied)
+## Latest (2026-07-17, 16th session — DEPLOYMENT + PASSWORD GATE + DESIGN REBRAND)
+
+Four things this session, all committed + pushed (auto-deployed):
+
+**1. Papercuts + payout tests (commit `ed7c14b`).** Fixed the 3 papercuts
+from the live-testing round: weekend-grid reset now returns Bill-to to
+Rider; the grid counts physical runs ("N classes (M runs)") instead of
+calling class-cells runs; reconciliation per-run fee counts count runs
+not entries. Added **`src/lib/payouts.ts`** — a TS mirror of migration
+00051's payout formula — with 12 vitest cases pinning the tie-split bug
+class down (27/27 tests green). The migration remains the authority;
+change both together.
+
+**2. DEPLOYED to Vercel + custom domain (see [[deployment-vercel]]).**
+Created private GitHub repo JKochenour/showring-iq, pushed, imported to
+Vercel (GitHub-connected, auto-deploy on push). Live at **showringiq.com**.
+The domain-attach was the whole saga: it had been added to the Vercel
+ACCOUNT but never to the PROJECT, so no TLS cert issued (looked like slow
+issuance for ~2h; it wasn't). Fixed by adding it under the project's
+Settings → Domains — cert issued in ~10s. Full-stack verified: /login on
+prod redirected to /dashboard "Welcome, Jason" from the live DB.
+
+**3. Pre-launch password gate (commit `a9f0748`).** HTTP Basic Auth added
+to `src/proxy.ts` middleware, active only when Vercel env var
+`SITE_GATE_PASSWORD` is set (local dev stays open). Every route returns
+401 until the shared password is entered. Verified locked from outside
+(homepage, /shows, published show page all 401). **To launch publicly:
+delete that env var, or strip the middleware block.**
+
+**4. DESIGN REBRAND — "Silver & Turquoise" (see [[design-language]]).**
+User pushed hard on the homepage looking AI-generated. After 3 marketing
+passes (show-program serif → premium pass → mission-control dark grotesk),
+the real fix was the PALETTE: hunter-green + brass is the hunt-seat/
+country-club cliché and wrong for a reining product. Rebuilt from western-
+performance materials — **turquoise (silver-mounted tack) brand, aged
+silver trim, oiled-leather + warm-oat surfaces.** Done at the TOKEN level
+(`--color-brand-*` → turquoise, `--color-accent-*` → silver, paper→oat,
+bg→leather in globals.css) so it flows through shared components into
+marketing homepage, auth (login/signup), public pages, AND the whole
+logged-in app. Space Grotesk (new `next/font`, `.font-grotesk`) is the
+marketing/auth/wordmark display face; app content keeps Fraunces
+(`.font-display`). Interior swept clean (commit `6ff6c7d`): semantic
+colors intact (danger=red, Official=amber seal, severity blue/amber/red);
+only brand/highlight moved to turquoise. **No green or gold anywhere now
+— don't reintroduce them.** Commits `25c7169`, `e839575`, `a445b66`,
+`dd6374f`, `6ff6c7d`.
+
+## Earlier (2026-07-16, 15th session part 2 — EXTENSIVE LIVE TESTING OF THE REINING CORE: 2 real bugs found+fixed, migrations 00051+00052 applied)
 
 The user directed: reining only until extensive live testing. An 8-phase
 end-to-end dress rehearsal ran on a throwaway QA weekend (2 slates, 4
