@@ -85,6 +85,12 @@ export default async function WeekendHubPage({
           <h3 className="mb-3 text-sm font-semibold">This weekend</h3>
           <div className="space-y-2 text-sm">
             <Link
+              href={`/organizations/${id}/weekends/${weekendId}/manage`}
+              className="block rounded-md border border-stone-200 px-3 py-2 hover:border-brand-600 dark:border-stone-800"
+            >
+              Manage entries by back number →
+            </Link>
+            <Link
               href={`/organizations/${id}/weekends/${weekendId}/entries/new`}
               className="block rounded-md border border-stone-200 px-3 py-2 hover:border-brand-600 dark:border-stone-800"
             >
