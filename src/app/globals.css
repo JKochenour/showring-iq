@@ -86,6 +86,12 @@ body {
   font-feature-settings: "ss01" 1;
 }
 
+/* Marketing display face — ultra-sleek technical grotesk. The app keeps
+   Fraunces via .font-display; this class is marketing-page only. */
+.font-grotesk {
+  font-family: var(--font-grotesk), var(--font-geist-sans), sans-serif;
+}
+
 /* Marketing page motion. One choreography: hero copy rises first, the
    results card posts its rows, the readiness seal stamps last. The
    credibility marquee drifts continuously. Everything is static under
