@@ -89,6 +89,36 @@ TWILIO_FROM=+15551234567
 `TWILIO_FROM` is an SMS-capable Twilio number in +1XXXXXXXXXX form, or a
 Messaging Service SID (`MG...`).
 
+Optional — the **AI help chat** (the floating "?" bubble on every logged-in
+page). Without it the rest of the app works normally; the widget just replies
+"not configured yet."
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Get a key at **console.anthropic.com → API Keys → Create Key** (shown once —
+save it; the account needs a little billing/credit set up). It's used for
+short "how do I…" questions only (`claude-opus-4-8`, low effort, 1024-token
+cap), so cost is minimal. Restart the dev server after adding it — env changes
+aren't hot-reloaded.
+
+### Enabling the AI help chat in production (Vercel)
+
+`.env.local` only affects local dev. To turn the chat on at showringiq.com:
+
+1. **vercel.com → the `showring-iq` project → Settings → Environment
+   Variables.**
+2. Add **Key** `ANTHROPIC_API_KEY`, **Value** your `sk-ant-...` key, and check
+   the **Production** environment (add Preview/Development too if you want it
+   there).
+3. Save, then **redeploy** — env vars only apply to a new deployment (push any
+   commit, or **Deployments → ⋯ → Redeploy** on the latest one).
+
+Never commit the key: `.env.local` is gitignored, and Vercel stores the
+production value as an encrypted env var. If a key is ever exposed, revoke it
+in the Anthropic console and issue a new one.
+
 ## 4. (Optional, recommended for local dev) Disable email confirmation
 
 Supabase requires email confirmation by default. For faster local testing:
@@ -324,7 +354,9 @@ draft→review→tested→published→deprecated→archived lifecycle RPC.
   responsive feel.
   - **Requires `ANTHROPIC_API_KEY`** in `.env.local` (get one at
     console.anthropic.com → API Keys). Without it, the rest of the app works
-    normally — the chat widget just returns "not configured yet."
+    normally — the chat widget just returns "not configured yet." See
+    "Configure environment variables" above for the local key and the
+    Vercel/production setup.
   - v1 scope: conversation history lives in the browser only, not saved to
     the database — it resets on page refresh. No document retrieval; the
     app's feature set is summarized directly in the prompt
