@@ -7,7 +7,8 @@ yourself.
 
 ## CURRENT STATE (read this first in a new window)
 
-- **Branch `main`, HEAD `223e725`, working tree clean.** GitHub remote
+- **Branch `main`, HEAD `e6ea1c1` (+ this handoff commit), working tree
+  clean.** GitHub remote
   IS configured now: `origin` → `https://github.com/JKochenour/showring-iq`
   (private). **Push to main auto-deploys to Vercel.**
 - **NEW public pages this session (17th):** `/guide` (interactive
@@ -21,10 +22,14 @@ yourself.
   streaming `claude-opus-4-8`. It only needs `ANTHROPIC_API_KEY` set in
   Vercel to run in prod — no code change. **Still not set as of this
   writing.**
-- **User to-dos surfaced this session:** (1) set `ANTHROPIC_API_KEY` in
-  Vercel to turn on the AI help chat; (2) fill the 43 `/legal`
-  placeholders + get an attorney review before public launch; (3)
-  review/replace the AI-generated homepage video if the horse looks off.
+- **User to-dos surfaced this session:** (1) set a real
+  `ANTHROPIC_API_KEY` — it's EMPTY in `.env.local` (chat is off in BOTH
+  local dev and prod); SETUP.md now documents the local + Vercel steps
+  (credential action for the user); (2) fill the 43 `/legal` placeholders
+  + get an attorney review before public launch; (3) homepage video was
+  REVIEWED and kept (good/on-brand; only the rider's head is cropped) —
+  a planted-sliding-stop regen is pending Higgsfield credits (workspace
+  is out; user held off).
 - **DEPLOYED AND LIVE (2026-07-17):** the app runs at **showringiq.com**
   (apex redirects to www) on Vercel, GitHub-connected. It talks to the
   SAME live Supabase DB as local dev — production is real, not a
@@ -159,6 +164,39 @@ present + file served + non-black frame + nav/footer links correct. Files:
 8 changed, +1666. **Gotcha reconfirmed:** browser-pane screenshots time out /
 duplicate the render and misreport viewport width — trust DOM/clientWidth and
 verify via javascript_tool, not screenshots.
+
+**Follow-ons after the main commit (same 17th session):**
+- **SETUP.md now documents `ANTHROPIC_API_KEY`** (commit `e6ea1c1`): an
+  "Optional — AI help chat" env block (local `.env.local`) plus a
+  dedicated "Enabling the AI help chat in production (Vercel)" subsection
+  (add the env var under the project's Settings → Environment Variables
+  for Production, then redeploy). **KEY FINDING: `ANTHROPIC_API_KEY`
+  exists in `.env.local` but is EMPTY** (`ANTHROPIC_API_KEY=` with no
+  value), so the AI chat is currently OFF in BOTH local dev and prod —
+  not just prod. Setting a real `sk-ant-...` key is a credential action
+  the USER must do (in the Anthropic console + Vercel); Claude can't and
+  shouldn't enter it.
+- **Homepage video — REVIEWED, it's good, keeping it.** Could not view
+  frames via the browser pane (renderer hangs the moment the video
+  plays; seeking a paused video draws black), so extracted frames with
+  **`ffmpeg-static` installed into the session scratchpad** (no ffmpeg on
+  the system; Node 24 is). A 10-frame contact sheet + two full-res frames
+  showed a realistic, on-brand chestnut reining horse doing a
+  rundown/slide in a sunlit arena with dust — and it correctly rendered
+  **silver-mounted western reining tack** (conchos, headstall + curb
+  chain). No AI deformities (4 legs, coherent motion). Only caveats: the
+  rider's HEAD is cropped out the top (tight framing), and it reads as a
+  galloping rundown more than a planted sliding stop. Verdict: keep as
+  the decorative background band (behind object-cover + gradient +
+  caption).
+- **Planted-sliding-stop regen requested but BLOCKED — Higgsfield
+  workspace is OUT OF CREDITS.** The first clip spent the balance.
+  **User chose to HOLD OFF.** To redo later: top up credits (the
+  `show_plans_and_credits` tool opens the top-up widget) then regenerate
+  a "planted sliding stop, hind legs planted, sand rooster-tail, full
+  horse AND rider in frame" clip (~7.5 credits/take). OR — best option —
+  swap real reining footage into `public/homepage-hero.mp4` (same
+  filename → zero code change; the homepage `<video>` points at it).
 
 ## Latest (2026-07-17, 16th session — DEPLOYMENT + PASSWORD GATE + DESIGN REBRAND)
 
