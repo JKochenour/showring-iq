@@ -37,20 +37,50 @@ export default async function AppLayout({
       ?.map((m) => m.organization as unknown as { id: string; name: string })
       .filter(Boolean) ?? [];
 
+  type ShowRow = {
+    id: string;
+    name: string;
+    organization_id: string;
+    start_date: string | null;
+    weekend_id: string | null;
+  };
+
   const { data: shows } =
     orgs.length > 0
       ? await supabase
           .from("shows")
-          .select("id, name, organization_id")
+          .select("id, name, organization_id, start_date, weekend_id")
           .in(
             "organization_id",
             orgs.map((o) => o.id)
           )
-          .order("start_date", { ascending: false })
-      : { data: [] as { id: string; name: string; organization_id: string }[] };
+      : { data: [] as ShowRow[] };
+
+  // Order weekends newest-first (by their latest slate's start date), but
+  // order the slates WITHIN a weekend ascending so Slate 1 sits above Slate 2.
+  const showRows = (shows ?? []) as ShowRow[];
+  const weekendRank = new Map<string, string>();
+  for (const s of showRows) {
+    const key = s.weekend_id ?? s.id;
+    const date = s.start_date ?? "";
+    const cur = weekendRank.get(key);
+    if (cur === undefined || date > cur) weekendRank.set(key, date);
+  }
+  const sortedShows = [...showRows].sort((a, b) => {
+    const ka = a.weekend_id ?? a.id;
+    const kb = b.weekend_id ?? b.id;
+    const ra = weekendRank.get(ka) ?? "";
+    const rb = weekendRank.get(kb) ?? "";
+    if (ra !== rb) return rb.localeCompare(ra); // newer weekend first
+    if (ka !== kb) return ka.localeCompare(kb); // keep weekends grouped
+    const da = a.start_date ?? "";
+    const db = b.start_date ?? "";
+    if (da !== db) return da.localeCompare(db); // Slate 1 (earlier) first
+    return a.name.localeCompare(b.name);
+  });
 
   const showsByOrg = new Map<string, { id: string; name: string }[]>();
-  for (const s of shows ?? []) {
+  for (const s of sortedShows) {
     const list = showsByOrg.get(s.organization_id) ?? [];
     list.push({ id: s.id, name: s.name });
     showsByOrg.set(s.organization_id, list);
