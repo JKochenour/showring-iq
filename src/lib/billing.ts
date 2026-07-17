@@ -99,6 +99,10 @@ export interface RunFeeLine {
   backNumber: number | null;
   feeKey: string;
   label: string;
+  /** The run(s) this fee covers, e.g. "Open + Intermediate Open · Reining" —
+   * concurrent classes joined with +, distinct runs separated with ·. Shown
+   * next to the fee so a rider can see which classes it stems from. */
+  detail?: string;
   /** Number of runs (physical arena trips) this entry makes. */
   runCount: number;
   computedCents: number;
@@ -114,12 +118,17 @@ export interface RunFeeLine {
  * the computed total for a fee_key. Exported for unit testing.
  */
 export function computeEntryRunFees(
-  enteredClasses: { concurrentGroupId: string | null; judgeFeeCents: number }[],
+  enteredClasses: {
+    concurrentGroupId: string | null;
+    judgeFeeCents: number;
+    className?: string;
+  }[],
   perRunCharges: PerRunCharge[],
   overrides: Map<string, number>
 ): { lines: Omit<RunFeeLine, "entryId" | "backNumber">[]; totalCents: number } {
-  // Partition into runs.
+  // Partition into runs, tracking each run's class names for the bill detail.
   const runJudgeMax: number[] = [];
+  const runClassNames: string[][] = [];
   const groupToRun = new Map<string, number>();
   for (const c of enteredClasses) {
     let runIdx: number;
@@ -128,11 +137,19 @@ export function computeEntryRunFees(
     } else {
       runIdx = runJudgeMax.length;
       runJudgeMax.push(0);
+      runClassNames.push([]);
       if (c.concurrentGroupId) groupToRun.set(c.concurrentGroupId, runIdx);
     }
     runJudgeMax[runIdx] = Math.max(runJudgeMax[runIdx], c.judgeFeeCents);
+    if (c.className) runClassNames[runIdx].push(c.className);
   }
   const runCount = runJudgeMax.length;
+
+  // "Open + Intermediate Open · Reining": concurrent classes joined with +,
+  // distinct runs separated with · — shows which classes a per-run fee covers.
+  const detail =
+    runClassNames.map((names) => names.join(" + ")).filter(Boolean).join(" · ") ||
+    undefined;
 
   const lines: Omit<RunFeeLine, "entryId" | "backNumber">[] = [];
 
@@ -142,6 +159,7 @@ export function computeEntryRunFees(
     lines.push({
       feeKey: JUDGE_FEE_KEY,
       label: "Judge fee",
+      detail,
       runCount,
       computedCents: judgeComputed,
       overrideCents: judgeOverride,
@@ -156,6 +174,7 @@ export function computeEntryRunFees(
       lines.push({
         feeKey: charge.label,
         label: charge.label,
+        detail,
         runCount,
         computedCents: computed,
         overrideCents: override,
@@ -266,13 +285,17 @@ type BillingData = Awaited<ReturnType<typeof loadShowBillingData>>;
 /** Build, per entry, its entered classes + the run-fee lines for it, keyed by
  * entry id. Shared by the roster and the per-person bill. */
 function runFeesByEntry(data: BillingData): Map<string, RunFeeLine[]> {
-  const enteredByEntry = new Map<string, { concurrentGroupId: string | null; judgeFeeCents: number }[]>();
+  const enteredByEntry = new Map<
+    string,
+    { concurrentGroupId: string | null; judgeFeeCents: number; className: string }[]
+  >();
   for (const ec of data.entryClasses) {
     if (ec.status !== "entered" || !ec.class) continue;
     const list = enteredByEntry.get(ec.entry_id) ?? [];
     list.push({
       concurrentGroupId: ec.class.concurrent_group_id,
       judgeFeeCents: ec.class.judge_fee_cents ?? 0,
+      className: ec.class.name,
     });
     enteredByEntry.set(ec.entry_id, list);
   }
@@ -739,7 +762,7 @@ function buildPersonStatement(data: BillingData, personId: string): PersonStatem
     for (const rf of runFeesAll.get(entry.id) ?? []) {
       rows.push({
         qty: rf.feeKey === JUDGE_FEE_KEY ? 1 : rf.runCount,
-        description: rf.label,
+        description: rf.detail ? `${rf.label} — ${rf.detail}` : rf.label,
         exhibitor: entry.rider_name,
         amountCents: rf.effectiveCents,
         struck: false,

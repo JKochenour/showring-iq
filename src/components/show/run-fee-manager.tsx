@@ -115,6 +115,9 @@ export function RunFeeManager({
                     </span>
                   )}
                 </p>
+                {line.detail && (
+                  <p className="text-xs text-stone-500 dark:text-stone-400">{line.detail}</p>
+                )}
                 {overridden && (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
                     Adjusted from {formatCents(line.computedCents)}

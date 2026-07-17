@@ -126,6 +126,11 @@ export default async function WeekendPersonBillPage({
                     )}
                     {line.label}
                     {line.feeKey !== "judge" && line.runCount > 1 && ` ×${line.runCount}`}
+                    {line.detail && (
+                      <span className="block text-xs text-stone-500 dark:text-stone-400">
+                        {line.detail}
+                      </span>
+                    )}
                   </td>
                   <td className="py-2 text-right">{formatCents(line.effectiveCents)}</td>
                 </tr>

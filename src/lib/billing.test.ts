@@ -38,6 +38,22 @@ describe("computeEntryRunFees", () => {
     expect(byKey(lines)).toEqual({ [JUDGE_FEE_KEY]: 18500, Video: 5100, Photo: 3000 });
   });
 
+  it("labels each run fee with its classes (concurrent joined by +, runs by ·)", () => {
+    const classes = [
+      { concurrentGroupId: "open", judgeFeeCents: 7500, className: "Open" },
+      { concurrentGroupId: "open", judgeFeeCents: 5500, className: "Intermediate Open" },
+      { concurrentGroupId: null, judgeFeeCents: 4500, className: "Novice Horse Level 2" },
+    ];
+    const { lines } = computeEntryRunFees(classes, [VIDEO], new Map());
+    const judge = lines.find((l) => l.feeKey === JUDGE_FEE_KEY)!;
+    expect(judge.detail).toBe("Open + Intermediate Open · Novice Horse Level 2");
+    expect(judge.effectiveCents).toBe(12000); // max(75,55) + 45
+    // The per-run charge carries the same run description.
+    expect(lines.find((l) => l.feeKey === "Video")!.detail).toBe(
+      "Open + Intermediate Open · Novice Horse Level 2"
+    );
+  });
+
   it("collapses a concurrent group to one run and takes the highest judge fee", () => {
     const classes = [c("g", 7500), c("g", 5500), c("g", 4500)];
     const { lines } = computeEntryRunFees(classes, perRun, new Map());
