@@ -100,7 +100,14 @@ export default async function ScoreSheetPage({
 
   const [{ data: cls }, { data: show }, drawRows, { data: patternRow }, { data: classJudges }] =
     await Promise.all([
-      supabase.from("classes").select("*").eq("id", classId).eq("show_id", id).maybeSingle(),
+      supabase
+        .from("classes")
+        .select(
+          `*, affiliations:class_affiliations(code:association_class_codes(code, name, rule_package:association_rule_packages(association:associations(name))))`
+        )
+        .eq("id", classId)
+        .eq("show_id", id)
+        .maybeSingle(),
       supabase.from("shows").select("name, start_date, end_date").eq("id", id).maybeSingle(),
       loadClassDraw(supabase, id, classId),
       supabase
@@ -125,6 +132,26 @@ export default async function ScoreSheetPage({
       .map((cj) => (cj.show_staff as unknown as { display_name: string } | null)?.display_name)
       .filter(Boolean)
       .join(", ") || "";
+
+  // The judge scores an NRHA class, not our local class number — the sheet
+  // travels with the results, so it carries the code NRHA will file it
+  // under ("5300 Rookie 1"). Resolved the same way the ReinerSuite export
+  // resolves it: the class_affiliations row on an NRHA rule package, then
+  // the legacy free-text nrha_class_code, then the local number.
+  type CodeRow = {
+    code: { code: string; name: string; rule_package: { association: { name: string } | null } | null } | null;
+  };
+  const affiliations =
+    ((cls as unknown as { affiliations: CodeRow[] | null }).affiliations ?? []);
+  const nrhaCode = affiliations.find(
+    (a) => a.code?.rule_package?.association?.name?.toUpperCase() === "NRHA"
+  )?.code;
+
+  const classLabel = nrhaCode
+    ? `${nrhaCode.code} ${nrhaCode.name}`
+    : showClass.nrha_class_code
+      ? `${showClass.nrha_class_code} ${showClass.name}`
+      : `${showClass.class_number} — ${showClass.name}`;
 
   const entries = drawRows.filter((r) => r.entryClassStatus !== "scratched");
   const pages = chunk(entries, BLOCKS_PER_PAGE);
@@ -159,10 +186,7 @@ export default async function ScoreSheetPage({
               </span>
             </span>
             <span className="score-field-part">
-              Class{" "}
-              <span className="score-rule">
-                {showClass.class_number} — {showClass.name}
-              </span>
+              Class <span className="score-rule">{classLabel}</span>
             </span>
             <span className="score-field-part">
               Pattern{" "}
