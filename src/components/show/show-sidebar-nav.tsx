@@ -36,9 +36,13 @@ export function ShowSidebarNav({ show }: { show: { id: string; name: string } })
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         className={cx(
-          "flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800",
+          // items-start + border-l keeps the marker out of the text's
+          // horizontal budget — show names are long and the sidebar is
+          // only w-64, so the name gets every pixel and wraps instead
+          // of truncating.
+          "flex w-full items-start gap-1.5 rounded-md border-l-2 border-transparent px-2 py-1 text-left text-xs text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800",
           isActiveShow &&
-            "bg-brand-50 font-semibold text-brand-800 hover:bg-brand-100 dark:bg-brand-950/50 dark:text-brand-300 dark:hover:bg-brand-950/70"
+            "border-brand-600 bg-brand-50 font-semibold text-brand-800 hover:bg-brand-100 dark:border-brand-500 dark:bg-brand-950/50 dark:text-brand-300 dark:hover:bg-brand-950/70"
         )}
         aria-current={isActiveShow ? "page" : undefined}
         aria-expanded={isOpen}
@@ -47,22 +51,14 @@ export function ShowSidebarNav({ show }: { show: { id: string; name: string } })
           viewBox="0 0 20 20"
           fill="currentColor"
           className={cx(
-            "h-2.5 w-2.5 shrink-0 transition-transform",
+            "mt-1 h-2.5 w-2.5 shrink-0 transition-transform",
             isActiveShow ? "text-brand-500" : "text-stone-400",
             isOpen && "rotate-90"
           )}
         >
           <path d="M6 4l6 6-6 6V4z" />
         </svg>
-        <span className="truncate">{show.name}</span>
-        {isActiveShow && (
-          <span
-            className="ml-auto shrink-0 rounded-full bg-brand-600 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-white dark:bg-brand-500"
-            aria-hidden="true"
-          >
-            Here
-          </span>
-        )}
+        <span className="min-w-0 flex-1 leading-snug">{show.name}</span>
       </button>
       {isOpen && (
         <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-stone-200 pl-3 dark:border-stone-800">
