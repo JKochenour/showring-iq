@@ -161,8 +161,8 @@ Non-code go-live to-dos, tracked here so they don't get lost:
   Settings → `nrhaShowNumber`). The ReinerSuite CSV export is **blocked**
   without it — confirmed by the 2026-07-18 export-readiness test. Both
   slates currently have it empty.
-- [ ] **Run `cleanup_test_show.sql`** (scratchpad) if not already done — see
-  the end-to-end test section for the leftover test entry/classes.
+- [x] Test-show cleanup — DONE 2026-07-18 (plus the follow-up reset of
+  classes 3/4 left `Draw posted` by concurrent-group propagation).
 - [ ] **Remove the password gate**: delete the Vercel env var
   `SITE_GATE_PASSWORD` (or the block in `src/proxy.ts`).
 - [x] AI help chat live (ANTHROPIC_API_KEY set in Vercel) — DONE.
@@ -199,11 +199,20 @@ safe to test against.
 → verify → official → results → payout → ReinerSuite CSV cycle, penny-exact,
 incl. concurrent-run score mirroring and the −1/−2 scratch codes.
 
-**LEFTOVER TEST DATA — cleanup SQL written, USER TO RUN** (scratchpad
-`cleanup_test_show.sql`): deletes entry `a287e4cb-faa5-467c-a776-6b37f15929f3`,
-resets classes `b453e080…` (1 Open) and `c11066a0…` (2 Int Open) to draft, and
-clears the test `nrha_show_number` (`TEST-FCC1`) on show `938c2d4e…`. If it
-wasn't run, that test entry/score is still on Slate 1.
+**CLEANUP — RUN + VERIFIED 2026-07-18.** `cleanup_test_show.sql` deleted the
+test entry, reset classes 1 Open + 2 Int Open to draft, and cleared the test
+`nrha_show_number`. Verified live: Slate 1 has **0 entries**, no Chex/Tester.
+
+**…but the first cleanup was INCOMPLETE — real lesson:** generating a draw on a
+concurrent block advances **every class in that run**, including ones with **no
+entries**. Open (1) is grouped with 2/3/4 (Thursday Pattern 17), so drawing
+Open left **3 Limited Open** and **4 Rookie Professional** stuck at
+`Draw posted` with 0 entered. The cleanup only reset the 2 classes the entry
+was actually in. Fixed with:
+`update public.classes set status='draft' where id in
+('2a5827f6-b9d6-45ce-880b-82c039e952d7','fe2b6b6f-ddc3-486b-8097-108e740334bf');`
+**Takeaway: when cleaning up test draws/scores, reset the WHOLE concurrent
+group, not just the entered classes.**
 
 **Automation lesson worth keeping:** the `Combobox` typeahead does NOT register
 a selection from a JS `.click()` — only a real pointer click does. The reliable
