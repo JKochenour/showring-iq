@@ -133,6 +133,34 @@ yourself.
   here-strings with double quotes — use `git commit -F <file>`; the
   local dev server dies intermittently — `preview_list` then restart.
 
+## PRE-LAUNCH CHECKLIST (before removing the password gate)
+
+Non-code go-live to-dos, tracked here so they don't get lost:
+
+- [ ] **Form the business entity.** User resides in **PA** → form a PA LLC.
+  File the Certificate of Organization at **file.dos.pa.gov** (~$125, DIY —
+  skip LegalZoom-style upsells). Get a **free EIN** at irs.gov (never pay for
+  one). PA annual report ~$7/yr (due Sep 30). A single-member operating
+  agreement TEMPLATE was drafted and saved to
+  `C:\Users\jkoch\Documents\ShowRing-IQ-LLC-Operating-Agreement-TEMPLATE.md`
+  (fill the [BRACKETS]; not filed with the state). Consider a CPA later re:
+  default-LLC vs S-corp tax election.
+- [ ] **Legal page** (`/legal`): fill the **43 [BRACKET] placeholders**
+  (entity name, contact email, governing state = PA, effective date) and get
+  it reviewed. Claude offered a substantive DRAFTING review (not legal
+  sign-off — not a licensed attorney); a human PA attorney should bless the
+  disclaimer + youth-data + payments sections before launch. Automated
+  option: Termly/iubenda for the Privacy/Terms baseline.
+- [ ] **Homepage video** (`public/homepage-hero.mp4`): the current AI clip is
+  **NOT a real reining sliding stop** (reads as a gallop/rundown) — user can't
+  use it. Replace with real reining footage (drop in at the same path, zero
+  code change) OR regenerate a planted-stop clip once Higgsfield credits are
+  topped up. Until then, consider removing the "The ring" video band from
+  `src/app/page.tsx`.
+- [ ] **Remove the password gate**: delete the Vercel env var
+  `SITE_GATE_PASSWORD` (or the block in `src/proxy.ts`).
+- [x] AI help chat live (ANTHROPIC_API_KEY set in Vercel) — DONE.
+
 ## Latest (2026-07-17, 17th session pt 2 — REAL SHOW CONFIGURED + WEEKEND TESTING + 2 NEW FEATURES)
 
 Same session continued into real-data work on the LIVE DB. Details in memory:
