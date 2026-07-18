@@ -1,5 +1,44 @@
 # ShowRing IQ — Session Handoff (updated 2026-07-18, 19th session)
 
+## READ FIRST — state at end of the 19th session
+
+- **`main` @ `46963e1`**, working tree clean, everything pushed and
+  auto-deployed. 17 commits this session.
+- **Migrations 00053–00056 are ALL APPLIED** (the user ran each in the
+  Supabase SQL editor). Every feature below is live-verified unless it
+  says otherwise.
+- **Fire Cracker Classic I is `published`** (it was locked mid-session;
+  unlocked again — see the unlock item). Slate 1 has ONE entry:
+  QAJudge Two, back #2, three Rookie classes. Its bill is
+  entry $60 + run $20 + misc $268 = **$348**, balance $348.
+- **`scripts/link-fire-cracker-nrha-codes.sql` has NOT been run.** It
+  links the 60 classes to real NRHA codes. Steps 1–2 are read-only —
+  read their output before step 3.
+- **The user set real EPRHA prices** in the counter-sales price list
+  (Ice $3.00, stalls $185.00, "Tack Stall - Split" $1.00) and real
+  standard charges (Stall $185 / Office $25 / Drug $10).
+
+### The two biggest traps in this codebase, both hit repeatedly today
+
+1. **The PWA service worker serves stale JS.** Every "my fix didn't
+   work" moment this session was this. The tell is a hydration mismatch
+   in the dev-server log (server renders new markup, client runs old).
+   **Unregister the service worker ONLY** — `getRegistrations()` then
+   `unregister()`. Do NOT also clear caches/storage: that drops the
+   Supabase auth cookie and logs you out, and Claude cannot sign back
+   in. A `?cb=N` query param helps force a fresh document.
+2. **A stale `.next/dev` cache 404s deep dynamic routes.** Bill and
+   class-detail pages returned 404 while their folders existed and the
+   route answered 307 to an anonymous request. Restarting the dev
+   server fixed it. Do not go hunting in the code for this.
+
+Also reconfirmed: the browser pane drifts to other URLs between calls,
+`computer{left_click}` sometimes lands off-target (JS `.click()` is more
+reliable here, the opposite of the 11th-session note), and screenshots
+render the page into a corner. Trust DOM measurement over screenshots.
+
+---
+
 ## Latest (2026-07-18, 19th session — CONCURRENT-DRAW FIX + SIDEBAR REDO, all pushed to main)
 
 Three commits, all on `main` and auto-deployed. Working tree clean.
@@ -79,6 +118,168 @@ clientWidth`, tooltips carrying full names, Slate 1 still above Slate 2.
   here. The user's workflow is committing straight to `main` anyway
   (which auto-deploys); a PR attempt this session was resolved by merging
   to `main` instead.
+
+---
+
+## 19th session, part 2 — NAVIGATION, SCORE SHEET, BILLING (14 more commits)
+
+All pushed to `main`. Migrations **00053, 00054, 00055, 00056 applied**.
+
+### Navigation
+
+**Weekends are now the PARENT of their slates in the sidebar**
+(`b7b1bf8`). "Weekends" previously had no place in the sidebar at all —
+the only route to one was the org page's tab bar, so the weekend (the
+event) was the one thing you could not navigate to while its two slates
+sat at top level. Now:
+
+```
+EPRHA
+  Overview / Shows
+  ▾ EPRHA Fire Cracker Classic 2026
+      Overview · New entry · Manage entries · Consolidated billing
+      ▾ Classic I        ← aria-current
+      ▸ Classic 2
+```
+
+The rule it encodes: **anything counted once for the whole weekend lives
+on the weekend node; anything per-slate stays inside the slate.** Only
+weekends with 2+ slates become nodes — every show gets an auto
+weekend-of-one, so standalone shows still render flat.
+
+**Show tab bar: 18 flat tabs → 5 stages** (`23ba0f5`). Dashboard | Set up
+| Entries | Run the show | Results & money. A collapsed group names the
+current page ("Run the show · Draws"). Menus close on Escape, outside
+mousedown, and item click. At 375px it wraps with no page overflow (the
+old bar forced sideways scrolling).
+
+**Classes are identified by association code, not our class number**
+(`aba7495`, `1cdbc7d`). New `src/lib/class-code.ts` is shared by the
+class list, the scribe sheet, and matches what the ReinerSuite export
+already does, so the three cannot drift:
+`resolveNrhaCode` (linked NRHA affiliation → legacy free-text
+`nrha_class_code` → nothing), `formatClassCode` (appends " (N)" for the
+Nth slate), `loadSlateNumber`. Verified: Slate 1 prints 1100/1200/1301,
+Slate 2 prints **1100 (2) / 1200 (2) / 1301 (2)**. The local class number
+stays underneath in small type because the show bill and gate run on it.
+
+**IMPORTANT FINDING:** the 60 Fire Cracker classes carry their NRHA codes
+as FREE TEXT and have **no `class_affiliations` rows** ("No affiliations
+linked yet" on every class page). Both the export and the score sheet are
+therefore on the legacy fallback path. `scripts/link-fire-cracker-nrha-codes.sql`
+fixes this and is NOT yet run. Note the NRHA 2026 package is still
+**Draft** — eligibility rules only run for PUBLISHED packages.
+
+### Score sheet — rebuilt twice
+
+`b23252e` then `e97c583`. **The first attempt was wrong because it was
+built from extracted text coordinates without ever rendering the PDF.**
+The user said it "looks nothing like" the form; they were right. Render
+the PDF and LOOK at it before reconstructing a document.
+
+The real form is **ten free-standing bordered blocks with gaps**, not one
+continuous table: DRAW / EXH# / PENALTY as labels on a tight rule with the
+writing space beneath, eight **shaded** penalty cells above white score
+cells, an elbow arrow in the TOTAL column, a borderless column band above
+with diagonal tick marks over each maneuver number, serif headings and a
+sans grid, wider gap after block 5. Draw and back number pre-fill into the
+DRAW/EXH# cells. Measured at print width: blocks span 7.72in against the
+form's 7.8in, whole sheet 9.44in inside a 10.1in page.
+
+**App chrome was printing on every report.** The show layout's breadcrumb,
+title and tab bar had no print rule, so they landed on top of score
+sheets, gate sheets, statements and reconciliation. That wrapper is now
+`.no-print`; all four printables already render their own headers.
+
+To render a PDF here: `pdf-to-img` installed in the session scratchpad,
+importing pdfjs by absolute `file:///` URL from the project's
+`node_modules` (a scratchpad script cannot resolve the bare specifier).
+No poppler on this machine, so the Read tool cannot rasterise PDFs.
+
+### Billing
+
+**Standard charges were never configured on Fire Cracker** — that was the
+whole "missing office/stall/drug" report, not a bug. The user has since
+set Stall $185 / Office $25 / Drug $10.
+
+**They were also all marked "Per run"**, which bills them once per RUN
+instead of once per horse per weekend — a horse making two runs would pay
+stall, office and drug twice. Unchecked on all three with the user's
+go-ahead; Youth $0 preserved on the office fee. Stall consequently moved
+out of Run fees into Misc on the bill.
+
+**Retroactive apply for standard charges** (`085cd5e`, migration 00053).
+`assign_back_number` snapshots the charges when a horse first gets a back
+number, so configuring them later silently misses everyone already
+entered. `apply_standard_charges_to_existing` replays that same logic —
+once per horse per WEEKEND, first-signer attribution, `bill_to_trainer`
+resolution, youth `$0` line, per-run charges excluded. Surfaced as a
+Standard charges card on Financials.
+
+**`b4ef5cb` / migration 00055 — a real money bug caught BEFORE it fired.**
+The already-billed guard compared the charge label against
+`misc_charges.category` only. A hand-keyed charge is typically DESCRIBED
+"Stall" but filed under CATEGORY "Stabling", so a standard charge labelled
+"Stall" matched nothing and would have been added on top of the $185
+already on that bill. Found by reading the live data before running the
+backfill. The guard now matches category OR description. Live result
+afterwards: **`Added 2 charges across 1 entered horse, skipping 1 already
+billed`** — Office $25 and Drug $10 added, Stall correctly skipped; misc
+$233 → $268.
+
+**Counter-sales price list + quantity** (`d85b699`, migration 00054).
+`shows.charge_catalog` is a per-show price list (shavings, ice, tack
+stall) that is **never charged automatically** — it only pre-fills the
+add-charge form. Distinct from `standard_entry_charges`, which IS
+automatic. `misc_charges` gained `quantity` + `unit_amount_cents`;
+`amount_cents` stays the total and the single source of truth, so every
+existing sum is untouched and legacy rows read as quantity 1.
+`add_misc_charge_qty` computes the total server-side. `unitPriceHolds()`
+hides the "8 × $9.50" breakdown once an override makes it untrue — 5
+tests cover that, including comp-to-$0.
+
+**Consolidated weekend billing now takes corrections** (`1714fc5`,
+`46963e1`, migration 00056). It was read-only, pushing every fix back onto
+a slate bill. Now add/edit/remove, using the same component as a slate
+bill. A charge belongs to ONE slate, so each line is labelled with its
+slate, edits act on that charge's own slate, and adding asks which slate.
+`update_misc_charge_line` sets unit, quantity and total together —
+editing the total alone would leave "8 × $9.50" beside a total that
+isn't. Payments/refunds deliberately stay per-slate (they reconcile per
+show). Charge mutations now revalidate the weekend paths too.
+
+**`46963e1` — a hole opened and closed during verification.** A slate
+bill is built from that person's ENTRIES; `buildPersonBill` returns null
+without them and the page 404s. So a charge added to a slate the person
+never entered was stranded — visible and correct on the weekend total,
+but its slate bill would not render. `PersonBill.slateShowIds` now limits
+the picker to slates the person is actually on. Verified live:
+add 2 × $9.50 = $19.00 → edit qty 3 → $28.50 (misc $287 → $296.50) →
+remove → misc back to $268.00.
+
+### Two dead-ends fixed
+
+**Unlock read as impossible** (`39a9f6d`). The show WAS unlockable; the
+button was disabled until a reason was typed, and a greyed-out button
+beside a locked show reads as "cannot be unlocked". The reason is
+genuinely required (it goes in the audit log), so the button now stays
+live and explains itself on click, focusing the field. Verified through
+the full lock → empty click → type → unlock loop.
+
+**The public-link QR covered the content beside it** (`1714fc5`). The
+`qrcode` library bakes `width="176"` into the SVG; it sat in a 112px box
+with nothing constraining it — measured 176×176 spilling 71px right and
+down over the URL and the Copy/Open buttons. Now fills its box: 99×99.
+
+### Open for the user
+
+- **Run `scripts/link-fire-cracker-nrha-codes.sql`** (steps 1–2 are
+  read-only) and decide whether to publish the NRHA 2026 package.
+- The audit log carries this session's verification entries: charge
+  add/edit/remove on QAJudge Two with reasons like "Removing verification
+  test charge", and two lock/unlock cycles.
+- Still open from earlier: the pre-launch checklist below (LLC, 43 legal
+  placeholders, homepage video, NRHA show numbers, password gate).
 
 ---
 
