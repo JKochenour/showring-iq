@@ -190,62 +190,204 @@ html.kiosk main {
   padding-right: 1rem !important;
   padding-top: 1rem !important;
 }
-/* NRHA judges score sheet. Mirrors the official paper form: ten run
-   blocks to a portrait page, each block two rules tall (penalty over
-   score) so a judge can hand-write both per maneuver. Always black on
-   white — this is a form to print, not a screen surface, so it ignores
-   dark mode. */
-.score-sheet-table {
-  border: 1px solid #000;
+
+/* ---------------------------------------------------------------
+   NRHA judges score sheet — a reproduction of the official paper
+   form, not a screen table. Ten free-standing run blocks per
+   portrait page, each block a label rule over a writing rule, with
+   the penalty rule shaded. Always black on white: it exists to be
+   printed, so it ignores dark mode.
+   --------------------------------------------------------------- */
+.score-sheet-page {
+  color: #000;
+  background: #fff;
+  font-family: "Times New Roman", Times, serif;
+}
+
+.score-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+}
+.score-title {
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.score-field {
+  font-size: 13px;
+}
+.score-field-judge {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+.score-field-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+.score-field-part {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+/* A value sitting on a printed rule. Blank rules still print, so the
+   sheet can be completed by hand. */
+.score-rule {
+  flex: 1;
+  min-width: 3rem;
+  border-bottom: 1px solid #000;
+  padding: 0 0.2rem;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.score-legend {
+  margin-top: 0.3rem;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Column band above the blocks — borderless, sans-serif like the form. */
+.score-band {
+  width: 100%;
   table-layout: fixed;
-  color: #000;
-  background: #fff;
+  border-collapse: collapse;
+  margin-top: 0.25rem;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
 }
-.score-cell {
-  border: 1px solid #000;
-  padding: 1px 3px;
+.score-band td {
+  padding: 0;
   text-align: center;
-  /* ~0.4in per rule, matching the paper form's run-block spacing — tall
-     enough to hand-write a maneuver score. Ten blocks plus the header
-     still fit one portrait page. */
-  height: 2.1rem;
+  vertical-align: bottom;
+}
+.band-desc {
+  text-align: right;
+  padding-right: 4px !important;
+  line-height: 1.05;
+}
+.band-slash {
+  font-size: 15px;
+  font-family: "Times New Roman", Times, serif;
+}
+.band-num {
+  font-size: 12px;
+}
+.band-penalty {
+  font-size: 11px;
+  text-align: center;
+}
+
+/* One run block. */
+.score-block-wrap {
+  margin-top: 6px;
+}
+.score-block-gap {
+  /* The form breaks wider at the halfway mark. */
+  margin-top: 20px;
+}
+.score-block {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  border: 1px solid #000;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.sc {
+  border: 1px solid #000;
+  text-align: center;
+  padding: 0 2px;
   color: #000;
   background: #fff;
 }
-.score-head {
-  font-weight: 600;
-  height: auto;
-  line-height: 1.1;
+/* Label rule sits tight; the writing rule below it is tall enough to
+   hand-write a maneuver score into. */
+.sc-lbl {
+  font-size: 11px;
+  height: 20px;
+  line-height: 20px;
+  white-space: nowrap;
 }
-/* Row labels are printed guides, not data — keep them quiet so the
-   judge's handwriting is what stands out. */
-.score-rowlabel {
-  font-size: 8px;
-  text-align: left;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: #444;
+.sc-val {
+  font-size: 13px;
+  font-weight: 700;
+  /* Sized so ten blocks span ~7.8in, the same share of the page the
+     paper form gives them — this is the space a judge writes in. */
+  height: 46px;
+}
+/* Penalty cells are shaded on the printed form. */
+.sc-pen {
+  background: #efefef;
+  height: 20px;
+}
+.sc-total {
+  padding: 0;
+}
+.score-arrow {
+  display: block;
+  width: 100%;
+  height: 60px;
+  color: #000;
+}
+
+.col-draw {
+  width: 7%;
+}
+.col-exh {
+  width: 8%;
+}
+.col-label {
+  width: 13%;
+}
+.col-man {
+  width: 6.75%;
+}
+.col-total {
+  width: 8%;
+}
+.col-score {
+  width: 10%;
+}
+
+.score-signature {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  margin-top: 1.25rem;
+  font-size: 13px;
+}
+.score-rule-long {
+  flex: 1;
 }
 
 @media print {
-  /* The official sheet is portrait letter with narrow margins; anything
-     wider pushes the eight maneuver columns off the page. */
+  /* Portrait letter with narrow margins; any wider and the eight
+     maneuver columns run off the page. */
   @page {
     size: letter portrait;
-    margin: 0.4in;
+    margin: 0.45in;
   }
   .score-sheet-page {
-    /* Each page is one full sheet of ten runs. */
     break-after: page;
   }
   .score-sheet-page:last-child {
     break-after: auto;
   }
-  .score-sheet-table {
-    /* Never split a run block across a page break. */
+  /* A run block must never be split across a page break. */
+  .score-block,
+  .score-block tr {
     break-inside: avoid;
   }
-  .score-sheet-table tr {
-    break-inside: avoid;
+  /* Browsers drop background fills unless asked; the shaded penalty
+     rule is part of the form. */
+  .sc-pen {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

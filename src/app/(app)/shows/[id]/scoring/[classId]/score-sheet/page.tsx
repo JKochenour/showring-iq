@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/authz";
 import { loadClassDraw } from "@/lib/load-draw";
@@ -8,7 +7,9 @@ import type { ClassPatternRow, Show, ShowClass } from "@/lib/types";
 
 export const metadata = { title: "Scribe score sheet — ShowRing IQ" };
 
-const ROWS_PER_PAGE = 10;
+/** The paper form holds ten runs per page. */
+const BLOCKS_PER_PAGE = 10;
+const MANEUVERS = 8;
 
 function chunk<T>(items: T[], size: number): T[][] {
   if (items.length === 0) return [[]];
@@ -17,6 +18,76 @@ function chunk<T>(items: T[], size: number): T[][] {
     pages.push(items.slice(i, i + size));
   }
   return pages;
+}
+
+/** Shared column geometry so the header band lines up with every run
+ * block below it — they are separate tables, as on the paper form. */
+function ScoreCols() {
+  return (
+    <colgroup>
+      <col className="col-draw" />
+      <col className="col-exh" />
+      <col className="col-label" />
+      {Array.from({ length: MANEUVERS }, (_, i) => (
+        <col key={i} className="col-man" />
+      ))}
+      <col className="col-total" />
+      <col className="col-score" />
+    </colgroup>
+  );
+}
+
+/** The elbow arrow printed in the TOTAL column: the maneuver total
+ * carries down into the score box. */
+function TotalArrow() {
+  return (
+    <svg viewBox="0 0 40 34" className="score-arrow" aria-hidden="true">
+      <path
+        d="M2 6 H26 V24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path d="M26 32 l-4 -8 h8 z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function RunBlock({
+  draw,
+  exhibitor,
+}: {
+  draw?: number | null;
+  exhibitor?: string | null;
+}) {
+  return (
+    <table className="score-block">
+      <ScoreCols />
+      <tbody>
+        <tr>
+          <td className="sc sc-lbl">DRAW</td>
+          <td className="sc sc-lbl">EXH#</td>
+          <td className="sc sc-lbl">PENALTY</td>
+          {Array.from({ length: MANEUVERS }, (_, i) => (
+            <td key={i} className="sc sc-pen" />
+          ))}
+          <td rowSpan={2} className="sc sc-total">
+            <TotalArrow />
+          </td>
+          <td className="sc sc-lbl">SCORE</td>
+        </tr>
+        <tr>
+          <td className="sc sc-val">{draw ?? ""}</td>
+          <td className="sc sc-val">{exhibitor ?? ""}</td>
+          <td className="sc sc-lbl">SCORE</td>
+          {Array.from({ length: MANEUVERS }, (_, i) => (
+            <td key={i} className="sc" />
+          ))}
+          <td className="sc" />
+        </tr>
+      </tbody>
+    </table>
+  );
 }
 
 export default async function ScoreSheetPage({
@@ -56,151 +127,111 @@ export default async function ScoreSheetPage({
       .join(", ") || "";
 
   const entries = drawRows.filter((r) => r.entryClassStatus !== "scratched");
-  const pages = chunk(entries, ROWS_PER_PAGE);
+  const pages = chunk(entries, BLOCKS_PER_PAGE);
 
   return (
     <div>
       <div className="no-print mb-4 flex items-center justify-between">
         <p className="text-sm text-stone-500 dark:text-stone-400">
-          Printable scribe copy — official NRHA score-sheet layout, blank
-          maneuver/penalty/score cells for hand recording.
+          Printable scribe copy — the official NRHA judges score sheet, with
+          the draw and back numbers filled in.
         </p>
         <PrintButton />
       </div>
 
       {pages.map((pageRows, pageIndex) => (
         <section key={pageIndex} className="score-sheet-page">
-          {/* Title left, judge right — the official sheet's first line. */}
-          <div className="flex items-baseline justify-between gap-4">
-            <h1 className="text-sm font-bold uppercase tracking-wide">
-              NRHA Judges Score Sheet
-            </h1>
-            <p className="flex-1 text-sm">
-              Judge <FieldRule value={judgeNames} />
+          <div className="score-title-row">
+            <h1 className="score-title">NRHA JUDGES SCORE SHEET</h1>
+            <p className="score-field score-field-judge">
+              Judge <span className="score-rule">{judgeNames}</span>
             </p>
           </div>
 
-          {/* Event / Date / Class / Pattern on one line, as printed. */}
-          <p className="mt-2 flex flex-wrap items-baseline gap-x-3 text-sm">
-            <span className="flex-1 whitespace-nowrap">
-              Event <FieldRule value={showRow?.name ?? ""} />
+          <p className="score-field score-field-line">
+            <span className="score-field-part">
+              Event <span className="score-rule">{showRow?.name ?? ""}</span>
             </span>
-            <span className="whitespace-nowrap">
+            <span className="score-field-part">
               Date{" "}
-              <FieldRule
-                value={showClass.scheduled_date ?? showRow?.start_date ?? ""}
-              />
+              <span className="score-rule">
+                {showClass.scheduled_date ?? showRow?.start_date ?? ""}
+              </span>
             </span>
-            <span className="flex-1 whitespace-nowrap">
+            <span className="score-field-part">
               Class{" "}
-              <FieldRule
-                value={`${showClass.class_number} — ${showClass.name}`}
-              />
+              <span className="score-rule">
+                {showClass.class_number} — {showClass.name}
+              </span>
             </span>
-            <span className="whitespace-nowrap">
-              Pattern <FieldRule value={libraryPattern?.label ?? ""} />
+            <span className="score-field-part">
+              Pattern{" "}
+              <span className="score-rule">{libraryPattern?.label ?? ""}</span>
             </span>
           </p>
 
-          <p className="mt-2 text-[10px] font-semibold">
-            MANEUVER SCORES: -1&frac12; Extremely Poor &nbsp; -1 Very Poor
-            &nbsp; -&frac12; Poor &nbsp; 0 Correct &nbsp; +&frac12; Good
-            &nbsp; +1 Very Good &nbsp; +1&frac12; Excellent
+          <p className="score-legend">
+            MANEUVER SCORES: &nbsp;-1 1/2 Extremely Poor &nbsp; -1 Very Poor
+            &nbsp; -1/2 Poor &nbsp; 0 Correct &nbsp; +1/2 Good &nbsp; +1 Very
+            Good &nbsp; +1 1/2 Excellent
           </p>
 
-          <table className="score-sheet-table mt-2 w-full border-collapse text-[10px]">
-            <thead>
-              <tr>
-                <th className="score-cell score-head w-10">Draw</th>
-                <th className="score-cell score-head w-12">Exh#</th>
-                <th className="score-cell score-head w-20">
-                  Maneuver
-                  <br />
-                  Description
-                </th>
-                {Array.from({ length: 8 }, (_, i) => (
-                  <th key={i} className="score-cell score-head">
-                    {i + 1}
-                  </th>
-                ))}
-                <th className="score-cell score-head w-12">Total</th>
-                <th className="score-cell score-head w-12">Penalty</th>
-                <th className="score-cell score-head w-14">Score</th>
-              </tr>
-            </thead>
+          {/* Column band above the run blocks, borderless like the form. */}
+          <table className="score-band">
+            <ScoreCols />
             <tbody>
-              {pageRows.map((row) => (
-                <Fragment key={row.id}>
-                  <tr>
-                    <td rowSpan={2} className="score-cell font-mono">
-                      {row.position}
-                    </td>
-                    <td rowSpan={2} className="score-cell font-mono font-semibold">
-                      {row.backNumber ? `#${row.backNumber}` : ""}
-                    </td>
-                    <td className="score-cell score-rowlabel">Penalty</td>
-                    {Array.from({ length: 8 }, (_, i) => (
-                      <td key={i} className="score-cell" />
-                    ))}
-                    <td rowSpan={2} className="score-cell" />
-                    <td rowSpan={2} className="score-cell" />
-                    <td rowSpan={2} className="score-cell" />
-                  </tr>
-                  <tr>
-                    <td className="score-cell score-rowlabel">Score</td>
-                    {Array.from({ length: 8 }, (_, i) => (
-                      <td key={i} className="score-cell" />
-                    ))}
-                  </tr>
-                </Fragment>
-              ))}
-              {/* The printed sheet always has ten blank run blocks, so late
-                  entries and re-rides can be written in by hand. */}
-              {Array.from(
-                { length: Math.max(0, ROWS_PER_PAGE - pageRows.length) },
-                (_, i) => (
-                  <Fragment key={`blank-${i}`}>
-                    <tr>
-                      <td rowSpan={2} className="score-cell" />
-                      <td rowSpan={2} className="score-cell" />
-                      <td className="score-cell score-rowlabel">Penalty</td>
-                      {Array.from({ length: 8 }, (_, c) => (
-                        <td key={c} className="score-cell" />
-                      ))}
-                      <td rowSpan={2} className="score-cell" />
-                      <td rowSpan={2} className="score-cell" />
-                      <td rowSpan={2} className="score-cell" />
-                    </tr>
-                    <tr>
-                      <td className="score-cell score-rowlabel">Score</td>
-                      {Array.from({ length: 8 }, (_, c) => (
-                        <td key={c} className="score-cell" />
-                      ))}
-                    </tr>
-                  </Fragment>
-                )
-              )}
+              <tr>
+                <td />
+                <td />
+                <td className="band-desc">
+                  MANEUVER
+                  <br />
+                  DESCRIPTION
+                </td>
+                {Array.from({ length: MANEUVERS }, (_, i) => (
+                  <td key={i} className="band-slash">
+                    /
+                  </td>
+                ))}
+                <td />
+                <td className="band-penalty">PENALTY</td>
+              </tr>
+              <tr>
+                <td />
+                <td />
+                <td className="band-desc">MANEUVER</td>
+                {Array.from({ length: MANEUVERS }, (_, i) => (
+                  <td key={i} className="band-num">
+                    {i + 1}
+                  </td>
+                ))}
+                <td className="band-num">TOTAL</td>
+                <td />
+              </tr>
             </tbody>
           </table>
 
-          <p className="mt-4 text-sm">
-            Judge&apos;s Signature
-            <span className="ml-2 inline-block w-[70%] border-b border-black align-bottom" />
+          {Array.from({ length: BLOCKS_PER_PAGE }, (_, i) => {
+            const row = pageRows[i];
+            return (
+              // The form leaves a wider gap at the halfway mark.
+              <div
+                key={row?.id ?? `blank-${i}`}
+                className={i === 4 ? "score-block-wrap score-block-gap" : "score-block-wrap"}
+              >
+                <RunBlock
+                  draw={row?.position ?? null}
+                  exhibitor={row?.backNumber ? `${row.backNumber}` : null}
+                />
+              </div>
+            );
+          })}
+
+          <p className="score-signature">
+            Judge&apos;s Signature<span className="score-rule score-rule-long" />
           </p>
         </section>
       ))}
     </div>
   );
 }
-
-/** A value sitting on a printed rule, the way the paper sheet has a blank
- * line after each label. An empty value still draws the rule so the sheet
- * can be completed by hand. */
-function FieldRule({ value }: { value: string }) {
-  return (
-    <span className="ml-1 inline-block min-w-24 border-b border-black px-1">
-      {value || " "}
-    </span>
-  );
-}
-

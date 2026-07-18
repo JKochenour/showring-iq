@@ -74,7 +74,9 @@ export default async function ShowLayout({
 
   return (
     <div>
-      <div className="mb-6">
+      {/* Breadcrumb, show title, and section nav are app chrome — they
+          must not appear on printed reports, score sheets, or bills. */}
+      <div className="no-print mb-6">
         <p className="text-sm text-stone-500 dark:text-stone-400">
           <Link href="/organizations" className="hover:underline">
             Organizations
