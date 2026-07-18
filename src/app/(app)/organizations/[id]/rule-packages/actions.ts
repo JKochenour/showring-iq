@@ -364,7 +364,11 @@ const STARTER_CLASSES: {
   { code: "CONFIRM-5", name: "Novice Horse Open Level 1", division: "Ancillary", isYouth: false, isAmateur: false, isOpen: true, isNonPro: false },
   { code: "CONFIRM-6", name: "Novice Horse Non Pro Level 1", division: "Ancillary", isYouth: false, isAmateur: false, isOpen: false, isNonPro: true },
   { code: "CONFIRM-7", name: "Rookie Level 1", division: "Ancillary (Rookie)", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
-  { code: "5300", name: "Green Reiner Level 1", division: "Entry Level", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
+  // Was seeded as "5300", which is wrong and worse than a placeholder
+  // because it looks confirmed: 5300 is Rookie Level 1 in NRHA's own
+  // catalog, not Green Reiner Level 1. Back to a CONFIRM- placeholder
+  // like its neighbours until someone checks it against the handbook.
+  { code: "CONFIRM-8", name: "Green Reiner Level 1", division: "Entry Level", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
   { code: "CONFIRM-9", name: "Green Reiner Level 2", division: "Entry Level", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
   { code: "CONFIRM-10", name: "Ride & Slide Level 1", division: "Entry Level", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
   { code: "CONFIRM-11", name: "Ride & Slide Level 2", division: "Entry Level", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
@@ -432,15 +436,52 @@ export async function createNrhaStarterPackage(
   );
   if (codesError) return { error: codesError.message };
 
-  const { error: ruleError } = await supabase.from("association_eligibility_rules").insert({
-    rule_package_id: pkg.id,
-    rule_key: "nrha_non_pro_ownership",
-    applies_to: ["non_pro"],
-    conditions: [{ field: "horse.ownedByRider", operator: "equals", value: "true" }],
-    severity: "blocking",
-    message:
-      "Non Pro classes require the rider to be a listed owner of the horse — verify against your current NRHA Handbook.",
-  });
+  // Ownership checks, as WARNINGS.
+  //
+  // This used to be one BLOCKING rule requiring horse.ownedByRider, which
+  // was wrong in two ways. NRHA allows the horse to be owned by the Non
+  // Pro OR their immediate family OR a business entity they solely own,
+  // so demanding the rider be the owner blocks legitimate entries — a
+  // Non Pro on their spouse's horse — at the moment the office can least
+  // afford it. And the engine cannot see family relationships at all, so
+  // the strongest honest check is that an owner is recorded, with the
+  // relationship verified by hand. Same call the AQHA and APHA packages
+  // made for their ownership rules.
+  //
+  // Scoped by the non_pro/youth CATEGORY, which is safe against this
+  // catalog: Rookie, Green Reiner and Ride & Slide are all isNonPro:
+  // false here, and NRHA exempts exactly those from ownership rules. If
+  // you later import NRHA's real codes, note that Ride & Slide Non Pro
+  // DOES carry the non-pro flag — scope by explicit code then, the way
+  // scripts/nrha-eligibility-rules.sql does.
+  //
+  // Age rules (Youth 13 & Under, Youth 14-18, Prime Time 50+, Masters
+  // 60+, Legends 70+) are deliberately NOT seeded here: they have to
+  // target individual codes, and this catalog is still CONFIRM-
+  // placeholders. See scripts/nrha-eligibility-rules.sql for the
+  // transcribed set to apply once real codes are in.
+  const { error: ruleError } = await supabase
+    .from("association_eligibility_rules")
+    .insert([
+      {
+        rule_package_id: pkg.id,
+        rule_key: "nrha_non_pro_ownership_recorded",
+        applies_to: ["non_pro"],
+        conditions: [{ field: "entry.hasOwner", operator: "equals", value: "true" }],
+        severity: "warning",
+        message:
+          "Non Pro: record the horse's owner. NRHA requires the horse to be owned solely by the Non Pro, their immediate family, or a business entity they solely own — verify the relationship against your current NRHA Handbook.",
+      },
+      {
+        rule_package_id: pkg.id,
+        rule_key: "nrha_youth_ownership_recorded",
+        applies_to: ["youth"],
+        conditions: [{ field: "entry.hasOwner", operator: "equals", value: "true" }],
+        severity: "warning",
+        message:
+          "Youth class: record the horse's owner. NRHA requires the horse to be owned solely by the youth, their immediate family, or a business entity they solely own — verify the relationship against your current NRHA Handbook.",
+      },
+    ]);
   if (ruleError) return { error: ruleError.message };
 
   revalidatePath(`/organizations/${organizationId}/rule-packages`);
