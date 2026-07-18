@@ -50,6 +50,10 @@ export default async function WeekendPersonBillPage({
     .slice()
     .sort((a, b) => a.start_date.localeCompare(b.start_date));
 
+  const billableSlates = slates
+    .filter((s) => bill.slateShowIds.includes(s.id))
+    .map((s) => ({ id: s.id, name: s.name }));
+
   // The price list is configured per slate; a weekend usually runs the
   // same one on both. Merge by label so the office sees each item once.
   const catalog = [
@@ -175,13 +179,16 @@ export default async function WeekendPersonBillPage({
 
       <Card>
         <h3 className="mb-3 text-base font-semibold">Misc charges (all slates)</h3>
+        {/* Only slates this person is entered on: a slate bill is built
+            from entries, so a charge on a slate they never entered would
+            live on a page that cannot render. */}
         <MiscChargeManager
-          showId={slates[0]?.id ?? ""}
+          showId={billableSlates[0]?.id ?? ""}
           personId={personId}
           charges={bill.charges}
           catalog={catalog}
-          slates={slates.map((s) => ({ id: s.id, name: s.name }))}
-          canEdit={canEdit}
+          slates={billableSlates}
+          canEdit={canEdit && billableSlates.length > 0}
         />
         <p className="mt-3 text-right text-sm font-semibold">
           Subtotal: {formatCents(bill.miscChargeCents)}

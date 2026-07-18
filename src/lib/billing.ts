@@ -518,6 +518,11 @@ export interface PersonBillPayment {
 export interface PersonBill {
   personId: string;
   name: string;
+  /** Slates this person actually has entries on. A charge may only be
+   * added to one of these: a slate bill is built from entries, so a
+   * charge on a slate they never entered would sit on a page that
+   * cannot render. */
+  slateShowIds: string[];
   backNumbers: number[];
   billedRiderNames: string[];
   lineItems: PersonBillLineItem[];
@@ -641,6 +646,7 @@ function buildPersonBill(data: BillingData, personId: string): PersonBill | null
   return {
     personId,
     name: billedPersonName(personEntries[0]),
+    slateShowIds: [...new Set(personEntries.map((e) => e.show_id))],
     backNumbers: backNums,
     billedRiderNames: showRiderPerLine ? distinctRiders.sort() : [],
     lineItems,
