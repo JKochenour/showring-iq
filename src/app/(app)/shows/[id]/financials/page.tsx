@@ -21,7 +21,7 @@ export default async function FinancialsPage({
   const { data: show } = await supabase
     .from("shows")
     .select(
-      "id, organization_id, end_date, timezone, payouts_distributed_at, close_out_fee_cents, close_out_deadline"
+      "id, organization_id, end_date, timezone, payouts_distributed_at, close_out_fee_cents, close_out_deadline, weekend_id"
     )
     .eq("id", id)
     .maybeSingle();
@@ -35,6 +35,7 @@ export default async function FinancialsPage({
     | "payouts_distributed_at"
     | "close_out_fee_cents"
     | "close_out_deadline"
+    | "weekend_id"
   >;
 
   const canView = await hasOrgPermission(s.organization_id, "invoice.view");
@@ -65,6 +66,32 @@ export default async function FinancialsPage({
     : null;
   const openBalanceCount = rows.filter((r) => r.balanceCents > 0).length;
 
+  // A slate's financials only ever show that slate. When the show is one
+  // of several slates in a weekend, an exhibitor's real total lives on the
+  // consolidated bill — and once-per-weekend charges (office/stall/drug)
+  // sit on whichever slate first signed the horse up, so a sibling slate
+  // legitimately shows nothing. Point staff at the weekend bill rather
+  // than letting them conclude the entry is missing.
+  let weekend: { id: string; name: string; slateCount: number } | null = null;
+  if (s.weekend_id) {
+    const [{ data: slates }, { data: weekendRow }] = await Promise.all([
+      supabase.from("shows").select("id").eq("weekend_id", s.weekend_id),
+      supabase
+        .from("show_weekends")
+        .select("id, name")
+        .eq("id", s.weekend_id)
+        .maybeSingle(),
+    ]);
+    const slateCount = slates?.length ?? 0;
+    if (slateCount > 1 && weekendRow) {
+      weekend = {
+        id: weekendRow.id as string,
+        name: weekendRow.name as string,
+        slateCount,
+      };
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -76,6 +103,26 @@ export default async function FinancialsPage({
           Reconciliation report
         </ButtonLink>
       </div>
+      {weekend && (
+        <Alert tone="info">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p>
+              This is one slate of{" "}
+              <span className="font-semibold">{weekend.name}</span> (
+              {weekend.slateCount} slates). These totals cover this slate
+              only — office, stall, and drug fees are charged once per horse
+              for the whole weekend, so they appear on whichever slate the
+              horse was signed up on first.
+            </p>
+            <ButtonLink
+              href={`/organizations/${s.organization_id}/weekends/${weekend.id}/financials`}
+              variant="secondary"
+            >
+              Consolidated weekend bill
+            </ButtonLink>
+          </div>
+        </Alert>
+      )}
       <PayoutDeadlineCard
         showId={id}
         {...payoutDeadlineInfo(s.end_date)}
