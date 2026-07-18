@@ -149,14 +149,16 @@ export async function generateDraw(
     p_show: cls.show_id,
   });
 
-  // Best effort: advance every grouped class's status to draw_posted
-  if (["draft", "open", "entry_closed"].includes(cls.status)) {
-    await supabase
-      .from("classes")
-      .update({ status: "draw_posted" })
-      .in("id", groupClassIds)
-      .in("status", ["draft", "open", "entry_closed"]);
-  }
+  // Best effort: advance to draw_posted only the classes that actually
+  // received draw rows. A concurrent group can contain classes nobody
+  // entered — posting a draw for a sibling must not drag those into the
+  // workflow-locked draw_posted state with zero entries.
+  const drawnClassIds = [...new Set(rows.map((r) => r.class_id))];
+  await supabase
+    .from("classes")
+    .update({ status: "draw_posted" })
+    .in("id", drawnClassIds)
+    .in("status", ["draft", "open", "entry_closed"]);
 
   for (const id of groupClassIds) revalidateDrawPages(cls.show_id, id);
   return {};
