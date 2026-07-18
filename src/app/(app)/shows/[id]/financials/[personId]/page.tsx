@@ -21,11 +21,22 @@ export default async function PersonBillPage({
 
   const { data: show } = await supabase
     .from("shows")
-    .select("id, organization_id, card_surcharge_percent")
+    .select("id, organization_id, card_surcharge_percent, charge_catalog")
     .eq("id", id)
     .maybeSingle();
   if (!show) notFound();
-  const s = show as Pick<Show, "id" | "organization_id" | "card_surcharge_percent">;
+  const s = show as Pick<
+    Show,
+    "id" | "organization_id" | "card_surcharge_percent" | "charge_catalog"
+  >;
+
+  const catalog = (s.charge_catalog ?? [])
+    .filter((c) => c.label && c.unit_amount_cents > 0)
+    .map((c) => ({
+      label: c.label,
+      category: c.category ?? c.label,
+      unitAmountCents: c.unit_amount_cents,
+    }));
 
   const [canView, canEdit] = await Promise.all([
     hasOrgPermission(s.organization_id, "invoice.view"),
@@ -140,6 +151,7 @@ export default async function PersonBillPage({
           showId={id}
           personId={personId}
           charges={bill.charges}
+          catalog={catalog}
           canEdit={canEdit}
         />
         <p className="mt-3 text-right text-sm font-semibold">

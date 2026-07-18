@@ -21,6 +21,10 @@ import {
   type UpdateEventClassificationInput,
   type UpdateConditionalFeesInput,
 } from "@/lib/validation/show";
+import {
+  updateChargeCatalogSchema,
+  type UpdateChargeCatalogInput,
+} from "@/lib/validation/billing";
 import type { ShowStatus } from "@/lib/types";
 
 export type ActionResult = { error?: string };
@@ -122,6 +126,65 @@ export async function updateShow(input: UpdateShowInput): Promise<ActionResult> 
   });
 
   revalidatePath(`/shows/${d.showId}`, "layout");
+  return {};
+}
+
+/** The show's reusable price list for ad-hoc charges (shavings, ice, a
+ * tack stall). Purely a set of defaults for the add-charge form — unlike
+ * updateStandardCharges, nothing here is ever billed on its own. */
+export async function updateChargeCatalog(
+  input: UpdateChargeCatalogInput
+): Promise<ActionResult> {
+  const parsed = updateChargeCatalogSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const d = parsed.data;
+
+  const supabase = await createClient();
+
+  const { data: before, error: beforeError } = await supabase
+    .from("shows")
+    .select("organization_id, charge_catalog")
+    .eq("id", d.showId)
+    .maybeSingle();
+  if (beforeError) return { error: beforeError.message };
+  if (!before) return { error: "Show not found." };
+
+  const items = d.items
+    .filter((i) => i.label.trim() !== "" && i.amount.trim() !== "")
+    .map((i) => ({
+      label: i.label.trim(),
+      category: i.category?.trim() || i.label.trim(),
+      unit_amount_cents: dollarsToCents(i.amount),
+    }));
+
+  const { data: updated, error } = await supabase
+    .from("shows")
+    .update({ charge_catalog: items })
+    .eq("id", d.showId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return {
+      error:
+        "Update was not applied. You may lack the show.edit permission, or the show is locked/archived.",
+    };
+  }
+
+  await supabase.rpc("log_audit", {
+    p_org: before.organization_id,
+    p_action: "show.charge_catalog_updated",
+    p_entity_type: "show",
+    p_entity_id: d.showId,
+    p_old: { charge_catalog: before.charge_catalog },
+    p_new: { charge_catalog: items },
+    p_show: d.showId,
+  });
+
+  revalidatePath(`/shows/${d.showId}/settings`);
+  revalidatePath(`/shows/${d.showId}/financials`);
   return {};
 }
 

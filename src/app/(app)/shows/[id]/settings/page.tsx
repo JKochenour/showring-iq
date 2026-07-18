@@ -7,6 +7,7 @@ import { ShowSettingsForm } from "@/components/show/show-settings-form";
 import { ShowStatusActions } from "@/components/show/show-status-actions";
 import { PublicLinkCard } from "@/components/show/public-link-card";
 import { StandardChargesEditor } from "@/components/show/standard-charges-editor";
+import { ChargeCatalogEditor } from "@/components/show/charge-catalog-editor";
 import { ConditionalFeesForm } from "@/components/show/conditional-fees-form";
 import { ScheduleSettingsForm } from "@/components/show/schedule-settings-form";
 import { Alert, Card } from "@/components/ui";
@@ -108,6 +109,23 @@ export default async function ShowSettingsPage({
               amount: centsToInput(c.amount_cents),
               perRun: c.per_run ?? false,
               youthExempt: c.youth_exempt ?? false,
+            }))}
+            canEdit={editable}
+          />
+        </Card>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-base font-semibold">
+          Price list for counter sales
+        </h2>
+        <Card>
+          <ChargeCatalogEditor
+            showId={s.id}
+            items={(s.charge_catalog ?? []).map((c) => ({
+              label: c.label,
+              category: c.category ?? "",
+              amount: centsToInput(c.unit_amount_cents),
             }))}
             canEdit={editable}
           />

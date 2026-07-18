@@ -70,6 +70,14 @@ export interface Show {
     per_run?: boolean;
     youth_exempt?: boolean;
   }[];
+  /** Reusable price list for counter sales (shavings, ice, tack stall).
+   * Never charged automatically — it only pre-fills the add-charge form.
+   * Contrast standard_entry_charges, which IS applied automatically. */
+  charge_catalog: {
+    label: string;
+    category?: string;
+    unit_amount_cents: number;
+  }[];
   schedule_start_time: string;
   schedule_break_minutes: number;
   schedule_drag_minutes: number;

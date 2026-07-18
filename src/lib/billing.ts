@@ -59,6 +59,9 @@ interface RawMiscCharge {
   description: string;
   category: string;
   amount_cents: number;
+  /** Null on rows written before 00054. */
+  quantity: number | null;
+  unit_amount_cents: number | null;
   created_at: string;
 }
 
@@ -239,7 +242,9 @@ async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) 
     supabase.from("back_numbers").select("entry_id, number").in("show_id", showIds),
     supabase
       .from("misc_charges")
-      .select("id, person_id, entry_id, description, category, amount_cents, created_at")
+      .select(
+        "id, person_id, entry_id, description, category, amount_cents, quantity, unit_amount_cents, created_at"
+      )
       .in("show_id", showIds)
       .order("created_at", { ascending: false }),
     supabase
@@ -466,8 +471,29 @@ export interface PersonBillCharge {
   id: string;
   description: string;
   category: string;
+  /** The line total. Always authoritative, including for legacy rows
+   * that predate quantity. */
   amountCents: number;
+  quantity: number;
+  /** Null on legacy rows, and treated as null once the price has been
+   * overridden — see unitPriceHolds(). */
+  unitAmountCents: number | null;
   createdAt: string;
+}
+
+/** Whether a charge's quantity x unit price still explains its total.
+ * An "Edit price" override rewrites amount_cents only, so a stale unit
+ * price must not be shown multiplying out to the wrong number. */
+export function unitPriceHolds(charge: {
+  amountCents: number;
+  quantity: number;
+  unitAmountCents: number | null;
+}): boolean {
+  return (
+    charge.unitAmountCents !== null &&
+    charge.quantity > 1 &&
+    charge.unitAmountCents * charge.quantity === charge.amountCents
+  );
 }
 
 export interface PersonBillPayment {
@@ -562,6 +588,8 @@ function buildPersonBill(data: BillingData, personId: string): PersonBill | null
       description: c.description,
       category: c.category,
       amountCents: c.amount_cents,
+      quantity: c.quantity ?? 1,
+      unitAmountCents: c.unit_amount_cents ?? null,
       createdAt: c.created_at,
     }));
 
@@ -741,7 +769,13 @@ function buildPersonStatement(data: BillingData, personId: string): PersonStatem
 
     // Standard charges applied to this horse (office/stall/drug), oldest first.
     for (const c of (miscByEntry.get(entry.id) ?? []).slice().reverse()) {
-      rows.push({ qty: 1, description: c.description, exhibitor: null, amountCents: c.amount_cents, struck: false });
+      rows.push({
+        qty: c.quantity ?? 1,
+        description: c.description,
+        exhibitor: null,
+        amountCents: c.amount_cents,
+        struck: false,
+      });
     }
 
     // Entry fee per class.
@@ -791,7 +825,13 @@ function buildPersonStatement(data: BillingData, personId: string): PersonStatem
   const otherCharges: StatementRow[] = otherChargesRaw
     .slice()
     .reverse()
-    .map((c) => ({ qty: 1, description: c.description, exhibitor: null, amountCents: c.amount_cents, struck: false }));
+    .map((c) => ({
+      qty: c.quantity ?? 1,
+      description: c.description,
+      exhibitor: null,
+      amountCents: c.amount_cents,
+      struck: false,
+    }));
   const otherChargesCents = otherCharges.reduce((s, r) => s + r.amountCents, 0);
 
   const totalFeesCents =

@@ -25,12 +25,15 @@ export async function addMiscCharge(
   const d = parsed.data;
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("add_misc_charge", {
+  // The total is unit x quantity, computed in the RPC — never sent from
+  // the browser.
+  const { error } = await supabase.rpc("add_misc_charge_qty", {
     p_show: showId,
     p_person: d.personId,
     p_description: d.description,
     p_category: d.category ?? "",
-    p_amount_cents: dollarsToCents(d.amount),
+    p_unit_amount_cents: dollarsToCents(d.amount),
+    p_quantity: Number(d.quantity || "1"),
   });
   if (error) return { error: error.message };
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeEntryRunFees, JUDGE_FEE_KEY } from "./billing";
+import { computeEntryRunFees, unitPriceHolds, JUDGE_FEE_KEY } from "./billing";
 
 // Fees in cents. Thursday Indoor example from the EPRHA entry form:
 //   1100 Open      entry $100  judge $75
@@ -112,5 +112,36 @@ describe("computeEntryRunFees", () => {
     const { totalCents } = computeEntryRunFees(classes, perRun, new Map());
     // judge 50 + video 17 + photo 10 = 77.
     expect(totalCents).toBe(5000 + 1700 + 1000);
+  });
+});
+
+describe("unitPriceHolds", () => {
+  const charge = (
+    amountCents: number,
+    quantity: number,
+    unitAmountCents: number | null
+  ) => ({ amountCents, quantity, unitAmountCents });
+
+  it("holds when quantity x unit equals the total", () => {
+    // 8 bags of shavings at $9.50.
+    expect(unitPriceHolds(charge(7600, 8, 950))).toBe(true);
+  });
+
+  it("is false for a legacy charge with no unit price", () => {
+    expect(unitPriceHolds(charge(7600, 1, null))).toBe(false);
+  });
+
+  it("is false for a single item — nothing to explain", () => {
+    expect(unitPriceHolds(charge(950, 1, 950))).toBe(false);
+  });
+
+  it("is false once the price has been overridden", () => {
+    // "Edit price" rewrites the total only; 8 x $9.50 no longer explains
+    // $50.00, so the stale unit price must not be shown.
+    expect(unitPriceHolds(charge(5000, 8, 950))).toBe(false);
+  });
+
+  it("is false when a comp zeroes the line", () => {
+    expect(unitPriceHolds(charge(0, 8, 950))).toBe(false);
   });
 });
