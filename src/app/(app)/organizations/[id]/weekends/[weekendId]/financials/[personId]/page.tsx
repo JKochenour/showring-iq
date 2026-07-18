@@ -6,7 +6,7 @@ import { Alert, Badge, ButtonLink, Card, PageHeader } from "@/components/ui";
 import { MiscChargeManager } from "@/components/show/misc-charge-manager";
 import { formatCents } from "@/lib/money";
 
-export const metadata = { title: "Weekend bill — ShowRing IQ" };
+export const metadata = { title: "Circuit bill — ShowRing IQ" };
 
 export default async function WeekendPersonBillPage({
   params,
@@ -31,7 +31,7 @@ export default async function WeekendPersonBillPage({
   ]);
   if (!canView) {
     return (
-      <Alert>You don&apos;t have permission to view financials for this weekend.</Alert>
+      <Alert>You don&apos;t have permission to view financials for this circuit.</Alert>
     );
   }
 
@@ -89,8 +89,8 @@ export default async function WeekendPersonBillPage({
             title={bill.name}
             description={
               bill.backNumbers.length > 0
-                ? `Back ${bill.backNumbers.length > 1 ? "numbers" : "number"} ${bill.backNumbers.map((n) => `#${n}`).join(", ")} · whole weekend`
-                : "Whole weekend"
+                ? `Back ${bill.backNumbers.length > 1 ? "numbers" : "number"} ${bill.backNumbers.map((n) => `#${n}`).join(", ")} · whole circuit`
+                : "Circuit total"
             }
           />
           <ButtonLink

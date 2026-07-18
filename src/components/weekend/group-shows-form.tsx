@@ -52,11 +52,11 @@ export function GroupShowsForm({
     setError(undefined);
     const finalName = name.trim() || suggestion;
     if (!finalName) {
-      setError("Name the weekend.");
+      setError("Name the circuit.");
       return;
     }
     if (picked.size < 1) {
-      setError("Pick the shows that make up this weekend.");
+      setError("Pick the shows that make up this circuit.");
       return;
     }
     startTransition(async () => {
@@ -73,7 +73,7 @@ export function GroupShowsForm({
     <Card className="max-w-2xl space-y-5">
       {error && <Alert>{error}</Alert>}
       <div>
-        <Label htmlFor="wkname">Weekend name</Label>
+        <Label htmlFor="wkname">Circuit name</Label>
         <Input
           id="wkname"
           placeholder={suggestion || "e.g. Fire Cracker Classic"}
@@ -114,7 +114,7 @@ export function GroupShowsForm({
                     {blocked
                       ? "has entries — can't group"
                       : s.inMultiSlateWeekend
-                        ? "in a weekend — will move"
+                        ? "in a circuit — will move"
                         : new Date(`${s.startDate}T00:00:00`).toLocaleDateString(
                             undefined,
                             { month: "short", day: "numeric" }
@@ -131,7 +131,7 @@ export function GroupShowsForm({
         </p>
       </div>
       <Button type="button" disabled={isPending || picked.size < 1} onClick={submit}>
-        {isPending ? "Creating…" : "Create weekend"}
+        {isPending ? "Creating…" : "Create circuit"}
       </Button>
     </Card>
   );

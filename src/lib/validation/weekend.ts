@@ -3,7 +3,7 @@ import { z } from "zod";
 /** Group one or more existing (entry-free) shows into a new weekend. */
 export const groupShowsSchema = z.object({
   organizationId: z.uuid(),
-  name: z.string().trim().min(1, "Name the weekend").max(160),
+  name: z.string().trim().min(1, "Name the circuit").max(160),
   showIds: z.array(z.uuid()).min(1, "Select at least one show"),
 });
 export type GroupShowsInput = z.infer<typeof groupShowsSchema>;
@@ -11,7 +11,7 @@ export type GroupShowsInput = z.infer<typeof groupShowsSchema>;
 export const renameWeekendSchema = z.object({
   weekendId: z.uuid(),
   organizationId: z.uuid(),
-  name: z.string().trim().min(1, "Name the weekend").max(160),
+  name: z.string().trim().min(1, "Name the circuit").max(160),
 });
 export type RenameWeekendInput = z.infer<typeof renameWeekendSchema>;
 

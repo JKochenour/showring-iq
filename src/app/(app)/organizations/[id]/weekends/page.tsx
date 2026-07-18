@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/show/show-status-actions";
 import { ButtonLink, Card, EmptyState, PageHeader } from "@/components/ui";
 import type { ShowStatus } from "@/lib/types";
 
-export const metadata = { title: "Weekends — ShowRing IQ" };
+export const metadata = { title: "Circuits — ShowRing IQ" };
 
 type WeekendRow = {
   id: string;
@@ -43,20 +43,20 @@ export default async function WeekendsPage({
   return (
     <div>
       <PageHeader
-        title="Weekends"
-        description="A weekend runs the same classes as two-plus slates — a horse keeps one back number across every slate, office/stall/drug is charged once, and each slate still submits its own NRHA file."
+        title="Circuits"
+        description="A circuit runs the same classes as two-plus slates — a horse keeps one back number across every slate, office/stall/drug is charged once, and each slate still submits its own NRHA file."
         action={
           canCreate ? (
             <ButtonLink href={`/organizations/${id}/weekends/new`}>
-              New weekend
+              New circuit
             </ButtonLink>
           ) : undefined
         }
       />
       {rows.length === 0 ? (
         <EmptyState
-          title="No weekends yet"
-          description="Group two shows (the slates) into a weekend to enter horses across both at once and bill each person a single consolidated total."
+          title="No circuits yet"
+          description="Group two shows (the slates) into a circuit to enter horses across both at once and bill each person a single consolidated total."
           action={
             canCreate ? (
               <ButtonLink href={`/organizations/${id}/weekends/new`}>

@@ -24,7 +24,7 @@ export default async function OrganizationLayout({
   const tabs = [
     { href: `/organizations/${id}`, label: "Overview" },
     { href: `/organizations/${id}/shows`, label: "Shows" },
-    { href: `/organizations/${id}/weekends`, label: "Weekends" },
+    { href: `/organizations/${id}/weekends`, label: "Circuits" },
     { href: `/organizations/${id}/people`, label: "People" },
     { href: `/organizations/${id}/horses`, label: "Horses" },
     { href: `/organizations/${id}/rule-packages`, label: "Rule Packages" },

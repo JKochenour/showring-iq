@@ -103,7 +103,7 @@ export default async function AppLayout({
     slates.forEach((s, i) => shortLabel.set(s.id, labels[i]));
   }
 
-  // Weekend names, for the multi-slate weekends that become sidebar nodes.
+  // Circuit names, for the multi-slate weekends that become sidebar nodes.
   const multiSlateIds = [...byWeekend.entries()]
     .filter(([, slates]) => slates.length > 1)
     .map(([wid]) => wid);

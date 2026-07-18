@@ -125,14 +125,14 @@ export default async function FinancialsPage({
               <span className="font-semibold">{weekend.name}</span> (
               {weekend.slateCount} slates). These totals cover this slate
               only — office, stall, and drug fees are charged once per horse
-              for the whole weekend, so they appear on whichever slate the
+              for the whole circuit, so they appear on whichever slate the
               horse was signed up on first.
             </p>
             <ButtonLink
               href={`/organizations/${s.organization_id}/weekends/${weekend.id}/financials`}
               variant="secondary"
             >
-              Consolidated weekend bill
+              Consolidated circuit bill
             </ButtonLink>
           </div>
         </Alert>

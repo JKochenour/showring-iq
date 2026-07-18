@@ -17,7 +17,7 @@ function friendlyBackNumberError(message: string): string {
     message.includes("weekend_back_numbers_weekend_id_number_key") ||
     message.includes("already used by another horse")
   ) {
-    return "That back number is already used by another horse this weekend.";
+    return "That back number is already used by another horse this circuit.";
   }
   return message;
 }

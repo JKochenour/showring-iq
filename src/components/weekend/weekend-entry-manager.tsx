@@ -92,7 +92,7 @@ export function WeekendEntryManager({
       />
 
       {horses.length === 0 ? (
-        <Alert tone="info">No horses are entered in this weekend yet.</Alert>
+        <Alert tone="info">No horses are entered in this circuit yet.</Alert>
       ) : filtered.length === 0 ? (
         <p className="px-1 py-6 text-center text-sm text-stone-500 dark:text-stone-400">
           No horse, rider, or back number matches “{query}”.

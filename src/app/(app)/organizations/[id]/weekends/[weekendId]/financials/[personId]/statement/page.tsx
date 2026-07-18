@@ -6,7 +6,7 @@ import { PrintButton } from "@/components/show/print-button";
 import { StatementDocument } from "@/components/show/statement-document";
 import { Alert } from "@/components/ui";
 
-export const metadata = { title: "Weekend statement — ShowRing IQ" };
+export const metadata = { title: "Circuit statement — ShowRing IQ" };
 
 export default async function WeekendStatementPage({
   params,
@@ -27,7 +27,7 @@ export default async function WeekendStatementPage({
 
   const canView = await hasOrgPermission(id, "invoice.view");
   if (!canView) {
-    return <Alert>You don&apos;t have permission to view financials for this weekend.</Alert>;
+    return <Alert>You don&apos;t have permission to view financials for this circuit.</Alert>;
   }
 
   const statement = await loadWeekendPersonStatement(supabase, weekendId, personId);

@@ -23,7 +23,7 @@ const CARD_ROWS = [
 const WEEKEND_STAGES = [
   {
     name: "Entries",
-    copy: "Office or online: rider, horse, owner, and classes — billed to the right party, one back number per horse for the whole weekend.",
+    copy: "Office or online: rider, horse, owner, and classes — billed to the right party, one back number per horse for the whole circuit.",
     feature: false,
   },
   {

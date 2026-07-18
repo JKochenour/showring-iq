@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/show/show-status-actions";
 import { ButtonLink, Card, PageHeader } from "@/components/ui";
 import type { ShowStatus } from "@/lib/types";
 
-export const metadata = { title: "Weekend — ShowRing IQ" };
+export const metadata = { title: "Circuit — ShowRing IQ" };
 
 export default async function WeekendHubPage({
   params,
@@ -37,11 +37,11 @@ export default async function WeekendHubPage({
     <div className="space-y-6">
       <PageHeader
         title={weekend.name}
-        description="Enter horses across every slate from one screen; each keeps one back number for the weekend and one consolidated bill. Scoring, results, and the NRHA export stay on each slate."
+        description="Enter horses across every slate from one screen; each keeps one back number for the circuit and one consolidated bill. Scoring, results, and the NRHA export stay on each slate."
         action={
           canEnter && slates.length > 0 ? (
             <ButtonLink href={`/organizations/${id}/weekends/${weekendId}/entries/new`}>
-              New weekend entry
+              New circuit entry
             </ButtonLink>
           ) : undefined
         }
@@ -82,7 +82,7 @@ export default async function WeekendHubPage({
         </Card>
 
         <Card>
-          <h3 className="mb-3 text-sm font-semibold">This weekend</h3>
+          <h3 className="mb-3 text-sm font-semibold">This circuit</h3>
           <div className="space-y-2 text-sm">
             <Link
               href={`/organizations/${id}/weekends/${weekendId}/manage`}
@@ -94,7 +94,7 @@ export default async function WeekendHubPage({
               href={`/organizations/${id}/weekends/${weekendId}/entries/new`}
               className="block rounded-md border border-stone-200 px-3 py-2 hover:border-brand-600 dark:border-stone-800"
             >
-              New weekend entry →
+              New circuit entry →
             </Link>
             <Link
               href={`/organizations/${id}/weekends/${weekendId}/financials`}

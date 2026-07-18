@@ -100,7 +100,7 @@ export async function createWeekendEntry(
     .select("id, organization_id")
     .eq("id", d.weekendId)
     .maybeSingle();
-  if (!weekend) return { error: "Weekend not found." };
+  if (!weekend) return { error: "Circuit not found." };
 
   const slateShowIds = d.slates.map((s) => s.showId);
   const { data: weekendShows } = await supabase
@@ -113,7 +113,7 @@ export async function createWeekendEntry(
       .map((s) => s.id as string)
   );
   if (validShowIds.size === 0) {
-    return { error: "None of the selected slates belong to this weekend." };
+    return { error: "None of the selected slates belong to this circuit." };
   }
 
   // Resolve display-name snapshots and validate the picked classes.
@@ -297,7 +297,7 @@ export async function saveWeekendRiderClasses(
     .select("id, organization_id")
     .eq("id", d.weekendId)
     .maybeSingle();
-  if (!weekend) return { error: "Weekend not found." };
+  if (!weekend) return { error: "Circuit not found." };
 
   const { data: weekendShows } = await supabase
     .from("shows")

@@ -455,7 +455,7 @@ const STEPS: Step[] = [
     actions: [
       "Set the show name, start/end dates, and venue.",
       "Add the NRHA affiliation and approval number in Settings.",
-      "Shows group into weekends/circuits when you run multiple slates.",
+      "Shows group into circuits when you run multiple slates.",
     ],
     screen: <ShowScreen />,
   },
@@ -493,7 +493,7 @@ const STEPS: Step[] = [
       "Enter riders and horses into classes and assign back numbers. Ineligible classes still show — with the exact reason — so nobody is turned away without an explanation. Exhibitors can also self-enter online.",
     actions: [
       "Pick rider and horse; check the classes; assign a back number.",
-      "One back number per horse for the whole weekend; fees bill to the right party.",
+      "One back number per horse for the whole circuit; fees bill to the right party.",
       "Ineligible classes reveal their reason instead of disappearing.",
     ],
     screen: <EntriesScreen />,

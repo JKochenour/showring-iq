@@ -63,7 +63,7 @@ export function StandardChargesBackfillCard({
     <Card>
       <h2 className="mb-1 text-base font-semibold">Standard charges</h2>
       <p className="mb-3 text-xs text-stone-500 dark:text-stone-400">
-        These are charged once per horse for the whole weekend, at the moment
+        These are charged once per horse for the whole circuit, at the moment
         the horse first gets a back number. If you set them up or changed them
         after entries were taken, horses already entered were missed — apply
         them here.

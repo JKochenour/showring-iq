@@ -5,7 +5,7 @@ import { loadWeekendBillingRoster } from "@/lib/billing";
 import { BillingRoster } from "@/components/show/billing-roster";
 import { Alert, PageHeader } from "@/components/ui";
 
-export const metadata = { title: "Weekend billing — ShowRing IQ" };
+export const metadata = { title: "Circuit billing — ShowRing IQ" };
 
 export default async function WeekendFinancialsPage({
   params,
@@ -25,7 +25,7 @@ export default async function WeekendFinancialsPage({
   const canView = await hasOrgPermission(id, "invoice.view");
   if (!canView) {
     return (
-      <Alert>You don&apos;t have permission to view financials for this weekend.</Alert>
+      <Alert>You don&apos;t have permission to view financials for this circuit.</Alert>
     );
   }
 

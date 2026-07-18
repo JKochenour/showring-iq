@@ -4,7 +4,7 @@ import { GroupShowsForm } from "@/components/weekend/group-shows-form";
 import { Alert, PageHeader } from "@/components/ui";
 import type { ShowStatus } from "@/lib/types";
 
-export const metadata = { title: "New weekend — ShowRing IQ" };
+export const metadata = { title: "New circuit — ShowRing IQ" };
 
 export default async function NewWeekendPage({
   params,
@@ -56,8 +56,8 @@ export default async function NewWeekendPage({
   return (
     <div>
       <PageHeader
-        title="New weekend"
-        description="Pick the shows that are the slates of this weekend. Group them before taking entries — a horse's shared back number and once-per-weekend fees are set up as entries come in."
+        title="New circuit"
+        description="Pick the shows that are the slates of this circuit. Group them before taking entries — a horse's shared back number and once-per-circuit fees are set up as entries come in."
       />
       {!canCreate ? (
         <Alert tone="info">

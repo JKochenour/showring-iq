@@ -4,7 +4,7 @@ import { WeekendEntryGrid } from "@/components/weekend/weekend-entry-grid";
 import { Alert, PageHeader } from "@/components/ui";
 import type { Person } from "@/lib/types";
 
-export const metadata = { title: "New weekend entry — ShowRing IQ" };
+export const metadata = { title: "New circuit entry — ShowRing IQ" };
 
 export default async function NewWeekendEntryPage({
   params,
@@ -101,7 +101,7 @@ export default async function NewWeekendEntryPage({
     <div className="space-y-6">
       <PageHeader
         title={`New entry — ${weekend.name}`}
-        description="Pick the horse and rider, who's billed, and check which classes they run in each slate. The horse keeps one back number all weekend; office/stall/drug is charged once, class/video/photo per run."
+        description="Pick the horse and rider, who's billed, and check which classes they run in each slate. The horse keeps one back number for the whole circuit; office/stall/drug is charged once, class/video/photo per run."
       />
       {!canCreate || !showEditable ? (
         <Alert tone="info">
