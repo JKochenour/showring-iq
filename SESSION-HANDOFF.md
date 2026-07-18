@@ -1,6 +1,94 @@
+# ShowRing IQ — Session Handoff (updated 2026-07-18, 19th session)
+
+## Latest (2026-07-18, 19th session — CONCURRENT-DRAW FIX + SIDEBAR REDO, all pushed to main)
+
+Three commits, all on `main` and auto-deployed. Working tree clean.
+
+**1. Draw no longer advances empty classes (`8f9b83f`).** The wart the
+18th session recorded: generating a draw on a concurrent group set EVERY
+class in the group to `draw_posted`, including classes with zero entries
+— and since `draw_posted` workflow-locks the manual status dropdown,
+unsticking them needed hand-written SQL. `generateDraw` in
+`src/app/(app)/shows/[id]/draws/actions.ts` now derives the update target
+from the draw rows it just inserted:
+
+```ts
+const drawnClassIds = [...new Set(rows.map((r) => r.class_id))];
+```
+
+A class with no entered entries contributes no rows, so it cannot be
+advanced. Also dropped the outer guard that keyed off the INITIATING
+class's status — on a re-draw it skipped the status update entirely,
+leaving a newly-entered sibling stuck in `draft`; the per-row
+`.in("status", [...])` filter already covers that safety.
+**NOT exercised at runtime** — the next real draw over a partially-filled
+concurrent group is the confirmation. Verifying it deliberately would
+have meant test entries on real Fire Cracker data whose cleanup tail
+(entry + auto-applied office/stall/drug misc_charges +
+weekend_back_numbers + a SQL status reset) outweighed the proof.
+
+**2. Sidebar: full names, no "Here" badge (`6bb1eb3`).** The 18th
+session's "Here" pill was the WRONG fix and the user rejected it. Two
+faults stacked: the pill sat at `ml-auto` stealing horizontal room, and
+the name span was `truncate` — so both slates clipped to nearly the same
+visible prefix. The badge meant to disambiguate them was labeling names
+you couldn't tell apart. Now: badge gone, name wraps instead of clipping,
+active state carried by a 2px left border (transparent when inactive → no
+layout shift) plus the existing brand background/weight/chevron.
+
+**3. Sidebar: slates shortened to "Classic I" / "Classic 2" (`40cd017`).**
+New `src/lib/show-labels.ts` — `weekendShowLabels()` drops the words all
+slates in a weekend share and adds back the LAST shared word for context
+("EPRHA Fire Cracker Classic I" → "Classic I"). Full name kept as the
+button's `title` tooltip. Conservative by design: names returned
+untouched for a weekend of one (the common case — every show gets an auto
+weekend-of-one), for names sharing no prefix, and when one name is a pure
+prefix of another. 9 unit tests; full suite 37/37.
+
+Live-verified at 1280px on the real 2-slate weekend: "Classic I"
+(`aria-current="page"`) + "Classic 2", one line each, `scrollWidth ==
+clientWidth`, tooltips carrying full names, Slate 1 still above Slate 2.
+
+### Corrections to earlier entries in this file
+
+- **Scoring is NOT blocked by a missing judge-signature feature.** The
+  18th-session end-to-end test recorded submitting a score as stalled on
+  a signature step. It is already built: `Submit` opens a ConfirmDialog
+  with a signature field pre-filled with the judge's name
+  (`src/components/show/score-entry-row.tsx`, ~line 105) and calls
+  `submitScore(entryClassId, signature)`. The stall was the degraded
+  browser pane failing to render ConfirmDialogs — a tooling artifact, not
+  a product gap. Do not go build this.
+- **The "Here" badge is gone** — the 18th-session section below still
+  describes it as the shipped active-show indicator. Superseded by
+  `6bb1eb3` above.
+
+### New gotcha
+
+- **`sr-only` does not work in this Tailwind setup.** It computes to
+  `position: static` and consumes real layout width — an 83px screen-
+  reader label squeezed the active show name into a 53px 4-line column
+  until removed. There are no other `sr-only` usages in the codebase; do
+  not reach for that class here.
+- Reconfirmed: the PWA service worker served stale markup through several
+  edit cycles this session. Unregister SWs + clear caches when a change
+  seems ignored. Also `resize_window` preset "desktop" did NOT take —
+  the pane sat at 534px (below `sm`, so the sidebar was `display:none`
+  and every measurement read 0). Pass explicit width/height instead.
+- `gh` CLI is NOT installed on this machine, so PRs cannot be opened from
+  here. The user's workflow is committing straight to `main` anyway
+  (which auto-deploys); a PR attempt this session was resolved by merging
+  to `main` instead.
+
+---
+
 # ShowRing IQ — Session Handoff (updated 2026-07-17, 18th session)
 
 ## Latest (2026-07-17, 18th session — SIDEBAR NAV FIXES, committed + pushed)
+
+> ⚠️ **Superseded by the 19th session above.** The "Here" badge described
+> here was rejected by the user and removed; slates now display as
+> "Classic I" / "Classic 2".
 
 Cleared the two sidebar to-dos flagged last session (commit `db00d8d`,
 pushed to main → auto-deployed). Both live-verified on the dev server
@@ -186,10 +274,13 @@ safe to test against.
   judges configured on the slate are selectable on the score sheet.
 
 **Where it stalled (NOT product defects):**
-1. **Submitting a score requires a judge digital signature** (the patterns +
-   sign-off feature from an earlier session). The score sat at status `Draft`;
-   `Submit` needs the signature step, which blocks class → official → results →
-   payout → CSV. Worth knowing for whoever runs scoring.
+1. ~~**Submitting a score requires a judge digital signature**~~ —
+   **CORRECTED 2026-07-18 (19th session): this was a misreading.** The
+   signature step is fully built and takes one click: `Submit` opens a
+   ConfirmDialog with a signature field pre-filled with the judge's name.
+   The score sat at `Draft` because the degraded browser pane wasn't
+   rendering ConfirmDialogs at all. Nothing blocks class → official →
+   results → payout → CSV. No work needed here.
 2. **The browser pane was badly degraded** — tab drifting to /dashboard between
    clicks, screenshot timeouts, denied navigations, ConfirmDialogs not
    rendering, and the dev server dying repeatedly. This blocked the last mile
@@ -212,7 +303,11 @@ was actually in. Fixed with:
 `update public.classes set status='draft' where id in
 ('2a5827f6-b9d6-45ce-880b-82c039e952d7','fe2b6b6f-ddc3-486b-8097-108e740334bf');`
 **Takeaway: when cleaning up test draws/scores, reset the WHOLE concurrent
-group, not just the entered classes.**
+group, not just the entered classes.** — **FIXED 2026-07-18 (19th session,
+`8f9b83f`): the root cause is gone.** Empty classes in a concurrent group
+are no longer advanced by a sibling's draw, so they never get stuck at
+`Draw posted` in the first place. The cleanup advice above still applies to
+draws generated BEFORE that commit.
 
 **Automation lesson worth keeping:** the `Combobox` typeahead does NOT register
 a selection from a JS `.click()` — only a real pointer click does. The reliable
