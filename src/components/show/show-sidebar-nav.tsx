@@ -24,7 +24,11 @@ function cx(...classes: (string | false | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function ShowSidebarNav({ show }: { show: { id: string; name: string } }) {
+export function ShowSidebarNav({
+  show,
+}: {
+  show: { id: string; name: string; label?: string };
+}) {
   const pathname = usePathname();
   const basePath = `/shows/${show.id}`;
   const isActiveShow = pathname === basePath || pathname.startsWith(`${basePath}/`);
@@ -46,6 +50,7 @@ export function ShowSidebarNav({ show }: { show: { id: string; name: string } })
         )}
         aria-current={isActiveShow ? "page" : undefined}
         aria-expanded={isOpen}
+        title={show.name}
       >
         <svg
           viewBox="0 0 20 20"
@@ -58,7 +63,9 @@ export function ShowSidebarNav({ show }: { show: { id: string; name: string } })
         >
           <path d="M6 4l6 6-6 6V4z" />
         </svg>
-        <span className="min-w-0 flex-1 leading-snug">{show.name}</span>
+        <span className="min-w-0 flex-1 leading-snug">
+          {show.label ?? show.name}
+        </span>
       </button>
       {isOpen && (
         <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-stone-200 pl-3 dark:border-stone-800">

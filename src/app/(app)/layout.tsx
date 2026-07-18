@@ -5,6 +5,7 @@ import { HelpChatWidget } from "@/components/help/help-chat-widget";
 import { MobileNav } from "@/components/mobile-nav";
 import { OrgSidebarNav } from "@/components/org/org-sidebar-nav";
 import { SidebarNavLink } from "@/components/org/sidebar-nav-link";
+import { weekendShowLabels } from "@/lib/show-labels";
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -79,10 +80,30 @@ export default async function AppLayout({
     return a.name.localeCompare(b.name);
   });
 
-  const showsByOrg = new Map<string, { id: string; name: string }[]>();
+  // Slates of the same weekend repeat the event name — show only the part
+  // that differs (plus one word of context) so "Classic I" / "Classic 2"
+  // fit the sidebar instead of wrapping. Weekends of one keep their name.
+  const shortLabel = new Map<string, string>();
+  const byWeekend = new Map<string, ShowRow[]>();
+  for (const s of sortedShows) {
+    if (!s.weekend_id) continue;
+    const list = byWeekend.get(s.weekend_id) ?? [];
+    list.push(s);
+    byWeekend.set(s.weekend_id, list);
+  }
+  for (const slates of byWeekend.values()) {
+    if (slates.length < 2) continue;
+    const labels = weekendShowLabels(slates.map((s) => s.name));
+    slates.forEach((s, i) => shortLabel.set(s.id, labels[i]));
+  }
+
+  const showsByOrg = new Map<
+    string,
+    { id: string; name: string; label: string }[]
+  >();
   for (const s of sortedShows) {
     const list = showsByOrg.get(s.organization_id) ?? [];
-    list.push({ id: s.id, name: s.name });
+    list.push({ id: s.id, name: s.name, label: shortLabel.get(s.id) ?? s.name });
     showsByOrg.set(s.organization_id, list);
   }
 
