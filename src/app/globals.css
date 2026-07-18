@@ -190,12 +190,62 @@ html.kiosk main {
   padding-right: 1rem !important;
   padding-top: 1rem !important;
 }
+/* NRHA judges score sheet. Mirrors the official paper form: ten run
+   blocks to a portrait page, each block two rules tall (penalty over
+   score) so a judge can hand-write both per maneuver. Always black on
+   white — this is a form to print, not a screen surface, so it ignores
+   dark mode. */
 .score-sheet-table {
   border: 1px solid #000;
+  table-layout: fixed;
+  color: #000;
+  background: #fff;
 }
 .score-cell {
   border: 1px solid #000;
-  padding: 2px 4px;
+  padding: 1px 3px;
   text-align: center;
-  height: 1.4rem;
+  /* ~0.4in per rule, matching the paper form's run-block spacing — tall
+     enough to hand-write a maneuver score. Ten blocks plus the header
+     still fit one portrait page. */
+  height: 2.1rem;
+  color: #000;
+  background: #fff;
+}
+.score-head {
+  font-weight: 600;
+  height: auto;
+  line-height: 1.1;
+}
+/* Row labels are printed guides, not data — keep them quiet so the
+   judge's handwriting is what stands out. */
+.score-rowlabel {
+  font-size: 8px;
+  text-align: left;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #444;
+}
+
+@media print {
+  /* The official sheet is portrait letter with narrow margins; anything
+     wider pushes the eight maneuver columns off the page. */
+  @page {
+    size: letter portrait;
+    margin: 0.4in;
+  }
+  .score-sheet-page {
+    /* Each page is one full sheet of ten runs. */
+    break-after: page;
+  }
+  .score-sheet-page:last-child {
+    break-after: auto;
+  }
+  .score-sheet-table {
+    /* Never split a run block across a page break. */
+    break-inside: avoid;
+  }
+  .score-sheet-table tr {
+    break-inside: avoid;
+  }
 }
