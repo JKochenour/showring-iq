@@ -3,7 +3,10 @@ import { requireUser } from "@/lib/authz";
 import { SignOutButton } from "@/components/sign-out-button";
 import { HelpChatWidget } from "@/components/help/help-chat-widget";
 import { MobileNav } from "@/components/mobile-nav";
-import { OrgSidebarNav } from "@/components/org/org-sidebar-nav";
+import {
+  OrgSidebarNav,
+  type SidebarNode,
+} from "@/components/org/org-sidebar-nav";
 import { SidebarNavLink } from "@/components/org/sidebar-nav-link";
 import { weekendShowLabels } from "@/lib/show-labels";
 
@@ -97,14 +100,51 @@ export default async function AppLayout({
     slates.forEach((s, i) => shortLabel.set(s.id, labels[i]));
   }
 
-  const showsByOrg = new Map<
-    string,
-    { id: string; name: string; label: string }[]
-  >();
+  // Weekend names, for the multi-slate weekends that become sidebar nodes.
+  const multiSlateIds = [...byWeekend.entries()]
+    .filter(([, slates]) => slates.length > 1)
+    .map(([wid]) => wid);
+  const { data: weekendRows } =
+    multiSlateIds.length > 0
+      ? await supabase
+          .from("show_weekends")
+          .select("id, name")
+          .in("id", multiSlateIds)
+      : { data: [] as { id: string; name: string }[] };
+  const weekendName = new Map(
+    (weekendRows ?? []).map((w) => [w.id as string, w.name as string])
+  );
+
+  // Build the sidebar tree in the order already established by the sort:
+  // a multi-slate weekend becomes one node holding its slates, everything
+  // else stays a flat show. sortedShows keeps a weekend's slates adjacent,
+  // so the weekend node lands at its first slate's position.
+  const nodesByOrg = new Map<string, SidebarNode[]>();
+  const emittedWeekends = new Set<string>();
   for (const s of sortedShows) {
-    const list = showsByOrg.get(s.organization_id) ?? [];
-    list.push({ id: s.id, name: s.name, label: shortLabel.get(s.id) ?? s.name });
-    showsByOrg.set(s.organization_id, list);
+    const list = nodesByOrg.get(s.organization_id) ?? [];
+    const wid = s.weekend_id;
+    if (wid && weekendName.has(wid)) {
+      if (!emittedWeekends.has(wid)) {
+        emittedWeekends.add(wid);
+        list.push({
+          kind: "weekend",
+          id: wid,
+          name: weekendName.get(wid)!,
+          shows: (byWeekend.get(wid) ?? []).map((slate) => ({
+            id: slate.id,
+            name: slate.name,
+            label: shortLabel.get(slate.id) ?? slate.name,
+          })),
+        });
+      }
+    } else {
+      list.push({
+        kind: "show",
+        show: { id: s.id, name: s.name, label: s.name },
+      });
+    }
+    nodesByOrg.set(s.organization_id, list);
   }
 
   const displayName = profile?.full_name || profile?.email || user.email || "";
@@ -130,7 +170,7 @@ export default async function AppLayout({
                 <OrgSidebarNav
                   key={org.id}
                   org={org}
-                  shows={showsByOrg.get(org.id) ?? []}
+                  nodes={nodesByOrg.get(org.id) ?? []}
                 />
               ))}
             </div>
@@ -169,7 +209,7 @@ export default async function AppLayout({
                     <OrgSidebarNav
                       key={org.id}
                       org={org}
-                      shows={showsByOrg.get(org.id) ?? []}
+                      nodes={nodesByOrg.get(org.id) ?? []}
                     />
                   ))}
                 </div>

@@ -4,8 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ShowSidebarNav } from "@/components/show/show-sidebar-nav";
+import {
+  WeekendSidebarNav,
+  type SidebarShow,
+} from "@/components/show/weekend-sidebar-nav";
 
-const MAX_SHOWS_SHOWN = 5;
+/** A weekend with 2+ slates renders as one node containing them; a
+ * standalone show (including the auto weekend-of-one every show gets)
+ * renders flat, exactly as before. */
+export type SidebarNode =
+  | { kind: "show"; show: SidebarShow }
+  | { kind: "weekend"; id: string; name: string; shows: SidebarShow[] };
+
+const MAX_NODES_SHOWN = 5;
 
 const TOP_TABS = [{ slug: "", label: "Overview" }];
 
@@ -24,22 +35,27 @@ function cx(...classes: (string | false | undefined)[]) {
 
 export function OrgSidebarNav({
   org,
-  shows,
+  nodes,
 }: {
   org: { id: string; name: string };
-  shows: { id: string; name: string }[];
+  nodes: SidebarNode[];
 }) {
   const pathname = usePathname();
   const basePath = `/organizations/${org.id}`;
   const showsHref = `${basePath}/shows`;
+  const allShows = nodes.flatMap((n) =>
+    n.kind === "weekend" ? n.shows : [n.show]
+  );
   const isActiveOrg =
     pathname === basePath ||
     pathname.startsWith(`${basePath}/`) ||
-    shows.some((s) => pathname.startsWith(`/shows/${s.id}`));
+    allShows.some((s) => pathname.startsWith(`/shows/${s.id}`));
   const [isOpen, setIsOpen] = useState(isActiveOrg);
 
-  const visibleShows = shows.slice(0, MAX_SHOWS_SHOWN);
-  const hiddenShowCount = shows.length - visibleShows.length;
+  const visibleNodes = nodes.slice(0, MAX_NODES_SHOWN);
+  const hiddenShowCount = nodes
+    .slice(MAX_NODES_SHOWN)
+    .reduce((n, node) => n + (node.kind === "weekend" ? node.shows.length : 1), 0);
 
   function renderTabLink(tab: { slug: string; label: string }) {
     const href = tab.slug ? `${basePath}/${tab.slug}` : basePath;
@@ -92,11 +108,19 @@ export function OrgSidebarNav({
           >
             Shows
           </Link>
-          {visibleShows.length > 0 && (
+          {visibleNodes.length > 0 && (
             <div className="ml-3 flex flex-col gap-0.5 border-l border-stone-200 pl-2 dark:border-stone-800">
-              {visibleShows.map((show) => (
-                <ShowSidebarNav key={show.id} show={show} />
-              ))}
+              {visibleNodes.map((node) =>
+                node.kind === "weekend" ? (
+                  <WeekendSidebarNav
+                    key={node.id}
+                    orgId={org.id}
+                    weekend={node}
+                  />
+                ) : (
+                  <ShowSidebarNav key={node.show.id} show={node.show} />
+                )
+              )}
               {hiddenShowCount > 0 && (
                 <Link
                   href={showsHref}
