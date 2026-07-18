@@ -25,6 +25,7 @@ export function ShowStatusActions({
 }) {
   const [error, setError] = useState<string>();
   const [unlockReason, setUnlockReason] = useState("");
+  const [unlockHint, setUnlockHint] = useState<string>();
   const [isPending, startTransition] = useTransition();
   const confirm = useConfirmDialog();
 
@@ -78,6 +79,10 @@ export function ShowStatusActions({
             Lock show
           </Button>
         )}
+        {/* The reason is required (it goes in the audit log), but a
+            greyed-out button with no explanation reads as "this show
+            can't be unlocked". So the button stays live and says why
+            when it can't proceed. */}
         {status === "locked" && canLock && (
           <div className="flex flex-wrap items-end gap-2">
             <div>
@@ -85,14 +90,32 @@ export function ShowStatusActions({
               <Input
                 id="unlock-reason"
                 value={unlockReason}
-                onChange={(e) => setUnlockReason(e.target.value)}
+                onChange={(e) => {
+                  setUnlockReason(e.target.value);
+                  if (unlockHint) setUnlockHint(undefined);
+                }}
                 placeholder="Why is this show being unlocked?"
                 className="w-72"
               />
+              {unlockHint && (
+                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  {unlockHint}
+                </p>
+              )}
             </div>
             <Button
-              disabled={isPending || unlockReason.trim().length === 0}
-              onClick={() => transition("published", unlockReason.trim())}
+              disabled={isPending}
+              onClick={() => {
+                if (unlockReason.trim().length === 0) {
+                  setUnlockHint(
+                    "Type a reason first — it is recorded in the audit log."
+                  );
+                  document.getElementById("unlock-reason")?.focus();
+                  return;
+                }
+                setUnlockHint(undefined);
+                transition("published", unlockReason.trim());
+              }}
             >
               Unlock show
             </Button>
