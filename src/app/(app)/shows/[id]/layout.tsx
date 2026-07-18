@@ -26,25 +26,50 @@ export default async function ShowLayout({
   const orgName =
     (show.organization as unknown as { name: string } | null)?.name ?? "";
 
-  const tabs = [
-    { href: `/shows/${id}/dashboard`, label: "Dashboard" },
-    { href: `/shows/${id}/classes`, label: "Classes" },
-    { href: `/shows/${id}/schedule`, label: "Schedule" },
-    { href: `/shows/${id}/entries`, label: "Entries" },
-    { href: `/shows/${id}/check-in`, label: "Check-in" },
-    { href: `/shows/${id}/issues`, label: "Issues" },
-    { href: `/shows/${id}/draws`, label: "Draws" },
-    { href: `/shows/${id}/scoring`, label: "Scoring" },
-    { href: `/shows/${id}/results`, label: "Results" },
-    { href: `/shows/${id}/financials`, label: "Financials" },
-    { href: `/shows/${id}/reservations`, label: "Reservations" },
-    { href: `/shows/${id}/announcements`, label: "Announcements" },
-    { href: `/shows/${id}/reports`, label: "Reports" },
-    { href: `/shows/${id}/exports`, label: "Exports" },
-    { href: `/shows/${id}/gate`, label: "Gate" },
-    { href: `/shows/${id}/announcer`, label: "Announcer" },
-    { href: `/shows/${id}/staff`, label: "Staff" },
-    { href: `/shows/${id}/settings`, label: "Settings" },
+  // Grouped by the stage of the show each section belongs to, so there are
+  // five things to choose from instead of eighteen to scan.
+  const tabGroups = [
+    {
+      label: "Dashboard",
+      tabs: [{ href: `/shows/${id}/dashboard`, label: "Dashboard" }],
+    },
+    {
+      label: "Set up",
+      tabs: [
+        { href: `/shows/${id}/classes`, label: "Classes" },
+        { href: `/shows/${id}/schedule`, label: "Schedule" },
+        { href: `/shows/${id}/staff`, label: "Staff" },
+        { href: `/shows/${id}/settings`, label: "Settings" },
+      ],
+    },
+    {
+      label: "Entries",
+      tabs: [
+        { href: `/shows/${id}/entries`, label: "Entries" },
+        { href: `/shows/${id}/check-in`, label: "Check-in" },
+        { href: `/shows/${id}/issues`, label: "Issues" },
+        { href: `/shows/${id}/reservations`, label: "Reservations" },
+      ],
+    },
+    {
+      label: "Run the show",
+      tabs: [
+        { href: `/shows/${id}/draws`, label: "Draws" },
+        { href: `/shows/${id}/gate`, label: "Gate" },
+        { href: `/shows/${id}/scoring`, label: "Scoring" },
+        { href: `/shows/${id}/announcer`, label: "Announcer" },
+        { href: `/shows/${id}/announcements`, label: "Announcements" },
+      ],
+    },
+    {
+      label: "Results & money",
+      tabs: [
+        { href: `/shows/${id}/results`, label: "Results" },
+        { href: `/shows/${id}/financials`, label: "Financials" },
+        { href: `/shows/${id}/exports`, label: "Exports" },
+        { href: `/shows/${id}/reports`, label: "Reports" },
+      ],
+    },
   ];
 
   return (
@@ -67,7 +92,7 @@ export default async function ShowLayout({
           <h1 className="text-2xl font-semibold tracking-tight">{show.name}</h1>
           <StatusBadge status={show.status as Show["status"]} />
         </div>
-        <ShowTabs tabs={tabs} />
+        <ShowTabs groups={tabGroups} />
       </div>
       {children}
     </div>
