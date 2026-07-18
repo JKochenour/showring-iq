@@ -58,6 +58,9 @@ export default async function AppLayout({
             "organization_id",
             orgs.map((o) => o.id)
           )
+          // The sidebar is for shows being worked on. Archived ones stay
+          // fully readable via Organizations → Shows → Archived.
+          .neq("status", "archived")
       : { data: [] as ShowRow[] };
 
   // Order weekends newest-first (by their latest slate's start date), but

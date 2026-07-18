@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/authz";
 import { ShowTabs } from "@/components/show/show-tabs";
 import { StatusBadge } from "@/components/show/show-status-actions";
+import { Alert } from "@/components/ui";
 import type { Show } from "@/lib/types";
 
 export default async function ShowLayout({
@@ -96,6 +97,24 @@ export default async function ShowLayout({
         </div>
         <ShowTabs groups={tabGroups} />
       </div>
+      {/* Archived shows are read-only at the database level, so an edit
+          here fails with a confusing "not applied" message. Say so up
+          front, and point at the way back. */}
+      {show.status === "archived" && (
+        <div className="no-print mb-6">
+          <Alert tone="info">
+            This show is archived — everything stays readable, printable, and
+            exportable, but nothing can be edited. To make a correction,{" "}
+            <Link
+              href={`/shows/${id}/settings`}
+              className="font-medium underline"
+            >
+              restore it to draft
+            </Link>{" "}
+            in settings, then archive it again.
+          </Alert>
+        </div>
+      )}
       {children}
     </div>
   );
