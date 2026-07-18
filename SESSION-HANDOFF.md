@@ -157,9 +157,59 @@ Non-code go-live to-dos, tracked here so they don't get lost:
   code change) OR regenerate a planted-stop clip once Higgsfield credits are
   topped up. Until then, consider removing the "The ring" video band from
   `src/app/page.tsx`.
+- [ ] **Set the real NRHA show/approval number** on each slate (Show →
+  Settings → `nrhaShowNumber`). The ReinerSuite CSV export is **blocked**
+  without it — confirmed by the 2026-07-18 export-readiness test. Both
+  slates currently have it empty.
+- [ ] **Run `cleanup_test_show.sql`** (scratchpad) if not already done — see
+  the end-to-end test section for the leftover test entry/classes.
 - [ ] **Remove the password gate**: delete the Vercel env var
   `SITE_GATE_PASSWORD` (or the block in `src/proxy.ts`).
 - [x] AI help chat live (ANTHROPIC_API_KEY set in Vercel) — DONE.
+
+## END-TO-END SHOW-CYCLE TEST (2026-07-18) — config validated, tail blocked by tooling
+
+Ran the run-the-show cycle against the real configured **Slate 1 (Fire Cracker
+Classic I)**. Note: the Fire Cracker Classic is **NOT live on ShowRing IQ** —
+it runs on Horse Show for Windows — so the ShowRing copy is dogfood data and
+safe to test against.
+
+**Verified live on the real config:**
+- ✅ **Config is NRHA-export-clean.** With a show number set, export readiness
+  went from 2 blockers to 1, and the remaining one is the expected "no classes
+  are official yet". The validator flagged **no** missing/invalid class codes,
+  patterns, or counts — the 60 configured classes pass export validation.
+- ✅ **Entry creation** — created an entry (Chex My Spook / Tester Jamie) in the
+  Open + Intermediate Open concurrent pair.
+- ✅ **Draw generation** — drew class 1 Open (Pattern 17), 1 in draw.
+- ✅ **Scoring** — entered 72.5 with judge **Naike Bell**, confirming the 3
+  judges configured on the slate are selectable on the score sheet.
+
+**Where it stalled (NOT product defects):**
+1. **Submitting a score requires a judge digital signature** (the patterns +
+   sign-off feature from an earlier session). The score sat at status `Draft`;
+   `Submit` needs the signature step, which blocks class → official → results →
+   payout → CSV. Worth knowing for whoever runs scoring.
+2. **The browser pane was badly degraded** — tab drifting to /dashboard between
+   clicks, screenshot timeouts, denied navigations, ConfirmDialogs not
+   rendering, and the dev server dying repeatedly. This blocked the last mile
+   and even the UI cleanup.
+
+**Already proven in prior sessions (not re-run):** the full draw → gate → score
+→ verify → official → results → payout → ReinerSuite CSV cycle, penny-exact,
+incl. concurrent-run score mirroring and the −1/−2 scratch codes.
+
+**LEFTOVER TEST DATA — cleanup SQL written, USER TO RUN** (scratchpad
+`cleanup_test_show.sql`): deletes entry `a287e4cb-faa5-467c-a776-6b37f15929f3`,
+resets classes `b453e080…` (1 Open) and `c11066a0…` (2 Int Open) to draft, and
+clears the test `nrha_show_number` (`TEST-FCC1`) on show `938c2d4e…`. If it
+wasn't run, that test entry/score is still on Slate 1.
+
+**Automation lesson worth keeping:** the `Combobox` typeahead does NOT register
+a selection from a JS `.click()` — only a real pointer click does. The reliable
+recipe is: JS-focus the input → `computer{type}` → `read_page` (filter=all,
+`ref_id` the form, `depth:4`) to get the option's **ref** → `computer{left_click,
+ref}`. Class checkboxes DO register via JS `.click()`.
 
 ## Latest (2026-07-17, 17th session pt 2 — REAL SHOW CONFIGURED + WEEKEND TESTING + 2 NEW FEATURES)
 
