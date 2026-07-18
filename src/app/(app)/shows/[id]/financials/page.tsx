@@ -3,6 +3,7 @@ import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadShowBillingRoster } from "@/lib/billing";
 import { BillingRoster } from "@/components/show/billing-roster";
 import { CloseOutCard } from "@/components/show/close-out-card";
+import { StandardChargesBackfillCard } from "@/components/show/standard-charges-backfill-card";
 import { PayoutDeadlineCard } from "@/components/show/payout-deadline-card";
 import { closeOutDeadlineInfo, payoutDeadlineInfo } from "@/lib/results-timing";
 import { Alert, ButtonLink, PageHeader } from "@/components/ui";
@@ -21,7 +22,7 @@ export default async function FinancialsPage({
   const { data: show } = await supabase
     .from("shows")
     .select(
-      "id, organization_id, end_date, timezone, payouts_distributed_at, close_out_fee_cents, close_out_deadline, weekend_id"
+      "id, organization_id, end_date, timezone, payouts_distributed_at, close_out_fee_cents, close_out_deadline, weekend_id, standard_entry_charges"
     )
     .eq("id", id)
     .maybeSingle();
@@ -36,7 +37,20 @@ export default async function FinancialsPage({
     | "close_out_fee_cents"
     | "close_out_deadline"
     | "weekend_id"
-  >;
+  > & {
+    standard_entry_charges: {
+      label: string;
+      amount_cents: number;
+      per_run?: boolean;
+    }[] | null;
+  };
+
+  // Only the once-per-horse-per-weekend charges can be backfilled; per-run
+  // judge/video/photo fees are computed live in billing.ts and never
+  // materialized, so they self-correct and need no apply step.
+  const standardCharges = (s.standard_entry_charges ?? [])
+    .filter((c) => c.per_run !== true && c.label && c.amount_cents > 0)
+    .map((c) => ({ label: c.label, amountCents: c.amount_cents }));
 
   const canView = await hasOrgPermission(s.organization_id, "invoice.view");
   if (!canView) {
@@ -130,6 +144,13 @@ export default async function FinancialsPage({
         totalMoneyWonCents={totalMoneyWonCents}
         canMark={canApprovePayouts}
       />
+      {standardCharges.length > 0 && (
+        <StandardChargesBackfillCard
+          showId={id}
+          charges={standardCharges}
+          canApply={canEditInvoices}
+        />
+      )}
       {(s.close_out_fee_cents ?? 0) > 0 && (
         <CloseOutCard
           showId={id}

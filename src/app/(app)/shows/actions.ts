@@ -302,6 +302,43 @@ export async function applyCloseOutFee(
   return { applied };
 }
 
+/** Applies the show's configured standard charges (office / stall /
+ * drug) to horses that already hold a back number.
+ *
+ * assign_back_number snapshots those charges when a horse first gets a
+ * number, so configuring or correcting the list after entries are taken
+ * misses everyone already entered. The 00053 RPC replays the same
+ * once-per-horse-per-weekend logic — same first-signer attribution,
+ * bill_to_trainer resolution, and youth $0 line — and skips any charge
+ * already billed, so it is safe to run more than once. */
+export async function applyStandardChargesToExisting(
+  showId: string
+): Promise<
+  ActionResult & { inserted?: number; skipped?: number; horses?: number }
+> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc(
+    "apply_standard_charges_to_existing",
+    { p_show: showId }
+  );
+  if (error) return { error: error.message };
+
+  const result = (data ?? {}) as {
+    inserted?: number;
+    skipped?: number;
+    horses?: number;
+  };
+
+  revalidatePath(`/shows/${showId}/financials`);
+  revalidatePath(`/shows/${showId}/settings`);
+  return {
+    inserted: result.inserted ?? 0,
+    skipped: result.skipped ?? 0,
+    horses: result.horses ?? 0,
+  };
+}
+
 export async function updateEventClassification(
   input: UpdateEventClassificationInput
 ): Promise<ActionResult> {
