@@ -3,6 +3,12 @@ import { requireUser } from "@/lib/authz";
 import { loadClassDraw } from "@/lib/load-draw";
 import { getNrhaPattern } from "@/lib/nrha-patterns";
 import { PrintButton } from "@/components/show/print-button";
+import {
+  formatClassCode,
+  loadSlateNumber,
+  resolveNrhaCode,
+  type ClassCodeAffiliation,
+} from "@/lib/class-code";
 import type { ClassPatternRow, Show, ShowClass } from "@/lib/types";
 
 export const metadata = { title: "Scribe score sheet — ShowRing IQ" };
@@ -108,7 +114,11 @@ export default async function ScoreSheetPage({
         .eq("id", classId)
         .eq("show_id", id)
         .maybeSingle(),
-      supabase.from("shows").select("name, start_date, end_date").eq("id", id).maybeSingle(),
+      supabase
+        .from("shows")
+        .select("id, name, start_date, end_date, weekend_id")
+        .eq("id", id)
+        .maybeSingle(),
       loadClassDraw(supabase, id, classId),
       supabase
         .from("class_patterns")
@@ -123,7 +133,12 @@ export default async function ScoreSheetPage({
 
   if (!cls) notFound();
   const showClass = cls as ShowClass;
-  const showRow = show as Pick<Show, "name" | "start_date" | "end_date"> | null;
+  const showRow = show as
+    | Pick<Show, "id" | "name" | "start_date" | "end_date" | "weekend_id">
+    | null;
+  const slateNumber = showRow
+    ? await loadSlateNumber(supabase, showRow)
+    : 1;
   const pattern = patternRow as ClassPatternRow | null;
   const libraryPattern = getNrhaPattern(pattern?.pattern_key ?? null);
 
@@ -135,23 +150,16 @@ export default async function ScoreSheetPage({
 
   // The judge scores an NRHA class, not our local class number — the sheet
   // travels with the results, so it carries the code NRHA will file it
-  // under ("5300 Rookie 1"). Resolved the same way the ReinerSuite export
-  // resolves it: the class_affiliations row on an NRHA rule package, then
-  // the legacy free-text nrha_class_code, then the local number.
-  type CodeRow = {
-    code: { code: string; name: string; rule_package: { association: { name: string } | null } | null } | null;
-  };
-  const affiliations =
-    ((cls as unknown as { affiliations: CodeRow[] | null }).affiliations ?? []);
-  const nrhaCode = affiliations.find(
-    (a) => a.code?.rule_package?.association?.name?.toUpperCase() === "NRHA"
-  )?.code;
-
-  const classLabel = nrhaCode
-    ? `${nrhaCode.code} ${nrhaCode.name}`
-    : showClass.nrha_class_code
-      ? `${showClass.nrha_class_code} ${showClass.name}`
-      : `${showClass.class_number} — ${showClass.name}`;
+  // under, and the "(2)" that marks the weekend's second go.
+  const resolvedCode = resolveNrhaCode(
+    cls as unknown as {
+      nrha_class_code?: string | null;
+      affiliations?: ClassCodeAffiliation[] | null;
+    }
+  );
+  const classLabel = resolvedCode
+    ? `${formatClassCode(resolvedCode.code, slateNumber)} ${resolvedCode.name ?? showClass.name}`
+    : `${showClass.class_number} — ${showClass.name}`;
 
   const entries = drawRows.filter((r) => r.entryClassStatus !== "scratched");
   const pages = chunk(entries, BLOCKS_PER_PAGE);

@@ -5,6 +5,12 @@ import { formatCents } from "@/lib/money";
 import { ClassStatusBadge } from "@/components/show/class-status-badge";
 import { ReorderButtons } from "@/components/show/class-row-actions";
 import { ButtonLink, Card, EmptyState, PageHeader } from "@/components/ui";
+import {
+  formatClassCode,
+  loadSlateNumber,
+  resolveNrhaCode,
+  type ClassCodeAffiliation,
+} from "@/lib/class-code";
 import type { Show, ShowClass } from "@/lib/types";
 
 export const metadata = { title: "Classes — ShowRing IQ" };
@@ -19,23 +25,31 @@ export default async function ClassesPage({
 
   const { data: show } = await supabase
     .from("shows")
-    .select("id, organization_id, status")
+    .select("id, organization_id, status, weekend_id")
     .eq("id", id)
     .maybeSingle();
   if (!show) notFound();
-  const s = show as Pick<Show, "id" | "organization_id" | "status">;
+  const s = show as Pick<
+    Show,
+    "id" | "organization_id" | "status" | "weekend_id"
+  >;
 
-  const [{ data: classes }, canCreate, canEdit] = await Promise.all([
+  const [{ data: classes }, canCreate, canEdit, slateNumber] = await Promise.all([
     supabase
       .from("classes")
-      .select("*")
+      .select(
+        `*, affiliations:class_affiliations(code:association_class_codes(code, name, rule_package:association_rule_packages(association:associations(name))))`
+      )
       .eq("show_id", id)
       .order("display_order"),
     hasOrgPermission(s.organization_id, "class.create"),
     hasOrgPermission(s.organization_id, "class.edit"),
+    loadSlateNumber(supabase, s),
   ]);
 
-  const rows = (classes as ShowClass[]) ?? [];
+  const rows = (classes as (ShowClass & {
+    affiliations?: ClassCodeAffiliation[] | null;
+  })[]) ?? [];
   const showEditable = s.status === "draft" || s.status === "published";
   const reorderable = canEdit && showEditable && rows.length > 1;
 
@@ -99,7 +113,27 @@ export default async function ClassesPage({
                         />
                       </td>
                     )}
-                    <td className="py-3 pr-4 font-mono">{cls.class_number}</td>
+                    {/* The association code is what the class is known by
+                        outside the office — on the judge's sheet, in the
+                        submission file. The local class number stays
+                        underneath because the show bill and gate run on
+                        it. */}
+                    <td className="py-3 pr-4 font-mono">
+                      {(() => {
+                        const resolved = resolveNrhaCode(cls);
+                        if (!resolved) return cls.class_number;
+                        return (
+                          <>
+                            <span>
+                              {formatClassCode(resolved.code, slateNumber)}
+                            </span>
+                            <span className="block text-xs font-normal text-stone-400 dark:text-stone-500">
+                              #{cls.class_number}
+                            </span>
+                          </>
+                        );
+                      })()}
+                    </td>
                     <td className="py-3 pr-4">
                       <Link
                         href={`/shows/${id}/classes/${cls.id}`}
