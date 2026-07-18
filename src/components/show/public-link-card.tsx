@@ -25,8 +25,12 @@ export function PublicLinkCard({
 
   return (
     <div className="flex flex-wrap items-center gap-4">
+      {/* The generated SVG carries its own width/height attributes (176px),
+          which ignore this box and spill over the link and buttons beside
+          it. Force it to fill the container instead — the viewBox scales
+          it correctly. */}
       <div
-        className="h-28 w-28 shrink-0 rounded-lg border border-stone-200 bg-white p-1.5 dark:border-stone-800"
+        className="h-28 w-28 shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-white p-1.5 dark:border-stone-800 [&>svg]:h-full [&>svg]:w-full"
         dangerouslySetInnerHTML={{ __html: qrSvg }}
       />
       <div className="min-w-0 flex-1">

@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   addMiscCharge,
   removeMiscCharge,
-  updateMiscChargeAmount,
+  updateMiscChargeLine,
 } from "@/app/(app)/shows/[id]/financials/actions";
 import {
   addMiscChargeSchema,
@@ -31,15 +31,23 @@ export function MiscChargeManager({
   personId,
   charges,
   catalog,
+  slates,
   canEdit,
 }: {
+  /** Slate a new charge defaults to. On the weekend view this is the
+   * first slate; the picker below can move it. */
   showId: string;
   personId: string;
   charges: PersonBillCharge[];
   /** The show's price list — picking an item fills the form. */
   catalog: CatalogItem[];
+  /** Set only on the consolidated weekend bill, where a charge still has
+   * to land on one specific slate. Omitted inside a single show. */
+  slates?: { id: string; name: string }[];
   canEdit: boolean;
 }) {
+  const slateName = (id: string) =>
+    slates?.find((s) => s.id === id)?.name ?? null;
   const [serverError, setServerError] = useState<string>();
   const [isPending, startTransition] = useTransition();
   const confirm = useConfirmDialog();
@@ -69,9 +77,11 @@ export function MiscChargeManager({
   const onSubmit = (values: AddMiscChargeInput) => {
     setServerError(undefined);
     startTransition(async () => {
-      const result = await addMiscCharge(values, showId);
+      // values.showId is the picked slate, which may differ from the
+      // default when adding from the weekend total.
+      const result = await addMiscCharge(values, values.showId);
       if (result?.error) setServerError(result.error);
-      else reset({ showId, personId, ...EMPTY_FORM });
+      else reset({ showId: values.showId, personId, ...EMPTY_FORM });
     });
   };
 
@@ -94,22 +104,42 @@ export function MiscChargeManager({
     });
     if (!result) return;
     startTransition(async () => {
-      const res = await removeMiscCharge(charge.id, result.reason, showId, personId);
+      const res = await removeMiscCharge(
+        charge.id,
+        result.reason,
+        charge.showId,
+        personId
+      );
       if (res?.error) setServerError(res.error);
     });
   };
 
-  const editPrice = async (charge: PersonBillCharge) => {
+  // Quantity and unit price are edited together: changing one without the
+  // other leaves a line whose stated arithmetic no longer matches its
+  // total. The unit defaults to the current one where it still holds, and
+  // to the whole amount otherwise (a legacy or already-overridden line).
+  const editLine = async (charge: PersonBillCharge) => {
+    const unitDefault = unitPriceHolds(charge)
+      ? charge.unitAmountCents!
+      : charge.amountCents;
     const result = await confirm({
-      title: `Edit price — ${charge.description}`,
-      message: "Set a new price. $0 keeps the line (so it still counts) but charges nothing.",
-      confirmLabel: "Save price",
+      title: `Edit charge — ${charge.description}`,
+      message:
+        "Price is per item; the total is price × quantity. $0 keeps the line (so it still counts) but charges nothing.",
+      confirmLabel: "Save charge",
       fields: [
         {
           name: "amount",
-          label: "New price ($)",
+          label: "Price each ($)",
           type: "text",
-          defaultValue: centsToInput(charge.amountCents),
+          defaultValue: centsToInput(unitDefault),
+          required: true,
+        },
+        {
+          name: "quantity",
+          label: "Quantity",
+          type: "text",
+          defaultValue: String(charge.quantity || 1),
           required: true,
         },
         { name: "reason", label: "Reason (required)", type: "textarea", required: true },
@@ -117,11 +147,12 @@ export function MiscChargeManager({
     });
     if (!result) return;
     startTransition(async () => {
-      const res = await updateMiscChargeAmount(
+      const res = await updateMiscChargeLine(
         charge.id,
         result.amount,
+        result.quantity,
         result.reason,
-        showId,
+        charge.showId,
         personId
       );
       if (res?.error) setServerError(res.error);
@@ -142,6 +173,7 @@ export function MiscChargeManager({
                   {c.category}
                   {unitPriceHolds(c) &&
                     ` · ${c.quantity} × ${formatCents(c.unitAmountCents!)}`}
+                  {slateName(c.showId) && ` · ${slateName(c.showId)}`}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -152,9 +184,9 @@ export function MiscChargeManager({
                       type="button"
                       variant="secondary"
                       disabled={isPending}
-                      onClick={() => editPrice(c)}
+                      onClick={() => editLine(c)}
                     >
-                      Edit price
+                      Edit
                     </Button>
                     <Button
                       type="button"
@@ -174,7 +206,27 @@ export function MiscChargeManager({
 
       {canEdit && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
-          <input type="hidden" {...register("showId")} />
+          {/* A charge always belongs to one slate, even when it is being
+              added from the weekend total — so ask which, rather than
+              guessing. */}
+          {slates && slates.length > 1 ? (
+            <div className="max-w-xs">
+              <Label htmlFor="mc-slate">Add to</Label>
+              <select
+                id="mc-slate"
+                {...register("showId")}
+                className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-900"
+              >
+                {slates.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <input type="hidden" {...register("showId")} />
+          )}
           <input type="hidden" {...register("personId")} />
           {catalog.length > 0 && (
             <div>

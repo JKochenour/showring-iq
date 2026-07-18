@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { hasOrgPermission, requireUser } from "@/lib/authz";
 import { loadWeekendPersonBill } from "@/lib/billing";
 import { Alert, Badge, ButtonLink, Card, PageHeader } from "@/components/ui";
+import { MiscChargeManager } from "@/components/show/misc-charge-manager";
 import { formatCents } from "@/lib/money";
 
 export const metadata = { title: "Weekend bill — ShowRing IQ" };
@@ -17,12 +18,17 @@ export default async function WeekendPersonBillPage({
 
   const { data: weekend } = await supabase
     .from("show_weekends")
-    .select("id, name, organization_id, shows:shows(id, name, start_date)")
+    .select(
+      "id, name, organization_id, shows:shows(id, name, start_date, charge_catalog)"
+    )
     .eq("id", weekendId)
     .maybeSingle();
   if (!weekend || weekend.organization_id !== id) notFound();
 
-  const canView = await hasOrgPermission(id, "invoice.view");
+  const [canView, canEdit] = await Promise.all([
+    hasOrgPermission(id, "invoice.view"),
+    hasOrgPermission(id, "invoice.edit"),
+  ]);
   if (!canView) {
     return (
       <Alert>You don&apos;t have permission to view financials for this weekend.</Alert>
@@ -32,11 +38,35 @@ export default async function WeekendPersonBillPage({
   const bill = await loadWeekendPersonBill(supabase, weekendId, personId);
   if (!bill) notFound();
 
-  const slates = (
-    (weekend.shows as { id: string; name: string; start_date: string }[]) ?? []
-  )
+  type SlateRow = {
+    id: string;
+    name: string;
+    start_date: string;
+    charge_catalog:
+      | { label: string; category?: string; unit_amount_cents: number }[]
+      | null;
+  };
+  const slates = ((weekend.shows as SlateRow[]) ?? [])
     .slice()
     .sort((a, b) => a.start_date.localeCompare(b.start_date));
+
+  // The price list is configured per slate; a weekend usually runs the
+  // same one on both. Merge by label so the office sees each item once.
+  const catalog = [
+    ...new Map(
+      slates
+        .flatMap((s) => s.charge_catalog ?? [])
+        .filter((c) => c.label && c.unit_amount_cents > 0)
+        .map((c) => [
+          c.label,
+          {
+            label: c.label,
+            category: c.category ?? c.label,
+            unitAmountCents: c.unit_amount_cents,
+          },
+        ])
+    ).values(),
+  ];
 
   return (
     <div className="space-y-6">
@@ -145,20 +175,14 @@ export default async function WeekendPersonBillPage({
 
       <Card>
         <h3 className="mb-3 text-base font-semibold">Misc charges (all slates)</h3>
-        {bill.charges.length === 0 ? (
-          <p className="text-sm text-stone-500 dark:text-stone-400">No misc charges.</p>
-        ) : (
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-              {bill.charges.map((c) => (
-                <tr key={c.id}>
-                  <td className="py-2 pr-4">{c.description}</td>
-                  <td className="py-2 text-right">{formatCents(c.amountCents)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <MiscChargeManager
+          showId={slates[0]?.id ?? ""}
+          personId={personId}
+          charges={bill.charges}
+          catalog={catalog}
+          slates={slates.map((s) => ({ id: s.id, name: s.name }))}
+          canEdit={canEdit}
+        />
         <p className="mt-3 text-right text-sm font-semibold">
           Subtotal: {formatCents(bill.miscChargeCents)}
         </p>
@@ -216,11 +240,11 @@ export default async function WeekendPersonBillPage({
       </div>
 
       <Card>
-        <h3 className="mb-1 text-sm font-semibold">Take a payment or edit charges</h3>
+        <h3 className="mb-1 text-sm font-semibold">Take a payment</h3>
         <p className="mb-3 text-xs text-stone-500 dark:text-stone-400">
-          This weekend view is a read-only total. Record payments, refunds, or
-          charge edits on the person&apos;s bill for a slate — they roll up here
-          automatically.
+          Misc charges can be added, edited, and removed above. Payments and
+          refunds are still recorded on the slate they belong to — they roll up
+          here automatically.
         </p>
         <div className="flex flex-wrap gap-2">
           {slates.map((s) => (

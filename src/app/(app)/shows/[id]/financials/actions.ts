@@ -39,6 +39,7 @@ export async function addMiscCharge(
 
   revalidatePath(`/shows/${showId}/financials/${d.personId}`);
   revalidatePath(`/shows/${showId}/financials`);
+  await revalidateWeekendFinancials(supabase, showId, d.personId);
   return {};
 }
 
@@ -146,6 +147,7 @@ export async function removeMiscCharge(
 
   revalidatePath(`/shows/${showId}/financials/${personId}`);
   revalidatePath(`/shows/${showId}/financials`);
+  await revalidateWeekendFinancials(supabase, showId, personId);
   return {};
 }
 
@@ -170,7 +172,59 @@ export async function updateMiscChargeAmount(
 
   revalidatePath(`/shows/${showId}/financials/${personId}`);
   revalidatePath(`/shows/${showId}/financials`);
+  await revalidateWeekendFinancials(supabase, showId, personId);
   return {};
+}
+
+/** Edit a charge's quantity AND unit price together, recomputing the
+ * total. update_misc_charge_amount rewrites the total alone, which leaves
+ * a quantity-bearing line showing "8 × $9.50" beside a total that isn't
+ * 8 × $9.50. */
+export async function updateMiscChargeLine(
+  chargeId: string,
+  unitAmount: string,
+  quantity: string,
+  reason: string,
+  showId: string,
+  personId: string
+): Promise<ActionResult> {
+  if (!reason.trim()) return { error: "A reason is required" };
+  const qty = Number(quantity);
+  if (!Number.isInteger(qty) || qty < 1 || qty > 999) {
+    return { error: "Enter a whole quantity from 1 to 999" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_misc_charge_line", {
+    p_charge: chargeId,
+    p_unit_amount_cents: dollarsToCents(unitAmount),
+    p_quantity: qty,
+    p_reason: reason,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/shows/${showId}/financials/${personId}`);
+  revalidatePath(`/shows/${showId}/financials`);
+  await revalidateWeekendFinancials(supabase, showId, personId);
+  return {};
+}
+
+/** A charge edited from the consolidated weekend view has to refresh that
+ * view too, not just the slate it belongs to. */
+async function revalidateWeekendFinancials(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  showId: string,
+  personId: string
+) {
+  const { data: show } = await supabase
+    .from("shows")
+    .select("organization_id, weekend_id")
+    .eq("id", showId)
+    .maybeSingle();
+  if (!show?.weekend_id) return;
+  const base = `/organizations/${show.organization_id}/weekends/${show.weekend_id}/financials`;
+  revalidatePath(base);
+  revalidatePath(`${base}/${personId}`);
 }
 
 /** Override a computed run fee's total for one entry (e.g. comp a video fee).

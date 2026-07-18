@@ -54,6 +54,8 @@ interface RawEntryClass {
 
 interface RawMiscCharge {
   id: string;
+  /** Charges belong to one slate even when shown on a weekend total. */
+  show_id: string;
   person_id: string;
   entry_id: string | null;
   description: string;
@@ -243,7 +245,7 @@ async function loadShowBillingData(supabase: SupabaseClient, showIds: string[]) 
     supabase
       .from("misc_charges")
       .select(
-        "id, person_id, entry_id, description, category, amount_cents, quantity, unit_amount_cents, created_at"
+        "id, show_id, person_id, entry_id, description, category, amount_cents, quantity, unit_amount_cents, created_at"
       )
       .in("show_id", showIds)
       .order("created_at", { ascending: false }),
@@ -469,6 +471,8 @@ export interface PersonBillLineItem {
 
 export interface PersonBillCharge {
   id: string;
+  /** The slate this charge sits on — the weekend view spans several. */
+  showId: string;
   description: string;
   category: string;
   /** The line total. Always authoritative, including for legacy rows
@@ -585,6 +589,7 @@ function buildPersonBill(data: BillingData, personId: string): PersonBill | null
     .filter((c) => c.person_id === personId)
     .map((c) => ({
       id: c.id,
+      showId: c.show_id,
       description: c.description,
       category: c.category,
       amountCents: c.amount_cents,
