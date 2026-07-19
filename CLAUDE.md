@@ -79,7 +79,7 @@ The system doesn't just print results — it protects the show from mistakes all
 
 Key relationships: org → shows/people/horses/documents; show → affiliations/classes/entries/back_numbers/invoices/packages; entry → entry_classes/fees/documents/scores/results; class → affiliations/draws/scores/results.
 
-**Multi-affiliation classes:** one class can count for several affiliations with different codes and eligibility (e.g., Class 12 "Green Reiner Level 1" → NRHA code 5300 counts for money+points; EPRHA code counts for year-end). Keep display name, local class number, per-affiliation codes/rules/results strictly separated.
+**Multi-affiliation classes:** one class can count for several affiliations with different codes and eligibility (e.g., Class 12 "Green Reiner Level 1" → NRHA code `EXAMPLE-1` counts for money+points; EPRHA code counts for year-end). Keep display name, local class number, per-affiliation codes/rules/results strictly separated. **Codes in examples are always placeholders** — real association codes are the association's material and must not be committed to this repo (see `scripts/README.md`). This example previously read "5300", which is doubly wrong: it is a real NRHA code, and it belongs to Rookie Level 1, not Green Reiner Level 1.
 
 **People/horses:** person has roles (rider/owner/trainer/agent/guardian/judge) and `association_memberships[]` (number, type, status, dates, verified_at, source, card doc). Horse has `association_registrations[]` (registration + competition license numbers), ownership/lease records with percentages, dates, and lease documents. Build duplicate detection (similar names, same numbers/emails) — AI-assisted matching, human approval required.
 
