@@ -2,8 +2,8 @@
 
 ## READ FIRST — state at end of the 19th session
 
-- **`main` @ `46963e1`**, working tree clean, everything pushed and
-  auto-deployed. 17 commits this session.
+- **`main` @ `f7e3f79`**, working tree clean, everything pushed and
+  auto-deployed. 24 commits this session.
 - **Migrations 00053–00056 are ALL APPLIED** (the user ran each in the
   Supabase SQL editor). Every feature below is live-verified unless it
   says otherwise.
@@ -271,13 +271,148 @@ the full lock → empty click → type → unlock loop.
 with nothing constraining it — measured 176×176 spilling 71px right and
 down over the URL and the Copy/Open buttons. Now fills its box: 99×99.
 
+---
+
+## 19th session, part 3 — ARCHIVING, "CIRCUIT", AND THE NRHA RULE PACKAGE
+
+Seven more commits (`d084fee` … `f7e3f79`). Everything live-verified
+unless noted.
+
+### Archived shows (`d084fee`)
+
+Archiving already existed and already did the important part — an
+archived show stays fully readable and RLS blocks edits at the database
+level, with **Restore to draft** as the way back. What it did not do was
+get out of the way, which is why it did not feel like archiving.
+
+- The org shows list now shows only active shows; archived ones sit in a
+  collapsed **"Archived shows (N)"** section.
+- The sidebar tree excludes archived shows.
+- An archived show carries a banner explaining it is readable but not
+  editable, linking to the restore control — without it, an edit attempt
+  fails with RLS's confusing "update was not applied".
+
+Verified on a throwaway show: archive → banner + drops out of sidebar →
+dashboard still renders → restore → back in the active list.
+
+### "Weekend" renamed to "Circuit" (`792e44e`)
+
+NRHA's word. **Display text only** — `weekend` is also a bare variable, a
+discriminated-union tag (`kind: "weekend"`), a route segment
+(`/organizations/:id/weekends/…`) and a set of DB identifiers
+(`show_weekends`, `weekend_back_numbers`, `shows.weekend_id`), so a
+word-boundary replace would have broken the app. Done as explicit phrase
+replacements; a sweep for visible "weekend" in JSX text, title/description
+props and template literals now returns nothing.
+
+**Internal naming is deliberately unchanged** — tables, columns, RPCs,
+routes, components and variables still say weekend. The homepage tagline
+"mission control for the show weekend" was also left, being ordinary
+English rather than the feature name.
+
+### NRHA rule package — the long thread
+
+**Published it** (`Draft → Review → Tested → Published`). Be aware this
+turned on nothing by itself: the package had **zero eligibility rules**.
+The behaviour change came from LINKING the classes to real codes, which
+made validation derive each entry's required associations from its
+classes' affiliations — that is why the Issues tab now shows NRHA
+membership/registration warnings that were absent before.
+
+**The link script ran, including step 3.** The Supabase SQL editor only
+shows the LAST statement's result, so pasting the whole file ran steps
+1–4 and displayed only step 4. Outcome verified from the data: **all 60
+classes across both slates linked, 0 unmatched.**
+
+**7 eligibility rules** transcribed from the org's own handbook and
+applied: youth 13&under, youth 14-18, Prime Time 50+, Masters 60+,
+Legends 70+, plus owner-recorded checks for non-pro and youth classes.
+All **warnings**, never blocking — handbook ages are "as of January 1"
+while the engine compares a birthdate to today, and NRHA ownership
+permits the rider OR immediate family OR a family-owned entity, which the
+engine cannot see.
+
+Verified both ways, which is the pair that matters: adding a Non Pro
+class to the real entry made the ownership rule fire with the right
+message; with only Rookie classes **nothing fires**, because the handbook
+exempts Rookie / Green Reiner / Ride & Slide / Unrestricted Youth from
+ownership restrictions. Test class removed afterwards.
+
+**NOT encoded, deliberately** — Non Pro card status and the $200,000
+Open-earnings ceiling, all Rookie / Limited / Intermediate / Novice Horse
+earnings caps, immediate-family ownership, snaffle-bit horse-age limits,
+and **Prime Time Rookie (5301)**, whose age the handbook text never
+states and must not be assumed from the other Prime Time classes.
+
+### Association codes are OUT of the repo — read this before adding any
+
+`e2832b6`, `833c534`, `09f5c58`, `f7e3f79` all circle one rule, CLAUDE.md
+line 184: **do not copy protected association materials.** NRHA's numeric
+codes come from member-only Handbook/ReinerSuite access. An organization
+holding its own codes is fine — that is its own material — but the repo
+is the product, so a code list committed here ships to everyone.
+
+What that produced:
+
+- **The starter seeds an empty package.** No class codes, no eligibility
+  rules. It used to seed 13 `CONFIRM-#` placeholders; watching a real
+  import land showed those survive the import and sit beside the 89 real
+  codes, so a class can be linked to a placeholder.
+- **Its ownership rules were removed too.** They were scoped by the
+  non_pro/youth CATEGORY, which was only safe against the placeholder
+  catalog. Real codes flag **Ride & Slide Non Pro** as non-pro while NRHA
+  exempts Category 10 from ownership restrictions, so they would fire
+  wrongly — and they share `rule_key`s with the code-scoped rules an org
+  applies from its own script, where the unique constraint means whichever
+  lands first silently wins.
+- **A blocking rule was corrected to warnings** before that. It required
+  `horse.ownedByRider`, which would have blocked a Non Pro riding a
+  spouse's or parent's horse.
+- **`scripts/nrha-eligibility-rules.sql` moved OUT** to `Documents/NRHA/`
+  (it scopes by explicit code). `scripts/link-fire-cracker-nrha-codes.sql`
+  **stays** — it matches by join and contains no code literals. The
+  distinction is written up in **`scripts/README.md`**.
+- **A wrong code was removed everywhere.** `5300` was labelled "Green
+  Reiner Level 1" in the starter, the import template row, the rule-engine
+  doc comment and **CLAUDE.md line 82**. Your own approved-class list is
+  unambiguous: **5300 is Rookie Level 1**; Green Reiner Level 1 is 10002.
+  A real-looking code under the wrong name is worse than a placeholder,
+  because it reads as confirmed.
+
+### The import path (this is how codes get in now)
+
+`Documents/NRHA/nrha-class-codes.csv` — 89 rows generated from the org's
+own `NRHA_Approved_Classes.pdf`, deliberately outside the repo, columns
+matching `CLASS_CODE_IMPORT_FIELDS` exactly. Load via a rule package's
+**Import class codes** page; it matches on `code`, so re-importing a
+revised list updates rather than duplicates.
+
+**Verified end to end** on a throwaway package: file accepted, 89 rows
+parsed, all ten columns auto-mapped with no manual mapping, import
+produced the real codes with correct flags (Ride & Slide Non Pro carrying
+the non-pro flag, which is exactly why ownership rules scope by code).
+
+Regenerate it from the PDF with the scratchpad scripts if NRHA revises the
+list. Gotcha if you do: the PDF bullets every row with a Symbol-font glyph
+that extracts as a private-use character (U+F0B7) and trails every name
+and category — strip the `-` range, and note that class names
+contain digits ("Level 1", "13 & Under"), so a parser must split on a 4-6
+digit code rather than stop the name at the first digit.
+
 ### Open for the user
 
-- **Run `scripts/link-fire-cracker-nrha-codes.sql`** (steps 1–2 are
-  read-only) and decide whether to publish the NRHA 2026 package.
+- **Prime Time Rookie (5301) has no age rule** — supply the age and it is
+  a one-line addition to the rules script.
+- **The NRHA 2026 package is Published with 7 rules.** Review them.
 - The audit log carries this session's verification entries: charge
-  add/edit/remove on QAJudge Two with reasons like "Removing verification
-  test charge", and two lock/unlock cycles.
+  add/edit/remove on QAJudge Two, two lock/unlock cycles, an entry class
+  added and removed, and several throwaway rule packages created and
+  deleted (NRHA 2098/2099).
+- **Unverified visually:** the NRHA starter button's new copy. The page
+  kept serving cached markup and the only fix wipes the auth cookie.
+  Source-verified instead (the old string is absent from `src/`). If it
+  reads "notincluded" run together, that is a JSX spacing bug already
+  fixed but never seen rendered.
 - Still open from earlier: the pre-launch checklist below (LLC, 43 legal
   placeholders, homepage video, NRHA show numbers, password gate).
 
