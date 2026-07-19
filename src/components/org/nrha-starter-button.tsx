@@ -12,14 +12,14 @@ export function CreateNrhaStarterButton({ organizationId }: { organizationId: st
 
   return (
     <Card>
-      <h2 className="mb-2 text-base font-semibold">Start from NRHA&apos;s public class list</h2>
+      <h2 className="mb-2 text-base font-semibold">Create an NRHA rule package</h2>
       <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
-        Creates a draft rule package with common local-show class names and
-        eligibility flags (Open, Non Pro, Green Reiner, Youth, etc.) from
-        NRHA&apos;s public category taxonomy. Class codes are seeded as
-        placeholders — confirm the real numeric codes from your NRHA
-        Handbook or ReinerSuite access before publishing. This does not scrape
-        or copy anything from NRHA&apos;s member-only content.
+        Creates an empty draft NRHA package for the year. Class codes are{" "}
+        <strong>not</strong> included — NRHA&apos;s numeric codes come from
+        member-only Handbook and ReinerSuite access, so nothing is scraped or
+        shipped here. Load your own official class-code list through the
+        package&apos;s <strong>Import class codes</strong> page, then add
+        eligibility rules scoped to those codes.
       </p>
       {error && (
         <div className="mb-3">
@@ -29,8 +29,8 @@ export function CreateNrhaStarterButton({ organizationId }: { organizationId: st
       {done && (
         <div className="mb-3">
           <Alert tone="success">
-            Draft NRHA {year} package created below — open it to review class codes and
-            confirm the real ones before publishing.
+            Draft NRHA {year} package created below — open it and import your
+            class-code list to fill it in.
           </Alert>
         </div>
       )}

@@ -336,53 +336,6 @@ export async function updateClassCode(
   return {};
 }
 
-/**
- * Seeds a draft "NRHA 2026" starter rule package: class names and
- * youth/amateur/open/non-pro flags come from NRHA's public class-category
- * taxonomy (nrha.com/education/navigating-categories/) — that's fine to
- * reuse. The actual numeric class codes live in NRHA's member-only
- * ReinerSuite/Handbook and are their material, not ours to scrape or
- * republish, so EVERY code here is a clearly-marked CONFIRM- placeholder.
- *
- * One used to be seeded as "5300" for Green Reiner Level 1, on the
- * grounds that it was CLAUDE.md's own worked example rather than scraped
- * data. It was removed for two reasons: it is wrong — 5300 is Rookie
- * Level 1 in NRHA's catalog, Green Reiner Level 1 is a different code —
- * and a real-looking code reads as confirmed when it is not. (CLAUDE.md
- * line 82 still carries the same mistaken example.)
- *
- * To get real codes into a package, use its Import class codes page with
- * your own official list; see scripts/README.md. The package stays in
- * "draft" status — confirm codes against your NRHA Handbook/ReinerSuite
- * access before publishing, per the standard validation disclaimer.
- */
-const STARTER_CLASSES: {
-  code: string;
-  name: string;
-  division: string;
-  isYouth: boolean;
-  isAmateur: boolean;
-  isOpen: boolean;
-  isNonPro: boolean;
-}[] = [
-  { code: "CONFIRM-1", name: "Open", division: "Ancillary", isYouth: false, isAmateur: false, isOpen: true, isNonPro: false },
-  { code: "CONFIRM-2", name: "Non Pro", division: "Ancillary", isYouth: false, isAmateur: false, isOpen: false, isNonPro: true },
-  { code: "CONFIRM-3", name: "Intermediate Non Pro", division: "Ancillary", isYouth: false, isAmateur: false, isOpen: false, isNonPro: true },
-  { code: "CONFIRM-4", name: "Limited Non Pro", division: "Ancillary", isYouth: false, isAmateur: false, isOpen: false, isNonPro: true },
-  { code: "CONFIRM-5", name: "Novice Horse Open Level 1", division: "Ancillary", isYouth: false, isAmateur: false, isOpen: true, isNonPro: false },
-  { code: "CONFIRM-6", name: "Novice Horse Non Pro Level 1", division: "Ancillary", isYouth: false, isAmateur: false, isOpen: false, isNonPro: true },
-  { code: "CONFIRM-7", name: "Rookie Level 1", division: "Ancillary (Rookie)", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
-  // Was seeded as "5300", which is wrong and worse than a placeholder
-  // because it looks confirmed: 5300 is Rookie Level 1 in NRHA's own
-  // catalog, not Green Reiner Level 1. Back to a CONFIRM- placeholder
-  // like its neighbours until someone checks it against the handbook.
-  { code: "CONFIRM-8", name: "Green Reiner Level 1", division: "Entry Level", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
-  { code: "CONFIRM-9", name: "Green Reiner Level 2", division: "Entry Level", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
-  { code: "CONFIRM-10", name: "Ride & Slide Level 1", division: "Entry Level", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
-  { code: "CONFIRM-11", name: "Ride & Slide Level 2", division: "Entry Level", isYouth: false, isAmateur: false, isOpen: false, isNonPro: false },
-  { code: "CONFIRM-12", name: "Youth 13 & Under", division: "Youth", isYouth: true, isAmateur: false, isOpen: false, isNonPro: false },
-  { code: "CONFIRM-13", name: "Youth 14-18", division: "Youth", isYouth: true, isAmateur: false, isOpen: false, isNonPro: false },
-];
 
 export async function createNrhaStarterPackage(
   organizationId: string,
@@ -417,7 +370,7 @@ export async function createNrhaStarterPackage(
       year,
       version: "1",
       source_notes:
-        "Starter package: class names and eligibility flags are from NRHA's public class-category taxonomy (nrha.com). Numeric codes are placeholders (CONFIRM-#) — replace with the real codes from your NRHA Handbook/ReinerSuite access before publishing. Not sourced from any scraped or copyrighted NRHA document.",
+        "Starter package: an empty NRHA shell. No class codes or eligibility rules are seeded — NRHA's numeric codes come from member-only Handbook/ReinerSuite access and are not shipped with this product. Load your own official class-code list through this package's Import class codes page, then add eligibility rules scoped to those codes. Confirm everything against your current NRHA Handbook before publishing.",
     })
     .select("id")
     .maybeSingle();
@@ -429,68 +382,25 @@ export async function createNrhaStarterPackage(
     return { error: pkgError?.message ?? "Could not create the rule package." };
   }
 
-  const { error: codesError } = await supabase.from("association_class_codes").insert(
-    STARTER_CLASSES.map((c) => ({
-      rule_package_id: pkg.id,
-      code: c.code,
-      name: c.name,
-      discipline: "Reining",
-      division: c.division,
-      is_youth: c.isYouth,
-      is_amateur: c.isAmateur,
-      is_open: c.isOpen,
-      is_non_pro: c.isNonPro,
-    }))
-  );
-  if (codesError) return { error: codesError.message };
-
-  // Ownership checks, as WARNINGS.
+  // No class codes and no eligibility rules are seeded.
   //
-  // This used to be one BLOCKING rule requiring horse.ownedByRider, which
-  // was wrong in two ways. NRHA allows the horse to be owned by the Non
-  // Pro OR their immediate family OR a business entity they solely own,
-  // so demanding the rider be the owner blocks legitimate entries — a
-  // Non Pro on their spouse's horse — at the moment the office can least
-  // afford it. And the engine cannot see family relationships at all, so
-  // the strongest honest check is that an owner is recorded, with the
-  // relationship verified by hand. Same call the AQHA and APHA packages
-  // made for their ownership rules.
+  // CODES: NRHA's numeric class codes come from member-only Handbook /
+  // ReinerSuite access and are their material, not ours to ship (see
+  // CLAUDE.md, "Do not copy protected association materials"). This used
+  // to seed CONFIRM-# placeholders so the package was not empty, but a
+  // placeholder catalog is worse than none: a class can be linked to a
+  // placeholder, and the placeholders survive an import and sit
+  // alongside the real codes. Load real codes through this package's
+  // Import class codes page from your own official list.
   //
-  // Scoped by the non_pro/youth CATEGORY, which is safe against this
-  // catalog: Rookie, Green Reiner and Ride & Slide are all isNonPro:
-  // false here, and NRHA exempts exactly those from ownership rules. If
-  // you later import NRHA's real codes, note that Ride & Slide Non Pro
-  // DOES carry the non-pro flag — scope by explicit code then, the way
-  // scripts/nrha-eligibility-rules.sql does.
-  //
-  // Age rules (Youth 13 & Under, Youth 14-18, Prime Time 50+, Masters
-  // 60+, Legends 70+) are deliberately NOT seeded here: they have to
-  // target individual codes, and this catalog is still CONFIRM-
-  // placeholders. See scripts/nrha-eligibility-rules.sql for the
-  // transcribed set to apply once real codes are in.
-  const { error: ruleError } = await supabase
-    .from("association_eligibility_rules")
-    .insert([
-      {
-        rule_package_id: pkg.id,
-        rule_key: "nrha_non_pro_ownership_recorded",
-        applies_to: ["non_pro"],
-        conditions: [{ field: "entry.hasOwner", operator: "equals", value: "true" }],
-        severity: "warning",
-        message:
-          "Non Pro: record the horse's owner. NRHA requires the horse to be owned solely by the Non Pro, their immediate family, or a business entity they solely own — verify the relationship against your current NRHA Handbook.",
-      },
-      {
-        rule_package_id: pkg.id,
-        rule_key: "nrha_youth_ownership_recorded",
-        applies_to: ["youth"],
-        conditions: [{ field: "entry.hasOwner", operator: "equals", value: "true" }],
-        severity: "warning",
-        message:
-          "Youth class: record the horse's owner. NRHA requires the horse to be owned solely by the youth, their immediate family, or a business entity they solely own — verify the relationship against your current NRHA Handbook.",
-      },
-    ]);
-  if (ruleError) return { error: ruleError.message };
+  // RULES: eligibility rules have to be scoped to the codes they apply
+  // to, so they cannot be written before those codes exist. Scoping by
+  // category instead is not a safe substitute — NRHA exempts Category 10
+  // (Green Reiner, Ride & Slide), the Rookie classes and Unrestricted
+  // Youth from ownership restrictions, yet Ride & Slide Non Pro genuinely
+  // carries the non-pro flag, so a category-scoped ownership rule fires
+  // on classes that have no such restriction. Apply the rules after
+  // importing codes; see scripts/README.md.
 
   revalidatePath(`/organizations/${organizationId}/rule-packages`);
   return {};
