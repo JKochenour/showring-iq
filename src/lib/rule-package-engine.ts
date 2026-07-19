@@ -18,7 +18,7 @@
  *
  * `applies_to` scopes which entries a rule runs against: empty = every
  * entry in the show; otherwise it's matched against each entered class's
- * linked rule-package code, by exact code string ("5300") or by category
+ * linked rule-package code, by exact code string ("EXAMPLE-1") or by category
  * flag alias ("non_pro", "youth", "amateur", "open").
  */
 

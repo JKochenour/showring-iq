@@ -8,8 +8,11 @@ import { Alert, PageHeader } from "@/components/ui";
 
 export const metadata = { title: "Import class codes — ShowRing IQ" };
 
+// Deliberately not a real association code. This row is offered as a
+// downloadable template, so a real code here would both republish the
+// association's material and invite someone to keep the sample value.
 const SAMPLE_ROW = {
-  code: "5300",
+  code: "EXAMPLE-1",
   name: "Green Reiner Level 1",
   discipline: "Reining",
   division: "Entry Level",

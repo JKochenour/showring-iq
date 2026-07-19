@@ -342,11 +342,19 @@ export async function updateClassCode(
  * taxonomy (nrha.com/education/navigating-categories/) — that's fine to
  * reuse. The actual numeric class codes live in NRHA's member-only
  * ReinerSuite/Handbook and are their material, not ours to scrape or
- * republish, so codes are seeded as clearly-marked placeholders (except
- * "5300" for Green Reiner Level 1, which is CLAUDE.md's own worked
- * example, not scraped data). The package stays in "draft" status —
- * confirm real codes against your NRHA Handbook/ReinerSuite access before
- * publishing, per the standard validation disclaimer.
+ * republish, so EVERY code here is a clearly-marked CONFIRM- placeholder.
+ *
+ * One used to be seeded as "5300" for Green Reiner Level 1, on the
+ * grounds that it was CLAUDE.md's own worked example rather than scraped
+ * data. It was removed for two reasons: it is wrong — 5300 is Rookie
+ * Level 1 in NRHA's catalog, Green Reiner Level 1 is a different code —
+ * and a real-looking code reads as confirmed when it is not. (CLAUDE.md
+ * line 82 still carries the same mistaken example.)
+ *
+ * To get real codes into a package, use its Import class codes page with
+ * your own official list; see scripts/README.md. The package stays in
+ * "draft" status — confirm codes against your NRHA Handbook/ReinerSuite
+ * access before publishing, per the standard validation disclaimer.
  */
 const STARTER_CLASSES: {
   code: string;
