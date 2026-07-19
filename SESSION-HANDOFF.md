@@ -399,10 +399,47 @@ and category — strip the `-` range, and note that class names
 contain digits ("Level 1", "13 & Under"), so a parser must split on a 4-6
 digit code rather than stop the name at the first digit.
 
+### Prime Time widened, and the NRHA export proven end to end (2026-07-19)
+
+**All seven Prime Time classes now carry the 50+ rule.** The first pass
+covered only 1110 / 1650 / 2350 / 2650. The user confirmed **5301 Prime
+Time Rookie**, and then **6235 / 6265** (the Closed Aged Event Prime Time
+Open / Non Pro), as 50 and older; all three had been deliberately left out
+because the handbook text does not state 5301's age and the Category 6
+pair was an inference from their class names. `applies_to` is now
+`1110, 1650, 2350, 2650, 5301, 6235, 6265`.
+
+Applied with `Documents/NRHA/add-prime-time-rookie.sql`, which SETS the
+full list rather than appending, so it is safe however many times it runs.
+The insert script could not do this — it uses ON CONFLICT DO NOTHING, so
+re-running it would never touch an existing rule.
+
+**Verified without any test data.** The real entry already holds class 26
+= Prime Time Rookie (5301), so the rule fired on its own the moment the
+codes were widened: warnings on that entry went 2 → 3 with "NRHA Prime
+Time: rider must be 50 or older as of January 1". It fires because the
+rider has no birthdate on file, which is the intended behaviour — you
+cannot verify a 50+ restriction without one.
+
+**NRHA show numbers set (user, 2026-07-19), and the CSV now generates.**
+Classic I moved from "3 issues, 1 blocking" to **NRHA Submission: Ready**,
+with Download CSV and the full ZIP both live. The generated file is
+format-correct per CLAUDE.md — semicolon delimiter, every field quoted,
+exact header order, money as `0.00`, numeric pattern — and critically
+**ClassCode now resolves from the linked affiliation** (`5300`) rather
+than the legacy free-text field:
+
+```
+"857486456";"EPRHA Fire Cracker Classic I";"Rookie Level 1";"5300";"6";…
+```
+
+Classic 2's only remaining issue is "no classes are official yet" —
+show-day work, not setup. The two warnings on Classic I are the QA
+entry's missing NRHA member/horse numbers, which is why `HorseNrha` and
+`MemberNrha` are blank in that row.
+
 ### Open for the user
 
-- **Prime Time Rookie (5301) has no age rule** — supply the age and it is
-  a one-line addition to the rules script.
 - **The NRHA 2026 package is Published with 7 rules.** Review them.
 - The audit log carries this session's verification entries: charge
   add/edit/remove on QAJudge Two, two lock/unlock cycles, an entry class
@@ -413,8 +450,9 @@ digit code rather than stop the name at the first digit.
   Source-verified instead (the old string is absent from `src/`). If it
   reads "notincluded" run together, that is a JSX spacing bug already
   fixed but never seen rendered.
-- Still open from earlier: the pre-launch checklist below (LLC, 43 legal
-  placeholders, homepage video, NRHA show numbers, password gate).
+- Still open from earlier: the pre-launch checklist below — **LLC, 43
+  legal placeholders, homepage video, password gate**. The NRHA show
+  numbers are now DONE.
 
 ---
 
@@ -581,10 +619,12 @@ Non-code go-live to-dos, tracked here so they don't get lost:
   code change) OR regenerate a planted-stop clip once Higgsfield credits are
   topped up. Until then, consider removing the "The ring" video band from
   `src/app/page.tsx`.
-- [ ] **Set the real NRHA show/approval number** on each slate (Show →
-  Settings → `nrhaShowNumber`). The ReinerSuite CSV export is **blocked**
-  without it — confirmed by the 2026-07-18 export-readiness test. Both
-  slates currently have it empty.
+- [x] **Set the real NRHA show/approval number** on each slate — DONE
+  2026-07-19 by the user (Show → Settings → `nrhaShowNumber`). Both
+  slates carry their own approval number. Verified: Classic I went from
+  "3 issues, 1 blocking" to **NRHA Submission: Ready**, and the CSV now
+  generates end to end. Classic 2's only remaining issue is "no classes
+  are official yet", which is show-day work rather than setup.
 - [x] Test-show cleanup — DONE 2026-07-18 (plus the follow-up reset of
   classes 3/4 left `Draw posted` by concurrent-group propagation).
 - [ ] **Remove the password gate**: delete the Vercel env var
